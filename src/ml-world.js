@@ -1,65 +1,112 @@
 /* =====================================================================================
    MUD LAB: THE WORLD (put inside the engine's world generator by src/build.py, so the background worker that makes
-   the land has it too: it may use only the generator's own helpers, sst, vn, fbm, SF, rimAt).
-   The whole world is soil: a square 327.68 m (1,075 ft) across, every centimetre of it can be dug, packed, rutted and
-   thrown (src/ml-soil.js keeps it every 8 cm). A grassy bank all round it, trees beyond. Its places (u east, v south
-   of its middle, metres):
-     the field (the middle): loam, gently rolling, a patch of sod to the south
-     the clay flats (north-west): flat grey clay, cracked where it's dry, puddles 2-5 cm deep in its hollows
-     the peat bog (north-east): low, dark and spongy, the water a few centimetres under the moss (any rut fills), and
-       a few bog holes of open water 20-30 cm deep
-     the ditch: from the bog down to the pond, 4 m wide, 25-40 cm of water over soft silt
-     the pond (east): soft silt bottom, 30-65 cm of water, and a ford across its west end 15-20 cm deep
-     the beach (south-east): wet sand along the pond's south shore, firm until you spin it
-     the sand (south-west): dry dunes, 1-2 m high
-     the hills (west): a mound and a steeper hill to climb
-   Everything is a cheap function of where you are, so the soil can lay it all out at the start.
+   the land has it too: it may use only the generator's own helpers, sst, vn, fbm, hs, SF, rimAt).
+   Mud Lab 4: 1,536 m (5,039 ft) square, all of it soil, built on MOISTURE: every spot has its soil (loam, clay, silt,
+   peat, sand) and how wet it is (0 dust dry .. 1 soaked); src/ml-soil.js makes its behaviour from the two, so the same
+   red loam is hard and dusty on a ridge, soft at the foot of a slope and soup by the creek. u east, v south of the
+   middle, metres:
+     the Trailhead (south): the camp where you start, open dry fields round it
+     the Field Track: a two-track from the camp east to the quarry and west to the Mud Hole
+     the Mud Hole (south-west of camp): a big dug bog, water up to knee deep over sticky mud
+     the Quarry (south-east): an old sand pit, 6 m down, steep sides
+     Big Creek: across the map from the south-west to the north-east, in its flat valley, the Bottoms: silt banks, sand
+       bars on its bends, peat bog in the low spots; the Lower and Upper Fords where trails cross it
+     the Pond: in the Bottoms, south of the creek
+     the Clay Pan (north-west): dry cracked clay, hard as a road until it's wet
+     the Ridge (north), the Hill Climb up its south face
+     the woods: most of the north and the east, with the mud trails through them (the Creek Loop, the Ridge Trail,
+       the Gumbo Trail across the clay, Deer Run in the east woods), worn into two-tracks with mud holes in the low spots
+     the bank all round, trees beyond
    ===================================================================================== */
-const ML_A={x:0,z:1200,h:163.84,m:40,h0:2};
-const ML_PL=-.35,ML_NONE=-99;   /* the pond's (and the ditch's) water level, over h0; no water */
-const mlEll=(u,v,cu,cv,ru,rv)=>Math.hypot((u-cu)/ru,(v-cv)/rv);
-/* the world's own ground: its height over h0 and what it's made of (weights 0..1; loam is what's left), and the level
-   of the water lying on it (over h0; ML_NONE where there is none) */
+const ML_A={x:0,z:1200,h:768,m:140,h0:2};
+const ML_NONE=-99,ML_CL=-.35;          /* the creek's (and the pond's) water level over the Bottoms' floor; no water */
+/* a smooth line through waypoints, a point every 4 m (Catmull-Rom) */
+function mlLine(P){const o=[];for(let i=0;i<P.length-1;i++){const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)],n=Math.max(1,Math.ceil(Math.hypot(p2[0]-p1[0],p2[1]-p1[1])/4));
+  for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t,f=(a,b,c,d)=>.5*(2*b+(-a+c)*t+(2*a-5*b+4*c-d)*t2+(-a+3*b-3*c+d)*t3);o.push([f(p0[0],p1[0],p2[0],p3[0]),f(p0[1],p1[1],p2[1],p3[1])]);}}
+  o.push(P[P.length-1].slice());return o;}
+const ML_CREEK=mlLine([[-800,560],[-620,500],[-470,400],[-340,300],[-220,220],[-110,180],[0,130],[110,60],[210,-25],[320,-55],[430,-140],[520,-250],[600,-370],[690,-460],[800,-520]]);
+const ML_TRAILS=[
+  {name:'Creek Loop',pts:mlLine([[20,620],[70,460],[62,320],[14,214],[-40,120],[-74,40],[-20,-44],[80,-66],[180,-112],[262,-62],[300,40],[262,140],[160,222],[92,330],[70,460]])},
+  {name:'Ridge Trail',pts:mlLine([[-20,-44],[-84,-160],[-62,-300],[18,-420],[62,-482],[122,-560],[240,-604],[380,-566],[462,-462],[520,-334],[520,-262]])},
+  {name:'Gumbo Trail',pts:mlLine([[-74,40],[-200,-22],[-330,-122],[-420,-242],[-520,-322],[-562,-452],[-462,-560],[-300,-560],[-180,-480],[-84,-380],[-62,-300]])},
+  {name:'Deer Run',pts:mlLine([[300,40],[400,122],[520,182],[622,102],[662,-52],[602,-202],[520,-262]])},
+  {name:'Field Track',pts:mlLine([[-170,606],[-60,640],[0,650],[110,630],[230,598],[350,566],[442,530]])}];
+/* the mud holes on the trails (in their low, shady spots), each its own pool; and the big one */
+const ML_HOLES=[];
+(()=>{const add=(tr,f,L,W,d)=>{const P=ML_TRAILS[tr].pts,i=Math.max(1,Math.min(P.length-2,Math.round(f*(P.length-1)))),a=P[i-1],b=P[i+1],r=Math.atan2(b[1]-a[1],b[0]-a[0]);ML_HOLES.push({u:P[i][0],v:P[i][1],L,W,r,d,lv:null});};
+  [[0,.12,13,5,.4],[0,.34,9,4.6,.32],[0,.58,15,5,.45],[0,.86,10,4.8,.35],[1,.22,12,5,.4],[1,.48,8,4.6,.3],[1,.74,14,5,.45],[2,.18,11,5,.42],[2,.42,16,5.2,.5],[2,.66,9,4.6,.35],[2,.88,12,5,.4],
+   [3,.3,12,5,.4],[3,.62,10,4.8,.38],[4,.2,8,4.6,.28]].forEach(a=>add(...a));
+  ML_HOLES.push({u:-172,v:556,L:30,W:19,r:.35,d:.75,lv:null,big:1});})();
+const ML_POND={u:232,v:104,a:62,b:34,r:-.5};
+const ML_QUARRY={u:450,v:516,a:66,b:48};
+const ML_CLAY={u:-470,v:-300};
+/* the places for the map: name, where, and what (for its mark) */
+const ML_PLACES=[['TRAILHEAD',0,650,'camp'],['MUD HOLE',-172,556,'hole'],['QUARRY',450,516,'sand'],['THE POND',232,104,'water'],['BIG CREEK',-340,300,'water'],
+  ['THE BOTTOMS',380,-110,'bog'],['CLAY PAN',-470,-300,'clay'],['THE RIDGE',220,-640,'hill'],['HILL CLIMB',62,-482,'hill'],['LOWER FORD',-24,150,'ford'],['UPPER FORD',282,-48,'ford'],
+  ['CREEK LOOP',150,340,'trail'],['RIDGE TRAIL',400,-560,'trail'],['GUMBO TRAIL',-540,-400,'trail'],['DEER RUN',600,80,'trail']];
+/* ---------- quick nearest-line lookups: each line's segments in 32 m buckets ---------- */
+const ML_BK=32,ML_BN=Math.ceil(2*(ML_A.h+ML_A.m)/ML_BK)+2;
+const ML_IDX={creek:new Map(),trail:new Map()};
+(()=>{const put=(M,ln,P,k)=>{for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],pad=k;
+    const i0=Math.floor((Math.min(a[0],b[0])-pad+ML_A.h+ML_A.m)/ML_BK),i1=Math.floor((Math.max(a[0],b[0])+pad+ML_A.h+ML_A.m)/ML_BK),j0=Math.floor((Math.min(a[1],b[1])-pad+ML_A.h+ML_A.m)/ML_BK),j1=Math.floor((Math.max(a[1],b[1])+pad+ML_A.h+ML_A.m)/ML_BK);
+    for(let j=j0;j<=j1;j++)for(let q=i0;q<=i1;q++){const key=j*ML_BN+q;let L=M.get(key);if(!L)M.set(key,L=[]);L.push(ln,i);}}};
+  put(ML_IDX.creek,0,ML_CREEK,140);ML_TRAILS.forEach((t,n)=>put(ML_IDX.trail,n,t.pts,12));})();
+const MLQ={d:1e9,t:0,n:-1,i:0,f:0};
+function mlNear(M,lines,u,v,o){o.d=1e9;o.n=-1;const L=M.get(Math.floor((v+ML_A.h+ML_A.m)/ML_BK)*ML_BN+Math.floor((u+ML_A.h+ML_A.m)/ML_BK));if(!L)return o;
+  for(let q=0;q<L.length;q+=2){const n=L[q],i=L[q+1],P=lines(n),a=P[i],b=P[i+1],ex=b[0]-a[0],ez=b[1]-a[1],ll=ex*ex+ez*ez||1;let f=((u-a[0])*ex+(v-a[1])*ez)/ll;f=f<0?0:f>1?1:f;
+    const dx=u-a[0]-ex*f,dz=v-a[1]-ez*f,d=dx*dx+dz*dz;if(d<o.d){o.d=d;o.n=n;o.i=i;o.f=f;}}
+  o.d=Math.sqrt(o.d);return o;}
+const ML_CL_F=n=>ML_CREEK,ML_TR_F=n=>ML_TRAILS[n].pts;
+/* the rolling hills (over the Bottoms' floor) and the Ridge */
+function mlHills(u,v){return 3+12*fbm(u/420+3.1,v/420-1.7,3,841)+3*fbm(u/120,v/120,2,842)+22*Math.exp(-Math.pow((v+600)/120,2))*sst(-760,-500,u)*sst(760,560,u);}
+/* ---------- the world's own ground: height over h0, soils (weights; loam is what's left), moisture, water level,
+   sod, the woods' floor, the trail (distance from its middle, 99 off it) and how wooded ---------- */
+const MLN={d:0,t:0,n:-1,i:0,f:0},MLT={d:0,t:0,n:-1,i:0,f:0};
 function mlZone(u,v,o){
-  const n1=vn(u/9,v/9,831)-.5,n2=vn(u/23,v/23,832)-.5,n3=vn(u/3.3,v/3.3,833)-.5,e=Math.max(Math.abs(u),Math.abs(v));
-  /* the field: gently rolling loam */
-  let h=.22*Math.sin(u*.045+.6)*Math.cos(v*.05-.3)+.12*Math.sin(u*.11+v*.07+1.3)+.1*n2;
-  let clay=0,silt=0,peat=0,sand=0,grass=0,wl=ML_NONE;
-  /* the clay flats: flat, a little low, hollows that hold puddles */
-  {const w=sst(-34,-48,u+n1*10)*sst(-38,-52,v+n2*12);if(w>0){const flat=-.12+.08*(vn(u/6.5,v/6.5,834)-.5)+.03*(vn(u/2.1,v/2.1,835)-.5);
-    h=h+(flat-h)*w;clay=w;const lv=-.145;if(w>.6)wl=Math.max(wl,lv);}}
-  /* the peat bog: low and flat, hummocks of moss, the water just under; bog holes */
-  {const w=sst(34,48,u+n1*10)*sst(-52,-66,v+n2*12);if(w>0){let b=-.28+.05*(vn(u/2.4,v/2.4,836)-.5)+.03*n2;
-    const hole=Math.max(sst(5.5,2.5,mlEll(u,v,95,-110,1,1)*5.5+n3*2),sst(4.5,2,mlEll(u,v,120,-85,1,1.3)*4.5+n3*2),sst(4,1.8,mlEll(u,v,70,-128,1,1)*4+n3*2));
-    b-=.28*hole;h=h+(b-h)*w;peat=w;if(w>.55)wl=Math.max(wl,-.315);}}
-  /* the pond: a silt bottom down to 65 cm under the water; a ford across its west end */
-  {const r=mlEll(u,v,95,18,46,30)+n1*.12;
-    if(r<1.35){let d=.65*sst(1.0,.25,r);const ford=sst(7,3,Math.abs(u-68+n3*2));d=Math.min(d,d*(1-ford)+.17*ford*sst(1.0,.6,r));
-      const bed=ML_PL-d+.02*n3,shore=ML_PL+.18*sst(.95,1.3,r);const k=sst(1.32,.95,r);h=h+((r<1?bed:shore)-h)*k;silt=Math.max(silt,sst(1.3,1.05,r));if(r<1.45)wl=Math.max(wl,ML_PL);}}
-  /* the ditch: from the bog down to the pond */
-  {const t=Math.max(0,Math.min(1,(v+62)/52)),cu=92+10*Math.sin(t*2.6),cv=-62+t*52,d=Math.hypot(u-cu,v-cv)+n3*.6;
-    if(d<6.5&&v>-66&&v<-6){const k=sst(6.5,2.2,d),bed=ML_PL-.28-.08*sst(2,0,d);h=h+(bed-h)*k;silt=Math.max(silt,sst(5,2.5,d));if(d<3.4)wl=Math.max(wl,ML_PL);}}
-  /* the beach: wet sand along the pond's south shore */
-  {const w=sst(36,50,u+n1*8)*sst(8,22,v+n2*6)*sst(-80,-66,-v+n2*8)*sst(.92,1.08,mlEll(u,v,95,18,46,30))*sst(1.75,1.45,mlEll(u,v,95,30,50,36));sand=Math.max(sand,w);silt*=1-w;}
-  /* the sand: dry dunes in the south-west */
-  {const w=sst(-34,-50,u+n1*10)*sst(42,58,v+n2*10);if(w>0){const du=Math.max(0,Math.sin(u*.075+v*.03+n1)*.9+.25)*1.5+.35*Math.sin(u*.21-v*.13);h+=du*w;sand=Math.max(sand,w);}}
-  /* the hills: a mound and a steeper hill */
-  {const dm=Math.hypot(u+62,v+6);if(dm<15)h+=1.8*(.5+.5*Math.cos(Math.PI*dm/15));
-   const dh=Math.hypot((u+118)/1.2,v-14);if(dh<22)h+=3.6*Math.pow(.5+.5*Math.cos(Math.PI*dh/22),1.3);}
-  /* a patch of sod south of the field */
-  {const w=sst(-14,-4,u+n1*12)*sst(-14,-4,58-u+n2*12)*sst(60,72,v+n1*10)*sst(-10,0,132-v);grass=Math.max(grass,w*(1-sand)*(.8+.2*vn(u/1.7,v/1.7,837)));}
-  /* the bank all round: grass rising 3 m */
-  {const b=sst(146,162,e+n1*4);h+=3.2*b;grass=Math.max(grass,b);clay*=1-b;peat*=1-b;sand*=1-b;silt*=1-b;if(b>.2)wl=ML_NONE;}
-  o.h=h;o.clay=clay;o.silt=silt;o.peat=peat;o.sand=sand;o.grass=grass;o.wl=wl;return o;}
-/* (the older names the soil asks for) */
+  const e=Math.max(Math.abs(u),Math.abs(v)),n1=vn(u/9,v/9,831)-.5,n2=vn(u/37,v/37,832)-.5,n3=vn(u/3.3,v/3.3,833)-.5,big=fbm(u/260,v/260,2,834)-.5;
+  mlNear(ML_IDX.creek,ML_CL_F,u,v,MLN);const dc=MLN.d,hw=4+2*vn(MLN.i/9,0,835);
+  /* the Bottoms: a flat valley 75-120 m each side of the creek; the hills beyond */
+  const vb=88+30*vn(MLN.i/14,3,836),bot=sst(vb+70,vb,dc+n2*30);
+  let h=mlHills(u,v)*(1-bot)+(.06*n1+.03*n3)*bot,clay=0,silt=0,peat=0,sand=0,wl=ML_NONE,moist=.32+.12*n2+.1*big;
+  moist+=.5*bot+.25*sst(40,0,dc);moist-=.2*sst(5,18,h)*(1-bot);
+  /* the creek: its channel, a deep middle, sand bars on the bends, silt banks; peat in the Bottoms' wettest spots */
+  if(dc<hw+6){const k=Math.max(0,1-(dc/hw)**2);h=Math.min(h,-1.0*k+.05*(1-k));if(dc<hw*1.05)wl=ML_CL;}
+  silt+=sst(30,6,dc)*bot;sand+=sst(.62,.75,vn(u/22,v/22,837))*sst(22,8,dc)*sst(hw*.7,hw*1.3,dc);
+  peat+=bot*sst(.55,.68,fbm(u/70,v/70,2,838))*sst(30,50,dc);if(peat>.2){h-=.06*peat*(vn(u/2.2,v/2.2,839)-.3);}
+  /* the pond, in the Bottoms */
+  {const P=ML_POND,cs=Math.cos(P.r),sn=Math.sin(P.r),x=u-P.u,z=v-P.v,a=(x*cs+z*sn)/P.a,b=(-x*sn+z*cs)/P.b,r=Math.hypot(a,b)+n1*.1;
+    if(r<1.4){const d=1.1*sst(1,.2,r);if(r<1){h=Math.min(h,ML_CL-d);wl=ML_CL;}else h=Math.min(h,ML_CL+.2*sst(1,1.4,r));silt=Math.max(silt,sst(1.4,1.05,r));moist=Math.max(moist,1-sst(1,1.4,r)*.4);}}
+  /* the Clay Pan: flat cracked clay, dry; a few low spots stay wet */
+  {const r=Math.hypot((u-ML_CLAY.u)/170,(v-ML_CLAY.v)/120)+n2*.4;if(r<1.3){const k=sst(1.3,.9,r);clay=Math.max(clay,k);h=h+(4.5+.25*n1-h)*k;moist=moist*(1-k)+(.12+.5*sst(.6,.72,vn(u/30,v/30,840)))*k;}}
+  clay=Math.max(clay,sst(.7,.8,fbm(u/90+7,v/90,2,843))*(1-bot)*sst(60,-120,v));
+  /* the Quarry: a sand pit 6 m down with steep sides */
+  {const Q=ML_QUARRY,r=Math.hypot((u-Q.u)/Q.a,(v-Q.v)/Q.b)+n2*.12;if(r<1.25){const k=sst(1.12,.92,r);h=h-6*k+.8*Math.max(0,Math.sin(u*.09+v*.05))*k*sst(.85,.4,r);sand=Math.max(sand,sst(1.25,1,r));moist=Math.min(moist,.2+.3*k*sst(.4,0,r));}}
+  /* the trails: worn two-tracks a little below the ground round them, wetter in the woods */
+  mlNear(ML_IDX.trail,ML_TR_F,u,v,MLT);let trail=99;
+  if(MLT.d<3.6){trail=MLT.d;const k=sst(3.6,1.6,MLT.d);h-=.14*k;moist=Math.min(1,moist+.12*k);}
+  /* the mud holes: each a pool at its own level, the bed under it; the big one dug deep */
+  for(const H of ML_HOLES){const x=u-H.u,z=v-H.v;if(Math.abs(x)>H.L+8||Math.abs(z)>H.L+8)continue;const cs=Math.cos(H.r),sn=Math.sin(H.r),a=(x*cs+z*sn)/H.L,b=(-x*sn+z*cs)/H.W,r=Math.hypot(a,b)+n3*.12;
+    if(r<1.5){if(H.lv===null)H.lv=mlHillsAt(H)-.14-.12*(H.big||0);const k=sst(1.5,1,r);
+      h=r<1?Math.min(h,H.lv-H.d*sst(1,.15,r)):h+(Math.max(H.lv+.12,Math.min(h,H.lv+.4))-h)*k;if(r<1)wl=H.lv;moist=Math.max(moist,1-.5*sst(1,1.5,r));clay=Math.max(clay,(H.big?.7:.35)*sst(1.5,1,r));}}
+  /* the bank all round: rising 6 m, grass */
+  const bank=sst(724,752,e+n2*10);h+=6*bank;if(bank>.2)wl=ML_NONE;
+  moist=Math.max(0,Math.min(1,moist));
+  /* the woods: most of the north and the east; open fields round the camp; thin in the Bottoms; none on the pan,
+     the trails, the water or the bank */
+  let wood=sst(.42,.56,fbm(u/300,v/300,3,844)+.22*sst(-100,-500,v)+.15*sst(150,500,u)-.35*sst(330,560,v))*(1-.7*bot)*(1-clay*.9)*(1-sand*.8)*(1-bank);
+  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;
+  const grass=(1-wood)*(1-sst(.3,.7,clay+sand+peat+silt))*(trail<99?sst(1.4,2.6,trail):1)*(wl>ML_NONE+1?0:1)*(.6+.4*sst(.15,.5,moist));
+  o.h=h;o.clay=clay;o.silt=silt;o.peat=peat;o.sand=sand;o.moist=moist;o.wl=wl;o.grass=grass;o.wood=wood;o.trail=trail;o.dc=dc;return o;}
+/* (a mud hole's own level: the ground round it, without it) */
+function mlHillsAt(H){const dc=mlNear(ML_IDX.creek,ML_CL_F,H.u,H.v,{d:0}).d,bot=sst(170,90,dc);return mlHills(H.u,H.v)*(1-bot)-.14;}
 const MLZ={};
 function mlBaseH(u,v){return mlZone(u,v,MLZ).h;}
 function mlMat(u,v,o){mlZone(u,v,o);o.mud=Math.max(o.silt,o.peat);o.rock=0;
-  o.code=o.wl>ML_NONE+1&&o.wl>o.h+.12?SF.water:o.silt>.5||o.peat>.5||o.clay>.5?SF.mud:o.sand>.5?SF.sand:o.grass>.5?SF.grass:SF.dirt;return o;}
+  o.code=o.wl>ML_NONE+1&&o.wl>o.h+.12?SF.water:(o.silt>.5||o.peat>.5)&&o.moist>.5?SF.mud:o.sand>.5?SF.sand:o.grass>.5?SF.grass:o.trail<2.5?SF.trail:SF.dirt;return o;}
 function mlLevel(){return ML_A.h0;}
 /* the grassland round it, out to the edge of the world: low swells, dry grass with bare patches */
 function mlOuter(x,z,o){
-  const h=ML_A.h0+3.2+3.2*(fbm(x/420,z/420,3,821)-.5)+1.1*(fbm(x/90,z/90,2,822)-.5);
+  const h=ML_A.h0+9+3.2*(fbm(x/420,z/420,3,821)-.5)+1.1*(fbm(x/90,z/90,2,822)-.5);
   const bare=sst(.6,.72,fbm(x/55,z/55,3,823)),grass=Math.max(0,1-bare)*(.8+.2*vn(x/7,z/7,824));
   o.h=h;o.grass=grass;o.rock=0;o.mud=0;o.salt=0;o.sand=0;o.code=grass>.5?SF.grass:SF.dirt;return o;}
 const MLM={};
@@ -68,11 +115,24 @@ function mlCore(x,z,o){
   if(e>A.m)mlOuter(x,z,o);
   else{const cu=Math.max(-A.h,Math.min(A.h,u)),cv=Math.max(-A.h,Math.min(A.h,v));mlMat(cu,cv,MLM);const h=A.h0+MLM.h;
     o.h=h;o.code=MLM.code===SF.water?SF.mud:MLM.code;o.grass=MLM.grass;o.rock=0;o.mud=MLM.mud;o.salt=0;o.sand=MLM.sand;
-    /* the ring past its edge: the bank's top easing into the grassland */
     if(e>0){const g={};mlOuter(x,z,g);const f=sst(0,A.m,e);o.h=h+(g.h-h)*f;o.grass=MLM.grass+(g.grass-MLM.grass)*f;}}
   o.h+=rimAt(x,z);o.ramp=0;o.wet=0;o.wl=o.h;o.B=o.h;o.rk=0;o.k=0;o.tm=0;o.tin=0;return o;}
+/* the woods' trees, chunk by chunk (genStatic hands in its own addTree): a tree every 6 m or so where it's wooded,
+   broadleaf mostly, pines up on the high ground */
+function mlTrees(x0,z0,x1,z1,addTree){
+  const A=ML_A,S=6.2,o={};
+  for(let z=Math.floor(z0/S)*S;z<z1;z+=S)for(let x=Math.floor(x0/S)*S;x<x1;x+=S){
+    const jx=x+hs(Math.round(x),Math.round(z),861)*S,jz=z+hs(Math.round(x),Math.round(z),862)*S;if(jx<x0||jx>=x1||jz<z0||jz>=z1)continue;
+    const u=jx-A.x,v=jz-A.z;if(Math.max(Math.abs(u),Math.abs(v))>A.h-20)continue;mlZone(u,v,o);
+    if(o.wood<.05||hs(Math.round(jx*3),Math.round(jz*3),863)>o.wood*.95)continue;
+    const pine=o.h>14&&hs(Math.round(jx),Math.round(jz),864)<.6,sc=.8+.55*hs(Math.round(jx*2),Math.round(jz*2),865);
+    addTree(jx,jz,pine?3:hs(Math.round(jx),Math.round(jz),866)<.5?0:1,sc,1);}}
 /* the place's name for the screen */
-function mlPlace(u,v){const o=mlZone(u,v,{}),e=Math.max(Math.abs(u),Math.abs(v));
-  if(e>163.84)return 'The grassland';if(e>146)return 'The bank';
-  if(o.wl>-90&&o.wl>o.h)return mlEll(u,v,95,18,46,30)<1.1?(Math.abs(u-68)<6?'The ford':'The pond'):o.peat>.4?'A bog hole':o.silt>.4?'The ditch':'A puddle';
-  return o.peat>.5?'The peat bog':o.clay>.5?'The clay flats':o.silt>.5?'The pond\'s edge':o.sand>.5?(u>0?'The beach':'The sand'):Math.hypot(u+118,v-14)<22||Math.hypot(u+62,v+6)<15?'The hills':o.grass>.5?'The sod':'The field';}
+function mlPlace(u,v){const e=Math.max(Math.abs(u),Math.abs(v));if(e>752)return 'Outside';if(e>724)return 'The bank';
+  const o=mlZone(u,v,{});
+  for(const H of ML_HOLES)if(Math.hypot(u-H.u,v-H.v)<H.L+3)return H.big?'The Mud Hole':'A mud hole';
+  if(o.trail<3.6){mlNear(ML_IDX.trail,ML_TR_F,u,v,MLT);if(MLT.n>=0)return ML_TRAILS[MLT.n].name;}
+  if(o.wl>ML_NONE+1&&o.wl>o.h)return Math.hypot(u-ML_POND.u,v-ML_POND.v)<70?'The Pond':'Big Creek';
+  if(Math.hypot(u-ML_QUARRY.u,v-ML_QUARRY.v)<70)return 'The Quarry';if(Math.hypot((u-ML_CLAY.u)/170,(v-ML_CLAY.v)/120)<1.1)return 'The Clay Pan';
+  if(o.dc<200&&o.h<1.5)return 'The Bottoms';if(Math.hypot(u,v-650)<70)return 'The Trailhead';if(v<-480)return 'The Ridge';
+  return o.wood>.5?'The woods':'The fields';}

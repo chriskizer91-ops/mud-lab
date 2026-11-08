@@ -4,7 +4,7 @@
    stay out of the menus. The build's name in the corner, so you can tell which one you opened. On the phone's
    driving screen: no N2O, O/D OFF, REAR or HORN buttons (his rule: every button has to earn its place).
    ===================================================================================== */
-const ML_BUILD='mud-lab-2';
+const ML_BUILD='mud-lab-4';
 function mlTitle(){
   const st=document.createElement('style');st.textContent=`
 #tNos,#tOD,#tRear,#touch [data-k=horn],#shBack,#mTabs [data-t=chals],#mTabs [data-t=races],#mTabs [data-t=garage],#mTabs [data-t=cool],
@@ -23,7 +23,7 @@ function mlTitle(){
   const h=document.querySelector('#menu .mhead h1');if(h)h.innerHTML='Mud Lab <small class="tagw">'+ML_BUILD+'</small>';
   document.title='Mud Lab';
   const d=document.createElement('div');d.id='mlTitle';
-  d.innerHTML='<div class="mlT"><small>The Rock &amp; Mud</small><h1>Mud Lab</h1><p>A field of soil to tear up: loam, a bog, sod, a sand pit and a mound.</p>'+
+  d.innerHTML='<div class="mlT"><small>The Rock &amp; Mud</small><h1>Mud Lab</h1><p>Five thousand feet of soil, wet and dry: creek bottoms, a clay pan, a quarry, mud trails through the woods.</p>'+
     '<button id="mlGo" type="button">Start</button><br><button id="mlOut" type="button">Bay</button></div><i>'+ML_BUILD+'</i>';
   document.body.appendChild(d);
   d.querySelector('#mlGo').addEventListener('click',()=>{d.remove();const b=$('sasDrive');if(b)b.click();});
