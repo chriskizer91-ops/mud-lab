@@ -3,16 +3,17 @@
    physics (base/heron/rt-game.js and rt-fly.js, frozen copies of salt-mini-plus redtail/game, Nov 7 2026), the
    redtail-2 model in his Heron paint. Nothing flies itself:
    - it waits at the west end of the Heron Strip (400 m of mown grass in the south fields), facing east along it;
-     drive up to it, stop, and HERON (E on a keyboard) puts you in it, the truck left standing where you stopped;
+     drive up to it, stop, and HERON (Enter on a keyboard) puts you in it, the truck left standing where you stopped;
    - take off, fly, land wherever you dare: the strip, the fields, the Clay Pan. Crash, and RESET puts it back on its
      wheels where it came down;
-   - stopped on the ground, TRUCK (E) puts you in the Rock & Mud beside it, the Heron left standing there.
+   - stopped on the ground, TRUCK (Enter) puts you in your SUV beside it, the Heron left standing there.
    THE MAP: every place named, the Heron where it waits; tap a place's name, JUMP, and the truck is there (from the
    air, the Heron goes back to its strip; from the ground, it stays where you left it).
    ===================================================================================== */
 /* ---------- its paint: his Heron (olive over cream, yellow wingtips and tail band, "Heron" on the cowl); no paint
    button (one plane, one paint) ---------- */
-if(window.ML_HERON_PAINT&&window.RT2_DATA){RT2_DATA.paints=RT2_DATA.paints||{};RT2_DATA.paints.heron=ML_HERON_PAINT;RT_PAINTS.push({id:'heron',name:'THE HERON'});RT.paint=RT_PAINTS.length-1;}
+/* (Mud Lab 6: the paint is the model's own picture now (src/build.py swaps it in), so the plane is never repainted) */
+RT.paint=0;try{localStorage.removeItem('rtPaint');}catch(_){}
 {const st=document.createElement('style');st.textContent='#rtPaintB{display:none!important}';document.head.appendChild(st);}
 
 /* ---------- the chase camera (Ground Truth's): behind it along where it's going, climbing, diving and turning with it ---------- */
@@ -38,7 +39,10 @@ camAuto=function(t,dt){
 
 /* up in it, the haze thins (half as thick 250 m up), so the whole map shows from the air; on the ground as it was */
 let mlFogA=0;
-function mlFogK(){const t=GAME.car;let a=0;if(t&&t.rt&&GAME.state==='drive')a=Math.max(0,t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]));mlFogA+=(a-mlFogA)*.05;
+let mlFogT=0;
+function mlFogK(){const t=GAME.car;let a=0;if(t&&t.rt&&GAME.state==='drive')a=Math.max(0,t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]));
+  /* (eased over about a second and a half, however often it's asked) */
+  const now=performance.now(),dt=Math.min(.25,Math.max(0,(now-(mlFogT||now))/1000));mlFogT=now;mlFogA+=(a-mlFogA)*(1-Math.exp(-dt*1.5));
   return 1-.5*Math.min(1,Math.max(0,(mlFogA-20)/230));}
 
 /* ---------- THE TRUCK AND THE HERON: you're in one, the other waits ---------- */
@@ -47,8 +51,8 @@ const mlvYaw=t=>Math.atan2(-t.M[6],t.M[0]);
 /* (the Heron's home: the strip's west end, facing east along it) */
 function mlvHome(){const A=WG.mlA,S=WG.mlStrip;return {x:A.x+S.u0+22,z:A.z+S.v,yaw:0};}
 /* a vehicle made only to stand somewhere: the truck, or the Heron (the game's own maker, with the plane asked for) */
-function mlvStandIn(plane,pose){const w=RT.want;RT.want=plane;let o=null;
-  try{o=makeCar(APP.bi,RANCH.world,simOpts(),plusK(BUILDS[APP.bi].car),plusG(BUILDS[APP.bi].car));}catch(e){console.warn('stand-in',e);}finally{RT.want=w;}
+function mlvStandIn(plane,pose){if((MLV.fail||0)>=3)return null;const w=RT.want;RT.want=plane;let o=null;
+  try{o=makeCar(APP.bi,RANCH.world,simOpts(),plusK(BUILDS[APP.bi].car),plusG(BUILDS[APP.bi].car));}catch(e){MLV.fail=(MLV.fail||0)+1;console.warn('stand-in',e);}finally{RT.want=w;}
   if(o)mlvStand(o,pose);return o;}
 function mlvStand(o,pose){const y=RANCH.W.heightAt(pose.x,pose.z);o.place([pose.x,y+.05,pose.z],pose.yaw);for(const w of o.wheels){w.comp=.35*(w.travel||.12);w.ang=0;w.w=0;}}
 /* somewhere a truck can stand: no water over it, out of the trees, inside the bank */
@@ -62,7 +66,7 @@ function mlvSpot(x,z,kx,kz,keep){for(let r=0;r<200;r+=4){const n=r?Math.max(8,Ma
 function mlvBeside(x,z,yaw){const f=[Math.cos(yaw),-Math.sin(yaw)],r=[Math.sin(yaw),Math.cos(yaw)];const s=mlvSpot(x-r[0]*14-f[0]*2,z-r[1]*14-f[1]*2,x,z,10);s.yaw=yaw;return s;}
 const mlvParked=()=>GAME.state==='drive'&&MLV.parked?MLV.parked:null;
 function mlvTick(){
-  const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip)return;
+  const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip)return;mlSuvTick();if(APP.bigMap)mlSuvBtn();
   if(t.rt){if(MLV.parked&&MLV.parked.rt)MLV.parked=null;if(!MLV.parked&&MLV.truck)MLV.parked=mlvStandIn(false,MLV.truck);}
   else if(!MLV.parked||!MLV.parked.rt)MLV.parked=mlvStandIn(true,MLV.plane||mlvHome());
   /* can you swap now? */
@@ -70,7 +74,7 @@ function mlvTick(){
   if(t.rt){const h=t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]);if(sp<3&&h<3&&!t.air)can='TRUCK';}
   else{const P=MLV.parked;if(P&&P.rt&&sp<3&&Math.hypot(P.p[0]-t.p[0],P.p[2]-t.p[2])<45)can='HERON';}
   MLV.can=can;if(MLV.btn){MLV.btn.hidden=!can;if(can&&MLV.btn.textContent!==can)MLV.btn.textContent=can;}
-  if(can&&can!==MLV.canSaid&&!GAME.touch&&APP.t>(MLV.quiet||0))say('E: '+(can==='HERON'?'INTO THE HERON':'INTO THE TRUCK'),1.8);MLV.canSaid=can;
+  if(can&&can!==MLV.canSaid&&!GAME.touch&&APP.t>(MLV.quiet||0))say('ENTER: '+(can==='HERON'?'INTO THE HERON':'INTO THE TRUCK'),1.8);MLV.canSaid=can;
   if(!APP.bigMap&&(MLV.sel||MLV.jb&&!MLV.jb.hidden)){MLV.sel=null;if(MLV.jb)MLV.jb.hidden=true;}
   /* (the map's own buttons only while it's open; the plane's height line not over the map) */
   if(!APP.bigMap&&MLS.gripBtn&&!MLS.gripBtn.hidden)MLS.gripBtn.hidden=true;
@@ -84,13 +88,17 @@ function mlvSwap(){
     rtFly(true);placeCar(pose.x,pose.z,pose.yaw);MLV.parked=keep;MLV.plane=null;return true;}
   say(t.rt?'LAND AND STOP FIRST':'DRIVE UP TO THE HERON AND STOP',2);return false;}
 /* the one you're not in, drawn where it waits (and into the shadows) */
-function mlvDraw(eye){mlvTick();const P=mlvParked();if(!P)return 0;const d=Math.hypot(P.p[0]-eye[0],P.p[2]-eye[2]);if(d>900)return 0;
+/* (Mud Lab 6: worked out in the game's step, not mid-draw; drawn out to 450 m (the Heron is 60,000 triangles and has no
+   simpler copy), its shadow within 150 m of you) */
+function mlvDraw(eye){const P=mlvParked();if(!P)return 0;const d=Math.hypot(P.p[0]-eye[0],P.p[2]-eye[2]);if(d>450)return 0;
   return drawWorldCar(P,null,0,d>260,false)||0;}
-/* the button: on the phone's right-hand column, at the top, only when the swap can happen; E on a keyboard */
+function mlvShadow(){const P=mlvParked(),t=GAME.car;return !!(P&&t&&Math.hypot(P.p[0]-t.p[0],P.p[2]-t.p[2])<150);}
+/* the button: on the phone's right-hand column, at the top, only when the swap can happen; Enter on a keyboard */
 function mlvUI(){if(MLV.btn)return;const col=document.querySelector('#touch .tside.R');if(!col)return;
   const b=document.createElement('button');b.className='tb';b.id='mlSwap';b.type='button';b.hidden=true;b.textContent='HERON';
   b.addEventListener('click',e=>{e.preventDefault();b.blur();mlvSwap();});col.insertBefore(b,col.firstChild);MLV.btn=b;}
-addEventListener('keydown',e=>{if(e.code==='KeyE'&&!e.repeat&&GAME.state==='drive'&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||''))mlvSwap();});
+/* (Enter on a keyboard (Mud Lab 6: E is the engine's gear-up key)) */
+addEventListener('keydown',e=>{if((e.code==='Enter'||e.code==='NumpadEnter')&&!e.repeat&&GAME.state==='drive'&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||''))mlvSwap();});
 
 /* ---------- THE MAP: the strip and the Heron on it; tap a name to pick it, JUMP to go there in the truck ---------- */
 function mlvPlaces(){const A=WG.mlA,o=WG.mlPlaces.map(([name,u,v,kind])=>({name,u,v,kind}));
@@ -102,7 +110,9 @@ function mlvMap(toM){
   if(MLV.sel){const [a,b]=toM(MLV.sel.u,MLV.sel.v);hRing(a,b,3.2,(APP.t*4|0)%2?PAL.white:PAL.gold);}}
 /* (a tap on the map: on a name or its dot, that place; anywhere else closes it, as before) */
 addEventListener('pointerdown',e=>{
-  if(!APP.bigMap||GAME.state!=='drive'||e.target!==cv||!MLV.hits.length)return;
+  /* (any tap on the open map counts, the steering strip over its corner included (Mud Lab 6: Big Creek and the Clay Pan sat
+     under it); the map's own buttons are left to themselves) */
+  if(!APP.bigMap||GAME.state!=='drive'||!MLV.hits.length||e.target&&e.target.closest&&e.target.closest('button'))return;
   const hx=(e.clientX-RECT.x)/RECT.w*W,hy=(e.clientY-RECT.y)/RECT.h*H;let best=null,bd=1e9;
   for(const h of MLV.hits){const inBox=hx>=h.a-3&&hx<=h.a+h.w&&hy>=h.b-9&&hy<=h.b+(h.p.kind==='heron'?9:3),d=Math.hypot(hx-h.a,hy-h.b);
     const s=inBox?d*.2:d;if((inBox||d<7)&&s<bd){bd=s;best=h.p;}}

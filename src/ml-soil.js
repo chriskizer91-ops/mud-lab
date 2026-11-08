@@ -287,13 +287,21 @@ function mlLand(p){
 /* ---------- the water against the truck: drag on the tyres and the body (by how deep and how fast), the bow wave ---------- */
 function mlWater(dt,t){
   const p=t.p,b=mlBase(p[0],p[2]),fi=(p[0]-MLS.x0)/MLS.C,fj=(p[2]-MLS.z0)/MLS.C,g=b+mlRut(fi|0,fj|0),wl=mlWL(p[0],p[2]),dw=wl-g;
+  /* (how high the body's sills are off the ground: the water and the mud meet them there) */
+  if(t.__mlClr===undefined){let mn=0;for(const q of t.c.hull||[])mn=Math.min(mn,q[1]);t.__mlClr=t.c.hull?Math.max(.15,Math.min(.8,t.c.hcg+mn)):.557;}
   MLS.wd=dw;if(dw<=.02)return;
   const M=t.M,fx=M[0],fz=M[6],fl=Math.hypot(fx,fz)||1,f=[fx/fl,fz/fl],v=t.v,vf=v[0]*f[0]+v[2]*f[1],vs=-v[0]*f[1]+v[2]*f[0];
-  const imm=Math.max(0,dw-.3),wh=Math.min(dw,.94),Cd=.9,m=t.c.mass||2500;
+  /* (the body meets the water above its sills: the Rock & Mud's are 56 cm up, his SUV's 32 cm (Mud Lab 6: the body's
+     depth measured from its own sills, the Rock & Mud's as before)) */
+  const imm=Math.max(0,dw-.3+(.557-t.__mlClr)),wh=Math.min(dw,.94),Cd=.9,m=t.c.mass||2500;
   /* (forward: the body's front and the four tyres; sideways: the body's side) */
   const Af=1.9*imm+4*t.c.tyreW*wh,As=4.7*imm+2*.9*wh*.5;
   const Ff=-.5*ML_RHO*Cd*Af*Math.abs(vf)*vf,Fs=-.5*ML_RHO*Cd*As*Math.abs(vs)*vs;
   let dvf=Ff/m*dt,dvs=Fs/m*dt;if(Math.abs(dvf)>Math.abs(vf))dvf=-vf;if(Math.abs(dvs)>Math.abs(vs))dvs=-vs;
+  /* (Mud Lab 6) water over the sills lifts the body: a quarter of the water the body pushes aside below the waterline (a
+     cab isn't sealed), so the tyres press down less and grip less; his SUV's lower body floats sooner than the
+     Rock & Mud's */
+  {const sub=Math.max(0,dw-t.__mlClr);if(sub>0){const B=ML_RHO*9.81*4.9*1.9*Math.min(sub,1.1)*.25;v[1]+=Math.min(B,.85*m*9.81)/m*dt;MLS.buoy=B;}else MLS.buoy=0;}
   v[0]+=f[0]*dvf-f[1]*dvs;v[2]+=f[1]*dvf+f[0]*dvs;
   /* the bow wave: water pushed up and out in front of the truck, and a mist off it */
   const sp=Math.abs(vf);if(sp>1.2&&!reduce){const cap=fxCap(),nb=fxCount(Math.min(1,dw/.35)*sp*sp*1.4*LOOK.dust*dt),fwd=vf>=0?1:-1,L=2.5*fwd;
@@ -303,11 +311,13 @@ function mlWater(dt,t){
 }
 /* ---------- each frame, after the physics ---------- */
 const ML_RR0={},ML_DG0={};for(const s of ['grass','dirt','strip','trail','rock','mud','concrete','water','gravel','asphalt','ruts','sand'])ML_RR0[s]=.015;
+const ML_LUG={};
+function mlLug(tr){if(ML_LUG[tr]===undefined){const T=TREAD_MU[tr],M=TREAD_MU.mud;ML_LUG[tr]=T&&M?Math.max(.5,Math.min(1.1,T.mud/M.mud)):1;}return ML_LUG[tr];}
 function mlStep(dt,t){
   if(!WG.mlA||MLS.off)return;if(!MLS.ready)mlInit();if(!MLS.ready||!t||t.rt)return;MLS.clock+=dt;
   /* (the soil's grip on each tyre, in place of or times the engine's own) */
   {const P=Object.getPrototypeOf(t);if(!P.__mlg){const o=P._smu;P._smu=function(wh,s){return MLS.terra&&wh.mlOn&&wh.mlMuT!==undefined?wh.mlMuT:o.call(this,wh,s)*(wh.mlGrip===undefined?1:wh.mlGrip);};P.__mlg=1;}}
-  mlWater(dt,t);let res=0;const m=t.c.mass||2500;
+  mlWater(dt,t);let res=0,zS=0,nZ=0;const m=t.c.mass||2500;
   for(const w of t.wheels){
     /* (soil science does its own rolling resistance: the engine's per-surface drag stood down while it's on) */
     if(MLS.terra){if(!w.__rr0){w.__rr0=w.surfRR;w.__dg0=w.surfDrag;}w.surfRR=ML_RR0;w.surfDrag=ML_DG0;}else if(w.__rr0){w.surfRR=w.__rr0;w.surfDrag=w.__dg0;w.__rr0=null;}
@@ -315,18 +325,28 @@ function mlStep(dt,t){
     if(!w.contact){w.mlFz=0;continue;}
     const fi=(w.cp[0]-MLS.x0)/MLS.C,fj=(w.cp[2]-MLS.z0)/MLS.C;if(fi<8||fj<8||fi>MLS.N-8||fj>MLS.N-8){w.mlGrip=1;continue;}
     const W=mlWeights(w.cp[0],w.cp[2],MLW),wd=W.wl-(w.cp[1]-MLS.h0),S=mlParams(W,wd>0?.6:0),wR=Math.abs(w.w*w.R),clayWet=W.clay*sst(.35,.7,W.moist);w.mlOn=true;
+    /* (the tread (Mud Lab 6): how well its lugs bite into soft soil against a mud-terrain's, from the engine's own grip in
+       mud: 1 for the Rock & Mud's mud-terrains, .69 for his SUV's all-seasons; a fine tread packs with clay sooner and
+       throws it out later) */
+    const lug=mlLug((w.front||!t.c.treadR)?t.c.tread:t.c.treadR);
     /* wet clay packs into the tread as it rolls; spinning throws it out; other ground wears it off */
-    const roll=Math.min(1,Math.abs(w.vl)/3);w.mlClog=Math.max(0,Math.min(1,w.mlClog+dt*(clayWet*.32*roll*(wd<.05?1:.2)-w.mlClog*(Math.max(0,wR-5)*.09+(1-clayWet)*.12+(wd>.1?.3:0)))));
+    const roll=Math.min(1,Math.abs(w.vl)/3);w.mlClog=Math.max(0,Math.min(1,w.mlClog+dt*(clayWet*.32*roll*(wd<.05?1:.2)/Math.pow(lug,1.5)-w.mlClog*(Math.max(0,wR-5)*.09*lug*lug+(1-clayWet)*.12+(wd>.1?.3:0)))));
     w.mlGrip=S.grip*(1-.5*w.mlClog)*(wd>.05?.92:1);
     /* soil science: the soil's strength over the contact patch (which grows as the tyre sinks), the tread's lugs biting
        into it; the work of pushing through it, more the deeper the tyre is in */
-    const z=Math.max(0,-mlRut(fi|0,fj|0))+.01,L=.16+Math.sqrt(2*w.R*z),Ar=(w.front?t.c.tyreW:t.c.tyreWR)*L,Fz=Math.max(800,w.Fz);
-    w.mlMuT=Math.max(.08,Math.min(1.3,1.2*(1-.4*w.mlClog)*(S.c*1000*Ar/Fz+Math.tan(S.phi*Math.PI/180))*(wd>.05?.9:1)));
+    const z=Math.max(0,-mlRut(fi|0,fj|0))+.01,L=.16+Math.sqrt(2*w.R*z),Ar=(w.front?t.c.tyreW:t.c.tyreWR)*L,Fz=Math.max(800,w.Fz);zS+=z;nZ++;
+    w.mlMuT=Math.max(.08,Math.min(1.3,1.2*(1-.4*w.mlClog)*(S.c*1000*Ar/Fz*lug+Math.tan(S.phi*Math.PI/180)*(.85+.15*lug))*(wd>.05?.9:1)));
     if(MLS.terra){const Rr=w.Fz*.45*Math.sqrt(z/w.R),fx=w.f[0],fz=w.f[2],fl=Math.hypot(fx,fz)||1,dv=Math.min(Math.abs(w.vl),Rr/m*dt)*Math.sign(w.vl);t.v[0]-=fx/fl*dv;t.v[2]-=fz/fl*dv;res+=Rr;}
     /* tyres come out of water or wet mud wet, and dry as they roll on */
     const wetSoil=W.moist*Math.max(W.silt+W.peat+W.clay*.6,.4);if(wd>.01||wetSoil>.55)w.mlWet=1;else w.mlWet=Math.max(0,w.mlWet-dt*(.04+.025*Math.abs(w.vl)));
     mlStamp(t,w,dt,S,W);if(!reduce)mlThrow(t,w,dt,S,W,wd);
     if(clayWet>.4&&roll>.2)GAME.dirt=Math.min(1,GAME.dirt+dt*.012*clayWet);}
+  /* the belly in the mud (Mud Lab 6): sunk deeper than the body's underside sits above the tyres' bottoms, the axles and
+     the floor plough the soil between the ruts; soft soil pushes back on them as on a blade (its stickiness over the
+     buried depth, and its weight); his SUV's underside is 24 cm up, the Rock & Mud's 49 */
+  if(nZ>=2&&t.__mlClr!==undefined){const pen=zS/nZ-(t.__mlClr-.07);MLS.plough=0;
+    if(pen>0){const W=mlWeights(t.p[0],t.p[2],MLW),S=mlParams(W),F=Math.min(.6*m*9.81,1.2*pen*(S.c*1000*4+9000*pen)),vx=t.v[0],vz=t.v[2],vl=Math.hypot(vx,vz);
+      if(vl>1e-3){const dv=Math.min(vl,F/m*dt);t.v[0]-=vx/vl*dv;t.v[2]-=vz/vl*dv;}MLS.plough=F;res+=F;}}
   MLS.res=res;if(!APP.bigMap&&MLS.gripBtn)MLS.gripBtn.hidden=true;
   mlSettle(dt);mlWindow();mlUpload();
 }
@@ -337,16 +357,22 @@ function mlWindow(){const c=GAME.car;if(!c)return;const cs=MLS.T*MLS.C,ci=Math.f
   const L=[];for(let tj=cj-H;tj<cj+H;tj++)for(let ti=ci-H;ti<ci+H;ti++){if(ti<0||tj<0||ti>=MLS.NT||tj>=MLS.NT)continue;
     if(Number.isFinite(old[0])&&ti>=old[0]-H&&ti<old[0]+H&&tj>=old[1]-H&&tj<old[1]+H)continue;L.push([Math.max(Math.abs(ti-ci),Math.abs(tj-cj)),tj*MLS.NT+ti]);}
   L.sort((a,b)=>a[0]-b[0]);const rest=[...MLS.up];MLS.up.clear();for(const [,q] of L)MLS.up.add(q);for(const q of rest)MLS.up.add(q);
-  /* (the first time, the squares under and round the truck before anything is drawn) */
-  if(!Number.isFinite(old[0])){const keep=[];for(const q of MLS.up){const ti=q%MLS.NT,tj=(q/MLS.NT)|0;if(Math.max(Math.abs(ti-ci),Math.abs(tj-cj))<=6)keep.push(q);}
+  /* (the first time, and after a jump (a reset, a swap, the map's JUMP: Mud Lab 6), the squares under and round the
+     truck before anything is drawn, so the patch never shows another place's ground) */
+  const first=!Number.isFinite(old[0]),jump=!first&&Math.max(Math.abs(ci-old[0]),Math.abs(cj-old[1]))>2;
+  if(first||jump){const R=first?6:4,keep=[];for(const q of MLS.up){const ti=q%MLS.NT,tj=(q/MLS.NT)|0;if(Math.max(Math.abs(ti-ci),Math.abs(tj-cj))<=R)keep.push(q);}
     const save=mlUploadCap;mlUploadCap=1e9;const all=MLS.up;MLS.up=new Set(keep);mlUpload();mlUploadCap=save;for(const q of keep)all.delete(q);MLS.up=all;}}
-let mlUploadCap=4;
+let mlUploadCap=4;const MLBC=new Map();
 function mlUpload(){
   const T=MLS.T,n=T*T,H=MLS.NW/T/2,[ci,cj]=MLS.wc,LU=MLS.lut,DL=MLS.dlut,hb=MLS.hb,db=MLS.db,C=MLS.C,nw=MLS.nw;let up=0;const t0=performance.now();
   for(const q of MLS.up){if(up>=(mlUploadCap>1e8?1e9:40)||performance.now()-t0>mlUploadCap)break;MLS.up.delete(q);const ti=q%MLS.NT,tj=(q/MLS.NT)|0;
     if(ti<ci-H||ti>=ci+H||tj<cj-H||tj>=cj+H)continue;up++;
     const t=MLS.tiles[q],sx=(ti*T)%MLS.NW,sz=(tj*T)%MLS.NW,x0=MLS.x0+(ti*T+.5)*C,z0=MLS.z0+(tj*T+.5)*C;
-    for(let j=0;j<T;j++)for(let i=0;i<T;i++){const k=j*T+i,o=k*4,b=mlBase(x0+i*C,z0+j*C);db[o]=mlHalf(b);db[o+3]=mlHalf(ML_TR);
+    /* (the ground's own height and the trails' ruts never change: worked out once per square and kept for the next time
+       it comes into the window (Mud Lab 6: up to 600 squares, 16 KB each)) */
+    let bc=MLBC.get(q);if(!bc){bc=new Uint16Array(n*2);for(let j=0;j<T;j++)for(let i=0;i<T;i++){const k=j*T+i;bc[k*2]=mlHalf(mlBase(x0+i*C,z0+j*C));bc[k*2+1]=mlHalf(ML_TR);}
+      MLBC.set(q,bc);if(MLBC.size>600)MLBC.delete(MLBC.keys().next().value);}
+    for(let k=0;k<n;k++){const o=k*4;db[o]=bc[k*2];db[o+3]=bc[k*2+1];
       if(t){hb[o]=mlHalf(t.r[k]);hb[o+1]=LU[t.ch[k]];hb[o+2]=LU[t.pr[k]];hb[o+3]=mlHalf(t.wt[k]);db[o+1]=DL[t.dr[k*2]];db[o+2]=DL[t.dr[k*2+1]];}
       else{hb[o]=hb[o+1]=hb[o+2]=0;hb[o+3]=nw;db[o+1]=db[o+2]=0;}}
     gl.activeTexture(gl.TEXTURE0+ML_U0);gl.bindTexture(gl.TEXTURE_2D,MLS.w0);gl.texSubImage2D(gl.TEXTURE_2D,0,sx,sz,T,T,gl.RGBA,gl.HALF_FLOAT,hb);
@@ -383,7 +409,7 @@ function mlPatchDraw(u){
   return tris;}
 /* the world raked smooth again (K on a keyboard; the test tools) */
 function mlRake(){if(!MLS.ready)return;for(let q=0;q<MLS.tiles.length;q++)if(MLS.tiles[q]){MLS.tiles[q]=null;MLS.up.add(q);}MLS.ntile=0;MLS.act.clear();}
-addEventListener('keydown',e=>{if(GAME.state!=='drive'||e.repeat)return;if(e.code==='KeyK'){mlRake();say('The ground raked smooth',1.6);}if(e.code==='KeyG')mlGripToggle();});
+addEventListener('keydown',e=>{if(GAME.state!=='drive'||e.repeat)return;if(e.code==='Backspace'){mlRake();say('The ground raked smooth',1.6);}if(e.code==='KeyG')mlGripToggle();});
 /* for the test tools */
 function mlStats(){if(!MLS.ready)return {ready:false};let mn=0,mx=0,ch=0,pr=0,br=0,wet=0;const now=mlNow();
   for(const t of MLS.tiles){if(!t)continue;for(let k=0;k<4096;k++){const r=t.r[k];if(r<mn)mn=r;if(r>mx)mx=r;if(t.ch[k]>60)ch++;if(t.pr[k]>60)pr++;if(t.fl[k]&1)br++;if(now-t.wt[k]<60)wet++;}}
@@ -398,29 +424,40 @@ function mlGripToggle(){MLS.terra=!MLS.terra;try{localStorage.setItem('mudlab:te
 const mlGripLabel=()=>'Grip: '+(MLS.terra?'Soil science':'Game');
 try{MLS.terra=localStorage.getItem('mudlab:terra')==='1';}catch(_){}
 /* ---------- the map: painted from the world's own ground, everything on it from the start ---------- */
+const MLPM={r:0,g:0,b:0,m(w,R,G,B){this.r+=(R-this.r)*w;this.g+=(G-this.g)*w;this.b+=(B-this.b)*w;}};
 function mlPaintMap(){
   const M=MLS.NM,M2=M*M,map=new Uint32Array(M2),cl=(a,b,t)=>a+(b-a)*t;
   for(let j=0;j<M;j++)for(let i=0;i<M;i++){const k=j*M+i,mo=MLS.cMo[k]/255,cy=MLS.cM[k]/255,si=MLS.cM[M2+k]/255,pe=MLS.cM[2*M2+k]/255,sa=MLS.cM[3*M2+k]/255,gr=MLS.cG[k]/255,wd=MLS.cWd[k]/255,tr=MLS.cTr[k]/255;
     /* the ground's own colour: loam by how wet; clay, silt, peat, sand over it; sod; the woods; the trails; the water */
     let r=cl(176,100,mo),g=cl(118,66,mo),b=cl(74,42,mo);
-    const mix=(w,R,G,B)=>{r=cl(r,R,w);g=cl(g,G,w);b=cl(b,B,w);};
-    mix(cy,cl(196,118,mo),cl(178,100,mo),cl(142,78,mo));mix(si,cl(170,96,mo),cl(152,84,mo),cl(120,62,mo));mix(pe,58,52,32);mix(sa,cl(222,170,mo),cl(176,128,mo),cl(116,82,mo));
-    mix(gr*.85,cl(170,96,mo),cl(160,128,mo),cl(84,58,mo));mix(wd*.9,34,64,34);mix(tr*.9,218,196,150);
-    const wl=MLS.cW[k],h=MLS.cB[k];if(wl>h)mix(Math.min(1,.55+(wl-h)*1.2),42,62,70);
+    /* (each layer laid over: written out, not a little function made for every dot) */
+    MLPM.r=r;MLPM.g=g;MLPM.b=b;
+    MLPM.m(cy,cl(196,118,mo),cl(178,100,mo),cl(142,78,mo));MLPM.m(si,cl(170,96,mo),cl(152,84,mo),cl(120,62,mo));MLPM.m(pe,58,52,32);MLPM.m(sa,cl(222,170,mo),cl(176,128,mo),cl(116,82,mo));
+    MLPM.m(gr*.85,cl(170,96,mo),cl(160,128,mo),cl(84,58,mo));MLPM.m(wd*.9,34,64,34);MLPM.m(tr*.9,218,196,150);
+    const wl=MLS.cW[k],h=MLS.cB[k];if(wl>h)MLPM.m(Math.min(1,.55+(wl-h)*1.2),42,62,70);r=MLPM.r;g=MLPM.g;b=MLPM.b;
     /* hill shade, the light from the north-west */
     const hx=MLS.cB[j*M+Math.min(M-1,i+1)]-MLS.cB[j*M+Math.max(0,i-1)],hz=MLS.cB[Math.min(M-1,j+1)*M+i]-MLS.cB[Math.max(0,j-1)*M+i],sh=Math.max(.6,Math.min(1.35,1+(hx+hz)*-.12));
     map[k]=pack(r*sh,g*sh,b*sh,255);}
-  MLS.map=map;}
+  MLS.map=map;MLS.mapC=null;}
 /* the corner map and the big map read it (instead of the chunks you've seen) */
-function mlMapFill(X0,Y0,n,cx0,cz0,mpp){
+function mlMapFill(X0,Y0,n,cx0,cz0,mpp,keep){
   const M=MLS.NM,out=pack(70,82,52,255);{const a=Math.max(0,Y0),b=Math.min(BH,Y0+n);if(b>a)hMark(a,b);}
+  /* (the big map doesn't move: its picture made once for its size, then copied in a row at a time (Mud Lab 6: it was
+     redrawn dot by dot every frame, 25 ms of a laptop's frame)) */
+  if(keep&&MLS.map){const key=n+','+cx0+','+cz0+','+mpp;let C=MLS.mapC;
+    if(!C||C.key!==key){const img=new Uint32Array(n*n);for(let j=0;j<n;j++){const z=cz0+(j+.5-n/2)*mpp,mj=Math.floor((z-MLS.z0)/MLS.CM);
+        for(let i=0;i<n;i++){const x=cx0+(i+.5-n/2)*mpp,mi=Math.floor((x-MLS.x0)/MLS.CM);img[j*n+i]=mi<0||mj<0||mi>=M||mj>=M?out:MLS.map[mj*M+mi];}}
+      C=MLS.mapC={key,img};}
+    const i0=Math.max(0,-X0),i1=Math.min(n,BW-X0);if(i1<=i0)return;
+    for(let j=0;j<n;j++){const Y=Y0+j;if(Y<0||Y>=BH)continue;HB.set(C.img.subarray(j*n+i0,j*n+i1),Y*BW+X0+i0);}
+    return;}
   for(let j=0;j<n;j++){const Y=Y0+j;if(Y<0||Y>=BH)continue;const o=Y*BW+X0,z=cz0+(j+.5-n/2)*mpp,mj=Math.floor((z-MLS.z0)/MLS.CM);
     for(let i=0;i<n;i++){const X=X0+i;if(X<0||X>=BW)continue;const x=cx0+(i+.5-n/2)*mpp,mi=Math.floor((x-MLS.x0)/MLS.CM);
       HB[o+i]=mi<0||mj<0||mi>=M||mj>=M?out:MLS.map[mj*M+mi];}}}
 function mlBigMap(){
   const A=WG.mlA,size=Math.min(H-14,W-14)|0,x0=Math.round((W-size)/2),y0=Math.round((H-size)/2),n=size*HS,span=MLS.WS*1.06;
   hRect(0,0,W,H,pack(0,0,0,110));hRect(x0-2,y0-2,size+4,size+4,pack(0,0,0,225));
-  mlMapFill(x0*HS,y0*HS,n,A.x,A.z,span/n);
+  mlMapFill(x0*HS,y0*HS,n,A.x,A.z,span/n,true);
   const toM=(u,v)=>[x0+size/2+u/span*size,y0+size/2+v/span*size];
   for(const [name,u,v,kind] of WG.mlPlaces){const [a,b]=toM(u,v),col=kind==='trail'?pack(240,226,190,255):kind==='water'||kind==='ford'?PAL.cyan:kind==='camp'?PAL.gold:PAL.ink;
     if(kind!=='trail')hDisc(a,b,1.3,col);otxt3(name,a+3,b-6,col);}
@@ -431,10 +468,25 @@ function mlBigMap(){
   otxt3((MLS.terra?'GRIP: SOIL SCIENCE':'GRIP: GAME')+(GAME.touch?'':'  (G)'),x0+size-3,y0+size-8,MLS.terra?PAL.gold:PAL.cyan,1,'r');
   /* (on a phone, the switch for the grip under the map) */
   if(GAME.touch){let b=MLS.gripBtn;if(!b){b=MLS.gripBtn=document.createElement('button');b.type='button';b.id='mlGrip';
-      b.style.cssText='position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(50% - 30px);z-index:60;font:600 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(20,14,9,.75);color:#f2e6d2';
+      b.style.cssText='position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(50% - 84px);z-index:60;font:600 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(20,14,9,.75);color:#f2e6d2';
       b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();mlGripToggle();});document.body.appendChild(b);}
     b.textContent=mlGripLabel();b.hidden=false;}
 }
-window.__ml={MLS,MLP,mlStats,mlRake,mlGround,ML_SOIL,mlWeights,mlParams,mlGripToggle,mlBase,mlWL};
+/* the land's full program (landSoil: the soil painted, the water) compiles in the background; the title waits only for
+   the plain one (Mud Lab 6, from the review). Checked every 16 frames (a round trip to the graphics process); when the
+   driver has it, it takes over for every pass. Until then the world is drawn in the engine's own ground colours */
+let ML_PRN=0;
+/* (for the tests: #nosoil holds the full ground back, to see the plain one a laptop shows while it builds) */
+if(/nosoil/.test(location.hash))MLS.noSoilFS=true;
+function mlSoilPromote(){const G=R&&R.G;if(!G||!P_LANDML||P_LANDML===P_LAND||MLS.noSoilFS)return;
+  if(!P_LANDML.ready){if((++ML_PRN&15)||ML_PRN<16)return;const par=G.ext.par;
+    if(par){if(!gl.getProgramParameter(P_LANDML.p,par.COMPLETION_STATUS_KHR))return;}else if(performance.now()<(BOOT.menu||0)+3000)return;
+    try{G.finish(P_LANDML);}catch(e){console.warn('the soil shader would not build here: the ground stays plain. '+(e&&e.message||e));MLS.noSoilFS=true;return;}}
+  MLS.lite=P_LAND;P_LAND=P_LANDML;MLS.soilFS=performance.now();if(R)R.resetTAA=true;
+  if(MLS.soilWait&&GAME.state==='drive')say('THE GROUND\'S DETAIL IS READY',2.5);}
+/* (at Start, if the full ground isn't built yet (a Windows laptop the first time): say so, so plain ground isn't a surprise) */
+function mlSoilNote(){setTimeout(()=>{if(P_LANDML&&P_LAND!==P_LANDML&&!MLS.noSoilFS&&GAME.state==='drive'){MLS.soilWait=true;
+  say('THE GROUND\'S DETAIL IS STILL BEING BUILT BY THE GRAPHICS DRIVER: PLAIN GROUND UNTIL IT\'S READY (SLOW THE FIRST TIME ON A LAPTOP)',6);}},1500);}
+window.__ml={MLS,MLP,mlStats,mlRake,mlGround,ML_SOIL,mlWeights,mlParams,mlGripToggle,mlBase,mlWL,land:()=>({cur:P_LAND&&P_LAND.name,soil:P_LANDML&&P_LANDML.ready,at:MLS.soilFS,no:MLS.noSoilFS})};
 /* the world's ground every 2.56 m made a slice at a time while the title is up */
-{const mlPrepT=setInterval(()=>{try{if(WG&&WG.mlA&&mlPrepStep(10))clearInterval(mlPrepT);}catch(_){}},25);}
+{let mlPrepE=0;const mlPrepT=setInterval(()=>{try{if(WG&&WG.mlA&&mlPrepStep(GAME.hold?20:10))clearInterval(mlPrepT);}catch(e){if(++mlPrepE>3){console.warn('soil prep: '+(e&&e.message||e));clearInterval(mlPrepT);}}},25);}

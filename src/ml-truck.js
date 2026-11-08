@@ -44,7 +44,9 @@ function mltBind(){if(MLT.texN<3)return;
   for(const [loc,tx,unit] of U){gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,tx);if(loc)gl.uniform1i(loc,unit);}gl.activeTexture(gl.TEXTURE0);}
 /* while you drive the play truck, the Studio 2 isn't made or kept for the road (it's the bay's) */
 const MLT_S2F=s2For;
-s2For=function(i){mltSand();if(GAME.state==='drive'&&ML_PLAY(GAME.car)&&GAME.car.bi===i)return null;return MLT_S2F(i);};
+/* (while driving, no Studio 2 car at all (Mud Lab 6): the Rock & Mud is its 50k play model, his stock SUV the game's
+   own model (Studio 2's is about 800,000 triangles), and the truck left parked while you fly is one of those too) */
+s2For=function(i){mltSand();if(GAME.state==='drive')return null;return MLT_S2F(i);};
 /* the bay's Studio 2 truck in Station Sand, weathered (the colour of the play truck's baked paint) */
 const MLT_SAND={paint:'#bca081',clad:'#3a3630',dirt:.35};
 function mltSand(){for(const b of BUILDS)if(b&&!b.machine&&(b.kit||b.id)==='crawler'&&!b.__mlSand){Object.assign(b,MLT_SAND);b.__mlSand=1;}}

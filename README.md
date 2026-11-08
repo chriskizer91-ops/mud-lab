@@ -4,10 +4,12 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-5.html`** (one self-contained page, 18 MB). START drives out from the Trailhead; the map shows the
-whole world with every place named (tap a name, JUMP, and the truck is there); the Heron waits on its strip (drive up,
-stop, HERON); G (or the Grip button on the map) switches the grip physics; K rakes the ground smooth. Earlier builds stay
-as they were (`mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
+**Open `builds/mud-lab-6.html`** (one self-contained page, 17 MB). Pick ROCK & MUD or STOCK SUV on the title; START
+drives out from the Trailhead; the map shows the whole world with every place named (tap a name, JUMP, and the truck is
+there; SUV: swaps the SUV you're in); the Heron waits on its strip (drive up, stop, HERON); G (or the Grip button on the
+map) switches the grip physics; on a keyboard Enter is HERON/TRUCK, L the low range (his SUV: AWD, 4 HI, 4 LO),
+Backspace rakes the ground smooth. Earlier builds stay as they were (`mud-lab-5.html`: no stock SUV, hangs on Windows
+laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
 
 ## What it's made of
 
@@ -18,10 +20,50 @@ as they were (`mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; 
 | His ground pictures | `base/texpack.js` | The textures Ground Truth paints its ground with (red dirt, wet mud, sand, grass...). |
 | The world | `src/ml-world.js` | Mud Lab 4: 1,536 m (5,040 ft) square, every spot a soil and a moisture (below). |
 | The soil | `src/ml-soil.js` | The ground every 8 cm, dug, packed, thrown, slumping and springing (below). |
+| The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. |
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py` writes `builds/mud-lab-4.html` (next build: change the name in it, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/ml-run.py` | Headless Chrome: `python3 tools/test/ml-run.py file://$PWD/builds/mud-lab-2.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop). |
+
+## Mud Lab 6 (Nov 8 2026): his stock SUV, and a page that opens on his laptop
+
+**The stock SUV.** His own SUV as the engine has it (the game's Stock build, made to drive like his real one: the 4.6 V8,
+six-speed automatic, 3.73 gears, 2,180 kg, 245/65R17 all-season tyres, all-wheel drive through a slipping centre
+coupling with brake traction control, open diffs, no lockers, factory height, a two-speed transfer case), beside the
+Rock & Mud. Pick it on the title (remembered) or swap in place on the map. Its button goes AWD -> 4 HI (centre locked) ->
+4 LO (low range). Drawn with the game's own model (Studio 2's is about 800,000 triangles: never while driving now).
+
+What makes it bog where the Rock & Mud doesn't (the soil reads each vehicle; nothing about the Rock & Mud changed):
+- the tread: in soft soil an all-season's small voids bite less than mud-terrain lugs (from the engine's own grip in
+  mud, .47 against .68), and pack with sticky clay sooner and throw it out later;
+- its body: sills 32 cm up against the Rock & Mud's 56; water over the sills pushes on the body, and lifts it (a quarter
+  of the water it pushes aside: a cab isn't sealed), so the tyres press down and grip less;
+- its belly: sunk deeper than the underside sits, the axles and floor plough the mud between the ruts.
+
+Tested (straight in from 12 m back, full and half throttle, Rock & Mud with its lockers on): a shallow trail hole, both
+through (the stock 9-13 mph, the Rock & Mud 21-23); a deeper trail hole, both through (the stock crawling 3-7 mph, the
+Rock & Mud 10-12); the Mud Hole, the Rock & Mud through at 3.5-4.5 mph, the stock to the far side and stuck; the pond's
+soft bottoms, the Rock & Mud through at about 3 mph, the stock stopped.
+
+**The laptop hang** (two reviews, Opus 5.5 and Fable 5.1, both found it): the page stuck on "Warming up the shaders
+20 / 21" on his Windows laptop in Edge. The 21st is the land's shader; Mud Lab's ground photos and soil painting made it
+the largest the engine has, and Windows' shader compiler (Direct3D's, through ANGLE) takes minutes over it. The engine
+waited 60 s, then sat in a blocking wait. Mud Lab 4 had the same shader. Now:
+- the land program the title waits for leaves out the photos and the soil painting (about the size of the reflections'
+  program his laptop already builds); the full one, landSoil, builds in the background and takes over when it's ready
+  (the plain ground until then, and a line saying so). Windows keeps a built shader, so later opens are quick;
+- the soil's 19 texture reads ask for their one level outright (textureLod), and the truck's and plane's pictures use
+  gradients worked out once (textureGrad): nothing in Mud Lab's code needs the compiler to work out gradients in a branch;
+- the warm-up waits as long as the shaders take and the loading line names what is still building.
+
+**And from the reviews:** nothing drawn behind the title, and no traffic cars built for a game without traffic (the
+soil's preparation finishes under the title); the big map's picture made once (it was redrawn dot by dot, 25 ms a frame
+on a laptop); the ground's own heights per square kept for the next time it comes into view; after a jump the ground round
+the truck is ready before it's drawn; the Heron's paint is its model's picture (one 2048 picture and 0.75 MB less); the
+parked Heron drawn out to 450 m and its shadow within 150 m; the town, park and Outer Loop's buildings, posts and chevrons
+the engine was putting round and inside the world are gone; map names under the steering strip can be tapped; the swap
+key is Enter (E is the gear-up key) and the rake Backspace (K is the lockers').
 
 ## Mud Lab 5 (Nov 8 2026): the Heron, and jumps on the map
 

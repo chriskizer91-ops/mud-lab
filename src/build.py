@@ -5,7 +5,7 @@ soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
 usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-5)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-5'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-6'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -27,7 +27,7 @@ swap("function mapFill(X0,Y0,n,cx0,cz0,mpp,dark){\n", "function mapFill(X0,Y0,n,
 swap("function drawBigMap(){\n", "function drawBigMap(){\n  if(WG.mlA&&MLS.map)return mlBigMap();\n")
 # ---------- THE TRUCK (src/ml-truck.js): the SUV is the Rock & Mud, drawn as its 50k play model ----------
 swap("const CAR_STOCK={suv:'stock',", "const CAR_STOCK={suv:'crawler',")
-swap("if(t===GAME.car&&!far){const S2=s2For(t.bi),k=s2Key(t.bi);", "if(t===GAME.car&&!far&&!ML_PLAY(t)){const S2=s2For(t.bi),k=s2Key(t.bi);")
+swap("if(t===GAME.car&&!far){const S2=s2For(t.bi),k=s2Key(t.bi);", "if(t===GAME.car&&!far&&!ML_PLAY(t)&&!mlIsStock(t)){const S2=s2For(t.bi),k=s2Key(t.bi);")
 swap("const i=t.bi,b=t.build,u=CUR.u,M0=carMatrix(t);let Mb=M0,T=far?truckFar(i):truck(i);", "const i=t.bi,b=t.build,u=CUR.u,M0=carMatrix(t);let Mb=M0,T=far?truckFar(i):truck(i);const MLP2=!far&&ML_PLAY(t);if(MLP2)T=mltT(T);")
 swap("  if(!depth){carUniformsW(t,v,dirt);gl.uniform1f(u.uMudLocal,1);gl.uniform1f(u.uMudOff,0);gl.uniform1f(u.uPrevOn,1);}\n  const fx=D.X(D.uFa)",
      "  if(!depth){carUniformsW(t,v,dirt);gl.uniform1f(u.uMudLocal,1);gl.uniform1f(u.uMudOff,0);gl.uniform1f(u.uPrevOn,1);if(MLP2)mltBind();}\n  const fx=D.X(D.uFa)")
@@ -41,10 +41,10 @@ swap('  else if(m>=40){\n    vec2 wp=Pw.xz;ground=true;',
      """  /* the Rock & Mud's play model: its colour, roughness and metal from its baked pictures, its surface detail from the
      normal map (the frame from the pixel's own derivatives: no tangents needed) */
   else if(m==120){
-    alb=pow(texture(uRTa,vUV).rgb,vec3(2.2));vec3 O=texture(uRTo,vUV).rgb;float rg=clamp(O.g,.05,1.);metal=O.b;
+    alb=pow(textureGrad(uRTa,vUV,mlt1,mlt2).rgb,vec3(2.2));vec3 O=textureGrad(uRTo,vUV,mlt1,mlt2).rgb;float rg=clamp(O.g,.05,1.);metal=O.b;
     shin=max(2./(rg*rg)-2.,1.);spec=mix(.5,1.,metal);
-    vec3 tn=texture(uRTn,vUV).xyz*2.-1.;tn.y=-tn.y;
-    vec3 q1=dFdx(vP),q2=dFdy(vP);vec2 t1=dFdx(vUV),t2=dFdy(vUV);vec3 q2p=cross(q2,N),q1p=cross(N,q1);
+    vec3 tn=textureGrad(uRTn,vUV,mlt1,mlt2).xyz*2.-1.;tn.y=-tn.y;
+    vec3 q1=mlq1,q2=mlq2;vec2 t1=mlt1,t2=mlt2;vec3 q2p=cross(q2,N),q1p=cross(N,q1);
     vec3 Tt=q2p*t1.x+q1p*t2.x,Bt=q2p*t1.y+q1p*t2.y;float im=inversesqrt(max(max(dot(Tt,Tt),dot(Bt,Bt)),1e-20));
     vec3 Nn=mat3(Tt*im,Bt*im,N)*tn;if(dot(Nn,Nn)>1e-8)N=normalize(Nn);}
   else if(m>=40){
@@ -78,7 +78,14 @@ swap("if(DUNES)return j===0&&Math.abs(x)<HALF-800?3:0;", "if(ML)return 0;if(DUNE
 swap("function core(x,z,ctx,o){\n  if(DUNES)return duneCore(x,z,o);", rd('src/ml-world.js') + "\nfunction core(x,z,ctx,o){\n  if(ML)return mlCore(x,z,o);if(DUNES)return duneCore(x,z,o);")
 swap("function baseAt(x,z){\n  if(DUNES)return rimAt(x,z);", "function baseAt(x,z){\n  if(ML)return mlCore(x,z,{}).h;if(DUNES)return rimAt(x,z);")
 swap("if(DUNES){let bb=[0,1e9,0,CH,-1e9,CH];", "if(DUNES&&!ML){let bb=[0,1e9,0,CH,-1e9,CH];")
-swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlStrip:ML_STRIP,L,HALF,CH,FT,ROAD_END,")
+# (Mud Lab 6, from the review: the engine's town, off-road park and Outer Loop are not in Mud Lab's world: City Limits
+# stood 300 m past the north bank and the loop's marker posts and chevrons ran through the woods; the engine's own trees
+# stay as the trees beyond the bank)
+swap("if(x1>-EDGE-40&&x0<EDGE+40&&z1>-EDGE-40&&z0<EDGE+40)townStatic(", "if(!ML&&x1>-EDGE-40&&x0<EDGE+40&&z1>-EDGE-40&&z0<EDGE+40)townStatic(")
+swap("if(x1>PARK.x0-80&&x0<PARK.x1+80&&z1>PARK.z0-80&&z0<PARK.z1+80||x1>PKW.ROADX-30&&x0<PKW.ROADX+30&&z1>-60&&z0<-20)parkStatic(", "if(!ML&&(x1>PARK.x0-80&&x0<PARK.x1+80&&z1>PARK.z0-80&&z0<PARK.z1+80||x1>PKW.ROADX-30&&x0<PKW.ROADX+30&&z1>-60&&z0<-20))parkStatic(")
+swap("if(x1>OL.bb[0]&&x0<OL.bb[2]&&z1>OL.bb[1]&&z0<OL.bb[3])loopStatic(", "if(!ML&&x1>OL.bb[0]&&x0<OL.bb[2]&&z1>OL.bb[1]&&z0<OL.bb[3])loopStatic(")
+swap("  townTrees(x0,z0,x1,z1,inC,addTree);\n  {const G=6.2,n=Math.floor(CH/G),cr={};", "  if(!ML)townTrees(x0,z0,x1,z1,inC,addTree);\n  if(!(ML&&Math.abs(x0+CH/2-ML_A.x)<ML_A.h+ML_A.m-CH/2&&Math.abs(z0+CH/2-ML_A.z)<ML_A.h+ML_A.m-CH/2)){const G=6.2,n=Math.floor(CH/G),cr={};")
+swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlStrip:ML_STRIP,mlHoles:ML_HOLES,L,HALF,CH,FT,ROAD_END,")
 swap("if(DYB.dunes)return Math.abs(z)<6?'Highway 40'", "if(WG.mlA)return WG.mlPlace(x-WG.mlA.x,z-WG.mlA.z);if(DYB.dunes)return Math.abs(z)<6?'Highway 40'")
 swap("const HOME=[0,1.9,0];", "const HOME=[WG.mlA.x,WG.mlA.z+630,1.571];")
 swap("  if(x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=", "  if(!ML&&x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=")
@@ -107,20 +114,20 @@ swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uP
      "    vN=normalize(vec3(-mlx,2.56,-mlz));vC=vec4(0.,0.,0.,1.);}\n"
      "  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;")
 swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "\nlayout(location=0) out vec4 oCol;")
-swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;\n"
+swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;vec3 mlq1=dFdx(vP),mlq2=dFdy(vP);vec2 mlt1=dFdx(vUV),mlt2=dFdy(vUV);\n"
      "#ifndef PROBE\n  /* (Mud Lab) inside the world: the patch drawn only there; the chunks' ground not drawn under the patch */\n"
      "  vec2 mlUV=(vP.xz-uMLo.xy)*uMLo.z,mlW=fract((vP.xz-uMLo.xy)*uMLw.z);bool mlIn=(m==40||m==50)&&uMLo.w>.5&&mlUV.x>0.&&mlUV.y>0.&&mlUV.x<1.&&mlUV.y<1.;\n"
      "  bool mlWin=mlIn&&max(abs(vP.x-uMLw.x),abs(vP.z-uMLw.y))<uMLw.w;\n"
      "  if(m==40&&uMLo.w>.5){if(uMLv>.5){if(!mlIn)discard;}else if(mlIn&&uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985)discard;}\n#endif")
 SC = '%.3f,%.3f,%.3f' % tuple(TP['SAND']['m'])
 swap("      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){",
-     "#ifndef PROBE\n"
+     "#if !defined(PROBE)&&defined(MLSOIL)\n"
      "      /* (Mud Lab) the world's own ground: each soil by how wet it is (loam dusty and pale dry, dark wet; clay cracked and\n"
      "         pale dry, smooth and dark wet; silt powder to slick; dark peat with moss; sand), sod (straw when dry, greener\n"
      "         wet), the woods' floor (leaf litter, moss); wetter still where the water lies just under */\n"
-     "      if(mlIn){vec4 s0=texture(uMLs0,mlUV),s1=texture(uMLs1,mlUV);float wc=s1.r,ws=s1.g,wq=s1.b,wsd=s1.a,tot=wc+ws+wq+wsd;\n"
+     "      if(mlIn){vec4 s0=textureLod(uMLs0,mlUV,0.),s1=textureLod(uMLs1,mlUV,0.);float wc=s1.r,ws=s1.g,wq=s1.b,wsd=s1.a,tot=wc+ws+wq+wsd;\n"
      "        if(tot>1.){wc/=tot;ws/=tot;wq/=tot;wsd/=tot;tot=1.;}float wlm=1.-tot,wg=max(s0.a,0.),wwd=max(-s0.a,0.);\n"
-     "        vec4 w0=vec4(0.,0.,0.,-9999.),w1=vec4(s0.r,0.,0.,0.);if(mlWin){w0=texture(uMLt,mlW);w1=texture(uMLd,mlW);}\n"
+     "        vec4 w0=vec4(0.,0.,0.,-9999.),w1=vec4(s0.r,0.,0.,0.);if(mlWin){w0=textureLod(uMLt,mlW,0.);w1=textureLod(uMLd,mlW,0.);}\n"
      "        float wtab=s0.g-(w1.r+w0.r),moist=max(s0.b,smoothstep(-.3,-.02,wtab));\n"
      "        float n1=vn(wp*.35),n2=vn(wp*17.)*.55+vn(wp*41.)*.45;vec3 dl=photoG2(dirtCol(wp),T_DIRT,T_DIRT2,wp);\n"
      "        vec3 cL=mix(dl*1.18+vec3(.03,.025,.015),dl*.5,smoothstep(.15,.85,moist));\n"
@@ -135,9 +142,9 @@ swap("      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){",
      "        spec=.03+.22*moist*moist*(wlm*.5+wc+ws)+.05*wq;shin=8.+40.*moist*(wc+ws);pud=0.;gG*=.5;em=1.-.4*wwd;\n"
      "        if(mlWin){float mtx=uMLq.x,mcl=uMLq.y,cd=uMLo.z*1.28;\n"
      "          /* the fine slopes the meshes don't carry: ruts, berms, the trails' two-track, the edges of the mud holes */\n"
-     "          float f0=texture(uMLt,mlW-vec2(mtx,0.)).r+texture(uMLd,mlW-vec2(mtx,0.)).r,f1=texture(uMLt,mlW+vec2(mtx,0.)).r+texture(uMLd,mlW+vec2(mtx,0.)).r,\n"
-     "            f2=texture(uMLt,mlW-vec2(0.,mtx)).r+texture(uMLd,mlW-vec2(0.,mtx)).r,f3=texture(uMLt,mlW+vec2(0.,mtx)).r+texture(uMLd,mlW+vec2(0.,mtx)).r;\n"
-     "          float c0=texture(uMLs0,mlUV-vec2(cd,0.)).r,c1=texture(uMLs0,mlUV+vec2(cd,0.)).r,c2=texture(uMLs0,mlUV-vec2(0.,cd)).r,c3=texture(uMLs0,mlUV+vec2(0.,cd)).r;\n"
+     "          float f0=textureLod(uMLt,mlW-vec2(mtx,0.),0.).r+textureLod(uMLd,mlW-vec2(mtx,0.),0.).r,f1=textureLod(uMLt,mlW+vec2(mtx,0.),0.).r+textureLod(uMLd,mlW+vec2(mtx,0.),0.).r,\n"
+     "            f2=textureLod(uMLt,mlW-vec2(0.,mtx),0.).r+textureLod(uMLd,mlW-vec2(0.,mtx),0.).r,f3=textureLod(uMLt,mlW+vec2(0.,mtx),0.).r+textureLod(uMLd,mlW+vec2(0.,mtx),0.).r;\n"
+     "          float c0=textureLod(uMLs0,mlUV-vec2(cd,0.),0.).r,c1=textureLod(uMLs0,mlUV+vec2(cd,0.),0.).r,c2=textureLod(uMLs0,mlUV-vec2(0.,cd),0.).r,c3=textureLod(uMLs0,mlUV+vec2(0.,cd),0.).r;\n"
      "          float maa=1.-smoothstep(mcl*2.,mcl*10.,gFP);gG+=(vec2(f1-f0,f3-f2)/(2.*mcl)-vec2(c1-c0,c3-c2)/2.56)*mix(.3,1.,maa);\n"
      "          float mrut=max(-w0.r,0.)+max(-w1.a,0.)*.5,mberm=max(w0.r,0.),mch=clamp(w0.g*1.25,0.,1.),mpr=w0.b*(1.-mch*.6),wetc=max(moist,.0);\n"
      "          /* the trails: the worn two-track bare and packed */\n"
@@ -163,8 +170,8 @@ swap("      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){",
 # the water: muddy and level, the bottom showing through where it's shallow
 swap("      N=normalize(vec3(gw.x,1.,gw.y));alb=vec3(.025,.03,.018);spec=.6;shin=2000.;ssr=1.;ground=false;\n",
      "      N=normalize(vec3(gw.x,1.,gw.y));alb=vec3(.025,.03,.018);spec=.6;shin=2000.;ssr=1.;ground=false;\n"
-     "#ifndef PROBE\n"
-     "      if(vC.a>.5&&mlIn){float gy=mlWin?texture(uMLd,mlW).r+texture(uMLt,mlW).r:texture(uMLs0,mlUV).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.1,dep);\n"
+     "#if !defined(PROBE)&&defined(MLSOIL)\n"
+     "      if(vC.a>.5&&mlIn){float gy=mlWin?textureLod(uMLd,mlW,0.).r+textureLod(uMLt,mlW,0.).r:textureLod(uMLs0,mlUV,0.).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.1,dep);\n"
      "        alb=mix(vec3(.05,.036,.022),vec3(.085,.064,.04),sh);spec=mix(.2,.32,sh);shin=mix(180.,700.,sh);ssr=mix(.25,.55,sh);N=normalize(vec3(gw.x*.6,1.,gw.y*.6));}\n"
      "#endif\n")
 # (the soil's textures bound whenever the land's programs are in use: src/ml-soil.js mlHookUse)
@@ -175,7 +182,7 @@ swap("drawMesh(g.w);tris+=g.w.tris;if(!probe)gl.enable(gl.CULL_FACE);}}\n  if(!p
 swap("G.uni(P,'uCourse',[WG.COURSE.x0-RO[0],WG.COURSE.mi,.11,-RO[2]]);G.uni(P,'uOrg',[0,0,0]);}", "G.uni(P,'uCourse',[WG.COURSE.x0-RO[0],WG.COURSE.mi,.11,-RO[2]]);G.uni(P,'uOrg',[0,0,0]);mlUniforms(P);}")
 # EACH FRAME: the soil after the physics (src/ml-soil.js mlStep); the engine's own dust and clods left to the tyres outside
 # the arena; a thrown clod that lands in the arena becomes soil there; room for more clods (each is 32 triangles)
-swap("fxEmit(dt,t);fxStep(dt);", "mlStep(dt,t);fxEmit(dt,t);fxStep(dt);")
+swap("fxEmit(dt,t);fxStep(dt);", "mlStep(dt,t);mlvTick();fxEmit(dt,t);fxStep(dt);")
 swap("if(!w.contact)continue;const R=w.R,surf=w.surf", "if(!w.contact||w.mlOn)continue;const R=w.R,surf=w.surf")
 swap("if(p.y<gy){p.y=gy;p.vx=p.vy=p.vz=0;", "if(p.y<gy){if(p.vol&&mlLand(p)){p.life=0;p.y=gy;continue;}p.y=gy;p.vx=p.vy=p.vz=0;")
 swap("const FX_MAX=360,", "const FX_MAX=1200,")
@@ -189,17 +196,52 @@ swap("const FX_CAP={mobile:220,low:300};", "const FX_CAP={mobile:600,low:800};")
 heron = rd('base/heron/rt-game.js').replace('/*@@FLY@@*/', rd('base/heron/rt-fly.js'))
 for a_, b_ in [("if(RT.want)say('THE REDTAIL',2);", "if(RT.want)say('THE HERON',2);"), ("{id:'redtail',name:'Redtail',gov:0,", "{id:'redtail',name:'Heron',gov:0,")]:
     assert heron.count(a_) == 1, a_; heron = heron.replace(a_, b_)
+# ---------- THE STOCK SUV (src/ml-suv.js): his SUV's 4WD mode on the LOW button and key, and its name on the HUD
+swap("    if(inp.low)say(setLow(t,!t.low)?(t.low?'Low range':'High range'):'No low range on this car',1.4);", "    if(inp.low)say(mlLow(t),1.4);")
+swap("$('tLow').hidden=!c.low;", "$('tLow').hidden=!c.low&&!mlIsStock(GAME.car);")
+swap("if(can.low)C.push(['LOW',t.low,PAL.amber]);", "if(mlIsStock(t))C.push([mlMode(t),t.low,PAL.amber]);else if(can.low)C.push(['LOW',t.low,PAL.amber]);")
+# ---------- THE SHADER WARM-UP (Mud Lab 6, from the review): the engine waited at most 60 s for the shaders to build
+# in the background, then sat in a blocking wait for any not yet built (on Windows, Edge's Direct3D shader compiler
+# took far longer than that over the land's shader, and the page hung on "20 / 21"). Now it waits as long as they take,
+# and the loading line names what is still building and for how long.
+swap("          if (done === list.length || performance.now() - t0 > 6e4) break;", "          if (done === list.length) break;")
+swap("          onProgress && onProgress(done, list.length);", "          onProgress && onProgress(done, list.length, list.filter((P) => !gl.getProgramParameter(P.p, par.COMPLETION_STATUS_KHR)).map((P) => P.name).join(', '), Math.round((performance.now() - t0) / 1e3));")
+swap("await R.G.warmup((d,n)=>{L.textContent='Warming up the shaders '+d+' / '+n+(built?' · the garage '+built+' / '+park.length:'');});",
+     "await R.G.warmup((d,n,w,s)=>{L.textContent='Warming up the shaders '+d+' / '+n+(w?' (building: '+w+', '+s+' s)':'')+(built?' · the garage '+built+' / '+park.length:'');});")
+# (the title covers the whole screen: the game holds behind it (src/ml-ui.js GAME.hold), and builds no traffic cars,
+# Mud Lab has no traffic; the soil's preparation gets the time)
+swap("if(showActive()){renderShow(dt);if(GFX.frame%6===0)trfModelsStep();return;}", "if(showActive()){renderShow(dt);return;}")
+# (the land's program the title waits for is built without the soil's painting and water; the full one, landSoil,
+# compiles in the background and takes over as soon as the graphics driver has it (src/ml-soil.js mlSoilPromote): the
+# page can't hang on the shaders however long Windows' shader compiler takes)
+swap("let P_LAND=null,P_LANDP=null,P_DEPTH=null;", "let P_LAND=null,P_LANDP=null,P_DEPTH=null,P_LANDML=null;")
+swap("P_LANDP=G.program('landProbe',S.VS,S.FS,Object.assign({PROBE:1},h));mlHookUse(G);if(!P_DEPTH)", "P_LANDP=G.program('landProbe',S.VS,S.FS,Object.assign({PROBE:1},h));mlHookUse(G);P_LANDML=G.program('landSoil',S.VS,S.FS,Object.assign({MLSOIL:1},h));P_LANDML.bg=true;if(!P_DEPTH)")
+swap("const G=R.G,old=[P_LAND,P_LANDP];P_LAND=P_LANDP=null;", "const G=R.G,old=[P_LAND,P_LANDP,P_LANDML];P_LAND=P_LANDP=P_LANDML=null;")
+swap("catch(e){console.warn('land shader rebuild: '+(e&&e.message||e));landDrop([P_LAND,P_LANDP]);P_LAND=old[0];P_LANDP=old[1];", "catch(e){console.warn('land shader rebuild: '+(e&&e.message||e));landDrop([P_LAND,P_LANDP,P_LANDML]);P_LAND=old[0];P_LANDP=old[1];P_LANDML=old[2];")
+swap("const par = ext.par, list = G.programs.filter((P) => !P.ready);", "const par = ext.par, list = G.programs.filter((P) => !P.ready && !P.bg);")
+swap("perfEnd(dt);APP.fps=lerp(APP.fps,1/Math.max(dt,1e-3),.05);gfxWatch(dt);", "perfEnd(dt);APP.fps=lerp(APP.fps,1/Math.max(dt,1e-3),.05);gfxWatch(dt);mlSoilPromote();")
+# (and the program the title waits for leaves out his ground photos too (NOPHOTO, as the reflections' probe program does,
+# which his laptop already builds): the photos are the largest part of what Windows' compiler chews on. The full
+# picture, photos and soil, is landSoil's)
+swap("#ifdef PROBE\nvec3 photoG(vec3 alb,int L,vec2 wp){return alb;}", "#if defined(PROBE)||defined(NOPHOTO)\nvec3 photoG(vec3 alb,int L,vec2 wp){return alb;}")
+swap("P_LAND=G.program('land',S.VS,S.FS,Object.assign(DEBUG_VIEW&&DEBUG_VIEW.startsWith('shadow')?{DEBUG_SHADOW:+(DEBUG_VIEW.slice(6)||0)}:{},h));", "P_LAND=G.program('land',S.VS,S.FS,Object.assign({NOPHOTO:1},DEBUG_VIEW&&DEBUG_VIEW.startsWith('shadow')?{DEBUG_SHADOW:+(DEBUG_VIEW.slice(6)||0)}:{},h));")
 # (up in the Heron the haze thins, so the whole map shows from the air: src/ml-heron.js mlFogK)
 swap("  if(DYB.dunes){const A=DYB.air;E.fogDen*=A.fog;", "  if(typeof mlFogK==='function')E.fogDen*=mlFogK();\n  if(DYB.dunes){const A=DYB.air;E.fogDen*=A.fog;")
-swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&GAME.car.rt?'Heron':carName({car:APP.car})")
+swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&GAME.car.rt?'Heron':mlIsStock(GAME.car)?'Stock SUV':carName({car:APP.car})")
 # (the one you're not in drawn where it waits, and into the shadows)
 swap("let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);", "let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);mlvUI();tris+=mlvDraw(c.eye);")
-swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvParked())one(mlvParked(),true);")
+swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvShadow())one(mlvParked(),true);")
 swap("/* =====================================================================================\n   THE BOOT: the dots",
-     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-heron.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
 import base64
 i = s.index("<script>\n(()=>{\n'use strict';")
-s = s[:i] + '<script>' + rd('base/truck-rock-mud-50k.js') + '\n' + rd('base/heron/heron-data.js') + 'window.ML_HERON_PAINT=' + repr(base64.b64encode(open(os.path.join(R, 'base/heron/redtail-2-heron.webp'), 'rb').read()).decode()) + ';\n</script>\n' + s[i:]
+# (the Heron's paint IS its picture (Mud Lab 6, from the review): his Heron paint goes in place of the original Redtail
+# paint in the model's data, so the original is neither carried nor decoded; one paint, no paint switching)
+import re as _re
+_hd = rd('base/heron/heron-data.js'); _hp = base64.b64encode(open(os.path.join(R, 'base/heron/redtail-2-heron.webp'), 'rb').read()).decode()
+assert len(_re.findall(r'"a":"[A-Za-z0-9+/=]+"', _hd)) == 1
+_hd = _re.sub(r'"a":"[A-Za-z0-9+/=]+"', lambda m: '"a":"' + _hp + '"', _hd)
+s = s[:i] + '<script>' + rd('base/truck-rock-mud-50k.js') + '\n' + _hd + '\n</script>\n' + s[i:]
 os.makedirs(os.path.join(R, 'builds'), exist_ok=True); out = os.path.join(R, 'builds', NAME + '.html')
 open(out, 'w', encoding='utf-8').write(re.sub(r"const ML_BUILD='[^']*';", "const ML_BUILD='%s';" % NAME, s, count=1))
 print('written', out, len(s))

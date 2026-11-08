@@ -52,7 +52,7 @@ async def main():
                 elif t == 'free': r = await pg.evaluate('()=>MLT.free()')
                 elif t.startswith('cam:'): r = await pg.evaluate("(n)=>{const D=__dyb,i=D.CAMS.indexOf(n);D.CAM.over=null;D.camPick(i);return i;}", t[4:].replace('-', ' '))
                 else: r = 'unknown'
-                print(t[:60], json.dumps(r)[:900], round(time.time() - t0), flush=True)
+                print(t[:60], json.dumps(r)[:8000], round(time.time() - t0), flush=True)
             except Exception as e: print('FAIL', t[:60], str(e)[:600], flush=True)
         errs = [l for l in logs if 'PAGEERR' in l or l.startswith('error')] + [l for l in logs if l.startswith('warn')][:3]
         print('--- errors/warnings:'); print('\n'.join(errs[:6]))
