@@ -6,7 +6,7 @@
    material 120. Phones load the pictures at 1024, laptops at 2048. The truck's numbers, its physics and its engine
    sound are the engine's own Rock & Mud (game build id crawler): nothing of them is changed here.
    ===================================================================================== */
-const RT_U8=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
+const MLT_U8=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
 const MLT={mesh:null,tex:null,texN:0,T:new WeakMap(),loc:null,locP:null,px:0,
   phone:(()=>{try{return matchMedia('(hover: none)').matches||Math.min(screen.width,screen.height)<600;}catch(_){return false;}})()};
 /* the play model is yours whenever you're in the Rock & Mud */
@@ -24,11 +24,11 @@ function mltTex(b64,cb){const an=gl.getExtension('EXT_texture_filter_anisotropic
 function mltBuild(){
   const D=window.LR_TRUCK;if(!D)return false;const ms={};
   for(const [nm,e] of Object.entries(D.pieces)){
-    const pos=new Float32Array(RT_U8(e.pos).buffer),nrm=new Float32Array(RT_U8(e.nrm).buffer),uv=new Float32Array(RT_U8(e.uv).buffer),m8=RT_U8(e.mat),n=pos.length/3;
+    const pos=new Float32Array(MLT_U8(e.pos).buffer),nrm=new Float32Array(MLT_U8(e.nrm).buffer),uv=new Float32Array(MLT_U8(e.uv).buffer),m8=MLT_U8(e.mat),n=pos.length/3;
     const col=new Float32Array(n*4),mat=new Float32Array(n);
     /* (the glass keeps the game's own glass materials; the underside (16 in the bake's numbering) is plain dark colour) */
     for(let k=0;k<n;k++){const m=m8[k];mat[k]=m===16?0:m;const c=m===120?1:m===16?.03:.025;col[k*4]=col[k*4+1]=col[k*4+2]=c;col[k*4+3]=0;}
-    const ib=RT_U8(e.idx),idx=e.i32?new Uint32Array(ib.buffer):new Uint16Array(ib.buffer);
+    const ib=MLT_U8(e.idx),idx=e.i32?new Uint32Array(ib.buffer):new Uint16Array(ib.buffer);
     ms[nm]=makeMesh({pos,nrm,col,mat,idx,uv});ms[nm].tris=e.n/3;}
   MLT.mesh=ms;MLT.tex={};MLT.px=0;
   for(const k of ['a','n','o'])mltTex(D.tex[k],(tx,w,h)=>{MLT.tex[k]=tx;MLT.texN++;MLT.px=w;});

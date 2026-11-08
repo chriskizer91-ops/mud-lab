@@ -4,9 +4,10 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-4.html`** (one self-contained page, 12.7 MB). START drives out from the Trailhead; the map button
-shows the whole world with every place named; G (or the Grip button on the phone's map) switches the grip physics; K
-rakes the ground smooth. Earlier builds stay as they were (`mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
+**Open `builds/mud-lab-5.html`** (one self-contained page, 18 MB). START drives out from the Trailhead; the map shows the
+whole world with every place named (tap a name, JUMP, and the truck is there); the Heron waits on its strip (drive up,
+stop, HERON); G (or the Grip button on the map) switches the grip physics; K rakes the ground smooth. Earlier builds stay
+as they were (`mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
 
 ## What it's made of
 
@@ -17,9 +18,32 @@ rakes the ground smooth. Earlier builds stay as they were (`mud-lab-3.html`: the
 | His ground pictures | `base/texpack.js` | The textures Ground Truth paints its ground with (red dirt, wet mud, sand, grass...). |
 | The world | `src/ml-world.js` | Mud Lab 4: 1,536 m (5,040 ft) square, every spot a soil and a moisture (below). |
 | The soil | `src/ml-soil.js` | The ground every 8 cm, dug, packed, thrown, slumping and springing (below). |
+| The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py` writes `builds/mud-lab-4.html` (next build: change the name in it, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/ml-run.py` | Headless Chrome: `python3 tools/test/ml-run.py file://$PWD/builds/mud-lab-2.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop). |
+
+## Mud Lab 5 (Nov 8 2026): the Heron, and jumps on the map
+
+His ask: a quick way round the map for testing, and the Heron from Ground Truth to get about and sightsee, flown for
+real: take off and land yourself (or crash, reset, and switch to the truck).
+
+- **The Heron Strip**: 400 m (1,300 ft) of mown grass in the south fields, laid level, a worn track down its middle, no
+  trees near it. The Heron waits at its west end, facing east.
+- **Getting in and out**: drive up to the Heron, stop, and HERON (E on a keyboard) puts you in it; the truck waits where
+  you left it. Stopped on the ground anywhere, TRUCK (E) puts you in the truck beside the Heron's left wing (the nearest
+  dry spot out of the trees), the Heron left standing there. Crash, RESET puts it back on its wheels where it came down,
+  then TRUCK.
+- **Flying**: the Heron as it is in Ground Truth (260 hp, 750 kg, the same stick, throttle lever, flaps and tilt); only the
+  chase camera is Ground Truth's too. Up in it, the haze thins to half (from 20 m up to 250 m up), so the whole map shows.
+- **Jumps**: on the map, tap a place's name (or THE HERON, where it waits): JUMP puts the truck at the nearest dry, open spot
+  to it, facing it. From the air the Heron goes back to its strip; landed, it stays where it is.
+
+Tested (test pilot in the headless browser): the take-off run on the strip, 10 degrees of flap, full power: tail up at
+36 mph after 27 m, off the ground at 56 mph after 67 m, over 50 ft after 182 m. Level at full power: 140 mph; at about
+half power, 106 mph (the map is crossed in about 30 seconds). A straight-in landing on the strip with full flap: down at
+52 mph, 216 ft/min, stopped 159 m later, TRUCK put the truck 14 m off the left wing. A reset from 870 ft put the Heron on
+its wheels and TRUCK worked. About 210-230K triangles on screen while flying over the woods.
 
 ## Mud Lab 4 (Nov 8 2026): five thousand feet built on moisture
 

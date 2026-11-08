@@ -120,7 +120,7 @@ function mlPrepStep(ms){
   const t0=performance.now();
   while(MLS.prow<M&&performance.now()-t0<ms){const j=MLS.prow++;for(let i=0;i<M;i++){const k=j*M+i;WG.mlZone(MLS.x0+(i+.5)*MLS.CM-A.x,MLS.z0+(j+.5)*MLS.CM-A.z,o);
     MLS.cB[k]=o.h;MLS.cW[k]=o.wl>-90?o.wl:o.h-1;MLS.cMo[k]=Math.round(o.moist*255);const w=[o.clay,o.silt,o.peat,o.sand];for(let c=0;c<4;c++)MLS.cM[c*M2+k]=Math.round(Math.max(0,Math.min(1,w[c]))*255);
-    MLS.cG[k]=Math.round(o.grass*255);MLS.cWd[k]=Math.round(o.wood*255);MLS.cTr[k]=o.trail<3.6?Math.round(255*(1-o.trail/3.6)):0;}}
+    MLS.cG[k]=Math.round(o.grass*255);MLS.cWd[k]=Math.round(o.wood*255);MLS.cTr[k]=o.trail<3.6?Math.round(255*(1-o.trail/3.6)):o.strip>.5&&o.stripD<4.2?Math.round(200*Math.min(1,(4.2-o.stripD)/1.5)):0;}}
   if(MLS.prow>=M){MLS.prep=2;mlPaintMap();}return MLS.prep>=2;}
 /* lay the world out on the graphics card (the first time the truck drives) */
 function mlInit(){
@@ -424,13 +424,14 @@ function mlBigMap(){
   const toM=(u,v)=>[x0+size/2+u/span*size,y0+size/2+v/span*size];
   for(const [name,u,v,kind] of WG.mlPlaces){const [a,b]=toM(u,v),col=kind==='trail'?pack(240,226,190,255):kind==='water'||kind==='ford'?PAL.cyan:kind==='camp'?PAL.gold:PAL.ink;
     if(kind!=='trail')hDisc(a,b,1.3,col);otxt3(name,a+3,b-6,col);}
+  if(typeof mlvMap==='function')mlvMap(toM);
   const t=GAME.car;{const [a,b]=toM(t.p[0]-A.x,t.p[2]-A.z);mapArrow(a,b,1.3);}
   hFrame(x0-2,y0-2,size+4,size+4,pack(255,255,255,70));
   otxt3('MUD LAB  5,000 FT ACROSS',x0+3,y0+3,PAL.ink);otxt3(GAME.touch?'TAP TO CLOSE':'M TO CLOSE',x0+3,y0+size-8,PAL.dim);
   otxt3((MLS.terra?'GRIP: SOIL SCIENCE':'GRIP: GAME')+(GAME.touch?'':'  (G)'),x0+size-3,y0+size-8,MLS.terra?PAL.gold:PAL.cyan,1,'r');
   /* (on a phone, the switch for the grip under the map) */
   if(GAME.touch){let b=MLS.gripBtn;if(!b){b=MLS.gripBtn=document.createElement('button');b.type='button';b.id='mlGrip';
-      b.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:60;font:600 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(20,14,9,.75);color:#f2e6d2';
+      b.style.cssText='position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(50% - 30px);z-index:60;font:600 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(20,14,9,.75);color:#f2e6d2';
       b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();mlGripToggle();});document.body.appendChild(b);}
     b.textContent=mlGripLabel();b.hidden=false;}
 }

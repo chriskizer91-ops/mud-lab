@@ -3,9 +3,9 @@ the Road Not Found engine, as it was on Nov 7 2026), the Rock & Mud's play model
 ground pictures (base/texpack.js), with this game's own code (src/). Nothing here is shared with Ground Truth: if the
 soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
-usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-4)"""
+usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-5)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-4'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-5'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -78,7 +78,7 @@ swap("if(DUNES)return j===0&&Math.abs(x)<HALF-800?3:0;", "if(ML)return 0;if(DUNE
 swap("function core(x,z,ctx,o){\n  if(DUNES)return duneCore(x,z,o);", rd('src/ml-world.js') + "\nfunction core(x,z,ctx,o){\n  if(ML)return mlCore(x,z,o);if(DUNES)return duneCore(x,z,o);")
 swap("function baseAt(x,z){\n  if(DUNES)return rimAt(x,z);", "function baseAt(x,z){\n  if(ML)return mlCore(x,z,{}).h;if(DUNES)return rimAt(x,z);")
 swap("if(DUNES){let bb=[0,1e9,0,CH,-1e9,CH];", "if(DUNES&&!ML){let bb=[0,1e9,0,CH,-1e9,CH];")
-swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,L,HALF,CH,FT,ROAD_END,")
+swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlStrip:ML_STRIP,L,HALF,CH,FT,ROAD_END,")
 swap("if(DYB.dunes)return Math.abs(z)<6?'Highway 40'", "if(WG.mlA)return WG.mlPlace(x-WG.mlA.x,z-WG.mlA.z);if(DYB.dunes)return Math.abs(z)<6?'Highway 40'")
 swap("const HOME=[0,1.9,0];", "const HOME=[WG.mlA.x,WG.mlA.z+630,1.571];")
 swap("  if(x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=", "  if(!ML&&x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=")
@@ -182,10 +182,24 @@ swap("const FX_MAX=360,", "const FX_MAX=1200,")
 swap("fx:220,carLod:1}", "fx:500,carLod:1}")
 swap("const FX_CAP={mobile:220,low:300};", "const FX_CAP={mobile:600,low:800};")
 # ---------- the code, just before the boot; the truck's data before the game's script ----------
+# ---------- THE HERON (src/ml-heron.js): Ground Truth's bush plane, flown for real. Its code is the Redtail's (base/heron/,
+# frozen copies of salt-mini-plus redtail/game rt-game.js and rt-fly.js, Nov 7 2026; the shader's material 120 and the
+# texture coordinates are already in, above, for the truck), named the Heron; its model (base/heron/heron-data.js,
+# made by that repo's glb2js.py from redtail-2.glb) and his Heron paint (base/heron/redtail-2-heron.webp, Ground Truth's)
+heron = rd('base/heron/rt-game.js').replace('/*@@FLY@@*/', rd('base/heron/rt-fly.js'))
+for a_, b_ in [("if(RT.want)say('THE REDTAIL',2);", "if(RT.want)say('THE HERON',2);"), ("{id:'redtail',name:'Redtail',gov:0,", "{id:'redtail',name:'Heron',gov:0,")]:
+    assert heron.count(a_) == 1, a_; heron = heron.replace(a_, b_)
+# (up in the Heron the haze thins, so the whole map shows from the air: src/ml-heron.js mlFogK)
+swap("  if(DYB.dunes){const A=DYB.air;E.fogDen*=A.fog;", "  if(typeof mlFogK==='function')E.fogDen*=mlFogK();\n  if(DYB.dunes){const A=DYB.air;E.fogDen*=A.fog;")
+swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&GAME.car.rt?'Heron':carName({car:APP.car})")
+# (the one you're not in drawn where it waits, and into the shadows)
+swap("let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);", "let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);mlvUI();tris+=mlvDraw(c.eye);")
+swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvParked())one(mlvParked(),true);")
 swap("/* =====================================================================================\n   THE BOOT: the dots",
-     rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-heron.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+import base64
 i = s.index("<script>\n(()=>{\n'use strict';")
-s = s[:i] + '<script>' + rd('base/truck-rock-mud-50k.js') + '</script>\n' + s[i:]
+s = s[:i] + '<script>' + rd('base/truck-rock-mud-50k.js') + '\n' + rd('base/heron/heron-data.js') + 'window.ML_HERON_PAINT=' + repr(base64.b64encode(open(os.path.join(R, 'base/heron/redtail-2-heron.webp'), 'rb').read()).decode()) + ';\n</script>\n' + s[i:]
 os.makedirs(os.path.join(R, 'builds'), exist_ok=True); out = os.path.join(R, 'builds', NAME + '.html')
 open(out, 'w', encoding='utf-8').write(re.sub(r"const ML_BUILD='[^']*';", "const ML_BUILD='%s';" % NAME, s, count=1))
 print('written', out, len(s))
