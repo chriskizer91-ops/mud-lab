@@ -4,11 +4,11 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-6.html`** (one self-contained page, 17 MB). Pick ROCK & MUD or STOCK SUV on the title; START
+**Open `builds/mud-lab-7.html`** (one self-contained page, 17 MB). Pick ROCK & MUD or STOCK SUV on the title; START
 drives out from the Trailhead; the map shows the whole world with every place named (tap a name, JUMP, and the truck is
 there; SUV: swaps the SUV you're in); the Heron waits on its strip (drive up, stop, HERON); G (or the Grip button on the
 map) switches the grip physics; on a keyboard Enter is HERON/TRUCK, L the low range (his SUV: AWD, 4 HI, 4 LO),
-Backspace rakes the ground smooth. Earlier builds stay as they were (`mud-lab-5.html`: no stock SUV, hangs on Windows
+Backspace rakes the ground smooth. Earlier builds stay as they were (`mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no stock SUV, hangs on Windows
 laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
 
 ## What it's made of
@@ -20,11 +20,24 @@ laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-
 | His ground pictures | `base/texpack.js` | The textures Ground Truth paints its ground with (red dirt, wet mud, sand, grass...). |
 | The world | `src/ml-world.js` | Mud Lab 4: 1,536 m (5,040 ft) square, every spot a soil and a moisture (below). |
 | The soil | `src/ml-soil.js` | The ground every 8 cm, dug, packed, thrown, slumping and springing (below). |
+| The sound coming back | `src/ml-audio.js` | Out of sight, the sound stops; back, the engine's synth is made fresh and fades in (Mud Lab 7). |
 | The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. |
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py` writes `builds/mud-lab-4.html` (next build: change the name in it, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/ml-run.py` | Headless Chrome: `python3 tools/test/ml-run.py file://$PWD/builds/mud-lab-2.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop). |
+
+## Mud Lab 7 (Nov 9 2026): the sound after another app
+
+His report: the Digital Engine's sound (in all his games that use it) turns to garble after switching to another app
+on the phone and back, or leaving the laptop's window and coming back; everything else in Mud Lab "amazing". The engine
+had no handling for the page going out of sight: the synth ran on by itself (the phone hands the sound back on a
+reopened output stream; the synth's state had run on with nothing from the engine), and nothing reset it. Now
+(`src/ml-audio.js`): out of sight, the sound fades out and the browser's sound is suspended; back, it resumes, the
+engine's synth is made fresh and fades in; if the phone takes the sound away while the page is in front, the next
+touch or key gets it back. The test browser can't reproduce the phone's garble (no real sound device); there the sound
+comes back clean after a simulated app switch (no broken samples, engine at idle 950 rpm). The same fix can go into his
+other games that use the Digital Engine.
 
 ## Mud Lab 6 (Nov 8 2026): his stock SUV, and a page that opens on his laptop
 

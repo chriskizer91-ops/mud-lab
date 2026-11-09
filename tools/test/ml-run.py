@@ -17,7 +17,7 @@ HELP = r"""window.MLT={
  free(){__dyb.CAM.over=null;return 1;}};"""
 async def main():
     async with async_playwright() as p:
-        br = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
+        br = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'])
         ctx = await br.new_context(viewport={'width': 915, 'height': 412} if MOBILE else {'width': 1280, 'height': 720}, device_scale_factor=1, has_touch=MOBILE)
         pg = await ctx.new_page(); logs = []
         if os.environ.get('INIT'): await pg.add_init_script(path=os.environ['INIT'])

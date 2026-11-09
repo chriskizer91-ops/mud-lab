@@ -5,7 +5,7 @@ soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
 usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-5)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-6'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-7'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -232,7 +232,7 @@ swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&
 swap("let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);", "let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);mlvUI();tris+=mlvDraw(c.eye);")
 swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvShadow())one(mlvParked(),true);")
 swap("/* =====================================================================================\n   THE BOOT: the dots",
-     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
 import base64
 i = s.index("<script>\n(()=>{\n'use strict';")
 # (the Heron's paint IS its picture (Mud Lab 6, from the review): his Heron paint goes in place of the original Redtail

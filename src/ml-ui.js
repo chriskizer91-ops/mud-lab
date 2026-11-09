@@ -4,7 +4,7 @@
    stay out of the menus. The build's name in the corner, so you can tell which one you opened. On the phone's
    driving screen: no N2O, O/D OFF, REAR or HORN buttons (his rule: every button has to earn its place).
    ===================================================================================== */
-const ML_BUILD='mud-lab-6';
+const ML_BUILD='mud-lab-7';
 function mlTitle(){
   const st=document.createElement('style');st.textContent=`
 #tNos,#tOD,#tRear,#touch [data-k=horn],#shBack,#mTabs [data-t=chals],#mTabs [data-t=races],#mTabs [data-t=garage],#mTabs [data-t=cool],
