@@ -3,9 +3,10 @@ the Road Not Found engine, as it was on Nov 7 2026), the Rock & Mud's play model
 ground pictures (base/texpack.js), with this game's own code (src/). Nothing here is shared with Ground Truth: if the
 soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
-usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-5)"""
+usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-8: give the
+next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-7'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-8'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -41,9 +42,9 @@ swap('  else if(m>=40){\n    vec2 wp=Pw.xz;ground=true;',
      """  /* the Rock & Mud's play model: its colour, roughness and metal from its baked pictures, its surface detail from the
      normal map (the frame from the pixel's own derivatives: no tangents needed) */
   else if(m==120){
-    alb=pow(textureGrad(uRTa,vUV,mlt1,mlt2).rgb,vec3(2.2));vec3 O=textureGrad(uRTo,vUV,mlt1,mlt2).rgb;float rg=clamp(O.g,.05,1.);metal=O.b;
+    alb=pow(mlTc(uRTa,vUV,mlt1,mlt2).rgb,vec3(2.2));vec3 O=mlTc(uRTo,vUV,mlt1,mlt2).rgb;float rg=clamp(O.g,.05,1.);metal=O.b;
     shin=max(2./(rg*rg)-2.,1.);spec=mix(.5,1.,metal);
-    vec3 tn=textureGrad(uRTn,vUV,mlt1,mlt2).xyz*2.-1.;tn.y=-tn.y;
+    vec3 tn=mlTc(uRTn,vUV,mlt1,mlt2).xyz*2.-1.;tn.y=-tn.y;
     vec3 q1=mlq1,q2=mlq2;vec2 t1=mlt1,t2=mlt2;vec3 q2p=cross(q2,N),q1p=cross(N,q1);
     vec3 Tt=q2p*t1.x+q1p*t2.x,Bt=q2p*t1.y+q1p*t2.y;float im=inversesqrt(max(max(dot(Tt,Tt),dot(Bt,Bt)),1e-20));
     vec3 Nn=mat3(Tt*im,Bt*im,N)*tn;if(dot(Nn,Nn)>1e-8)N=normalize(Nn);}
@@ -53,8 +54,11 @@ swap('  else if(m>=40){\n    vec2 wp=Pw.xz;ground=true;',
 # own colour at 85% ----------
 TP = json.loads(rd('base/texpack.js').split('window.LR_TEXPACK=', 1)[1].rstrip().rstrip(';'))
 lay = lambda L: '{id:"%s",t:"%s",m:[%s],scale:%s,has:true,src:"%s"}' % (L['id'], L['t'], ', '.join('%.4f' % v for v in L['m']), L['scale'], L['src'])
+# (Mud Lab 8: the rock's, the salt's, the gravel's and the planks' pictures aren't laid: nothing in Mud Lab is painted
+# with them any more (below), so they aren't carried in the page, decoded at the start or kept on the graphics card)
+ML_UNUSED = ('ROCK', 'SALT', 'GRAVEL', 'PLANKS')
 for t, L in TP.items():
-    if t == 'SAND': continue
+    if t == 'SAND' or t in ML_UNUSED: continue
     m = re.findall(r'\{id:"[a-z_0-9]+",t:"%s",m:\[[^\]]*\],scale:[0-9.]+,has:false,src:""\}' % t, s)
     assert len(m) == 1, t
     swap(m[0], lay(L))
@@ -101,7 +105,7 @@ swap("function groundInto(x,z,o){\n  const c=chunkAt(x,z);", "function groundInt
 # The vertex shader lifts the patch; the fragment shader hides the chunks' ground under the patch, paints every soil
 # by how wet it is, the sod and the woods' floor, the ruts, the turned soil, the pressed and the wet tracks, and the
 # water (muddy, the bottom showing through where it's shallow)
-UNI = "uniform highp sampler2D uMLt;uniform highp sampler2D uMLd;uniform highp sampler2D uMLs0;uniform sampler2D uMLs1;uniform vec4 uMLo;uniform vec4 uMLw;uniform vec4 uMLp;uniform vec4 uMLq;uniform float uMLv;"
+UNI = "uniform highp sampler2D uMLt;uniform highp sampler2D uMLd;uniform highp sampler2D uMLs0;uniform sampler2D uMLs1;uniform vec4 uMLo;uniform vec4 uMLw;uniform vec4 uMLp;uniform vec4 uMLq;uniform float uMLv;uniform vec4 uMLf;"
 swap("uniform vec3 uCam;uniform vec4 uFarDrop;\nout vec3 vP;", "uniform vec3 uCam;uniform vec4 uFarDrop;" + UNI + "\nout vec3 vP;")
 swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;",
      "  /* (Mud Lab) the soil's patch: the ground's own height every 8 cm and the ruts (fading out toward its edge); its\n"
@@ -114,66 +118,25 @@ swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uP
      "    vN=normalize(vec3(-mlx,2.56,-mlz));vC=vec4(0.,0.,0.,1.);}\n"
      "  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;")
 swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "\nlayout(location=0) out vec4 oCol;")
-swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;vec3 mlq1=dFdx(vP),mlq2=dFdy(vP);vec2 mlt1=dFdx(vUV),mlt2=dFdy(vUV);\n"
+swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;vec3 mlq1=dPx,mlq2=dPy;vec2 mlt1=dFdx(vUV),mlt2=dFdy(vUV);mlDx=dPx.xz;mlDy=dPy.xz;\n"
      "#ifndef PROBE\n  /* (Mud Lab) inside the world: the patch drawn only there; the chunks' ground not drawn under the patch */\n"
      "  vec2 mlUV=(vP.xz-uMLo.xy)*uMLo.z,mlW=fract((vP.xz-uMLo.xy)*uMLw.z);bool mlIn=(m==40||m==50)&&uMLo.w>.5&&mlUV.x>0.&&mlUV.y>0.&&mlUV.x<1.&&mlUV.y<1.;\n"
      "  bool mlWin=mlIn&&max(abs(vP.x-uMLw.x),abs(vP.z-uMLw.y))<uMLw.w;\n"
      "  if(m==40&&uMLo.w>.5){if(uMLv>.5){if(!mlIn)discard;}else if(mlIn&&uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985)discard;}\n#endif")
 SC = '%.3f,%.3f,%.3f' % tuple(TP['SAND']['m'])
-swap("      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){",
-     "#if !defined(PROBE)&&defined(MLSOIL)\n"
-     "      /* (Mud Lab) the world's own ground: each soil by how wet it is (loam dusty and pale dry, dark wet; clay cracked and\n"
-     "         pale dry, smooth and dark wet; silt powder to slick; dark peat with moss; sand), sod (straw when dry, greener\n"
-     "         wet), the woods' floor (leaf litter, moss); wetter still where the water lies just under */\n"
-     "      if(mlIn){vec4 s0=textureLod(uMLs0,mlUV,0.),s1=textureLod(uMLs1,mlUV,0.);float wc=s1.r,ws=s1.g,wq=s1.b,wsd=s1.a,tot=wc+ws+wq+wsd;\n"
-     "        if(tot>1.){wc/=tot;ws/=tot;wq/=tot;wsd/=tot;tot=1.;}float wlm=1.-tot,wg=max(s0.a,0.),wwd=max(-s0.a,0.);\n"
-     "        vec4 w0=vec4(0.,0.,0.,-9999.),w1=vec4(s0.r,0.,0.,0.);if(mlWin){w0=textureLod(uMLt,mlW,0.);w1=textureLod(uMLd,mlW,0.);}\n"
-     "        float wtab=s0.g-(w1.r+w0.r),moist=max(s0.b,smoothstep(-.3,-.02,wtab));\n"
-     "        float n1=vn(wp*.35),n2=vn(wp*17.)*.55+vn(wp*41.)*.45;vec3 dl=photoG2(dirtCol(wp),T_DIRT,T_DIRT2,wp);\n"
-     "        vec3 cL=mix(dl*1.18+vec3(.03,.025,.015),dl*.5,smoothstep(.15,.85,moist));\n"
-     "        vec3 cC=mix(photoGrainG(mix(vec3(.38,.33,.26),vec3(.45,.39,.3),n1),T_PLAYA,wp,1.),photoGrainG(vec3(.19,.16,.125),T_MUD,wp,.4),smoothstep(.25,.7,moist));\n"
-     "        vec3 cS=mix(vec3(.36,.32,.26)*(.9+.2*n1),photoGrainG(mix(vec3(.11,.095,.072),vec3(.15,.125,.095),n1),T_MUD,wp,.5),smoothstep(.2,.65,moist));\n"
-     "        vec3 mos=photoG(vec3(.085,.1,.04),T_BOG,wp);float mossy=smoothstep(.35,.62,vn(wp*.6)+.15*(n2-.5));vec3 cP=mix(vec3(.05,.037,.026)*(.85+.3*n2),mos*.72,mossy*.8);\n"
-     "        vec3 cD=photoG(vec3(" + SC + "),T_SAND,wp);cD=mix(cD,cD*.5,smoothstep(.3,.8,moist));\n"
-     "        vec3 cG=photoG2(grassCol(wp),T_GRASS,T_GRASS2,wp);cG=mix(cG*vec3(1.25,1.1,.7),cG*vec3(.85,1.,.85),moist);\n"
-     "        vec3 cW=mix(vec3(.085,.058,.034),vec3(.05,.036,.022),moist)*(.75+.5*n2);float lf=smoothstep(.55,.7,vn(wp*5.3+1.7));cW=mix(cW,mix(vec3(.2,.1,.035),vec3(.16,.13,.05),vn(wp*2.1)),lf*.6);\n"
-     "        cW=mix(cW,mos*.6,smoothstep(.55,.75,vn(wp*.9+3.))*.5);\n"
-     "        vec3 cSo=cL*wlm+cC*wc+cS*ws+cP*wq+cD*wsd;float cov=min(1.,wg+wwd);alb=mix(cSo,(cG*wg+cW*wwd)/max(cov,1e-3),cov);\n"
-     "        spec=.03+.22*moist*moist*(wlm*.5+wc+ws)+.05*wq;shin=8.+40.*moist*(wc+ws);pud=0.;gG*=.5;em=1.-.4*wwd;\n"
-     "        if(mlWin){float mtx=uMLq.x,mcl=uMLq.y,cd=uMLo.z*1.28;\n"
-     "          /* the fine slopes the meshes don't carry: ruts, berms, the trails' two-track, the edges of the mud holes */\n"
-     "          float f0=textureLod(uMLt,mlW-vec2(mtx,0.),0.).r+textureLod(uMLd,mlW-vec2(mtx,0.),0.).r,f1=textureLod(uMLt,mlW+vec2(mtx,0.),0.).r+textureLod(uMLd,mlW+vec2(mtx,0.),0.).r,\n"
-     "            f2=textureLod(uMLt,mlW-vec2(0.,mtx),0.).r+textureLod(uMLd,mlW-vec2(0.,mtx),0.).r,f3=textureLod(uMLt,mlW+vec2(0.,mtx),0.).r+textureLod(uMLd,mlW+vec2(0.,mtx),0.).r;\n"
-     "          float c0=textureLod(uMLs0,mlUV-vec2(cd,0.),0.).r,c1=textureLod(uMLs0,mlUV+vec2(cd,0.),0.).r,c2=textureLod(uMLs0,mlUV-vec2(0.,cd),0.).r,c3=textureLod(uMLs0,mlUV+vec2(0.,cd),0.).r;\n"
-     "          float maa=1.-smoothstep(mcl*2.,mcl*10.,gFP);gG+=(vec2(f1-f0,f3-f2)/(2.*mcl)-vec2(c1-c0,c3-c2)/2.56)*mix(.3,1.,maa);\n"
-     "          float mrut=max(-w0.r,0.)+max(-w1.a,0.)*.5,mberm=max(w0.r,0.),mch=clamp(w0.g*1.25,0.,1.),mpr=w0.b*(1.-mch*.6),wetc=max(moist,.0);\n"
-     "          /* the trails: the worn two-track bare and packed */\n"
-     "          float tw=smoothstep(.0,.04,-w1.a);alb=mix(alb,cSo*.85,tw*.85);\n"
-     "          /* turned soil: dark and wet-looking, lumpy loam with dry crumbs, smooth sticky clay with a shine, glossy silt, black peat */\n"
-     "          vec3 tc=cL*mix(.42,.7,n2)*wlm+cC*mix(.5,.65,n2)*wc+cS*.7*ws+vec3(.03,.022,.016)*(.8+.4*n2)*wq+cD*.78*wsd;\n"
-     "          float crumb=smoothstep(.62,.8,vn(wp*23.+7.))*(1.-moist)*wlm;tc=mix(tc,cL*1.05,crumb*.5);alb=mix(alb,tc,mch);\n"
-     "          /* the tread: where a tyre rolled (not spun), its knobs pressed into the track, along the way it was heading */\n"
-     "          vec2 md2=w1.gb;float mtw=mpr*smoothstep(.45,.85,length(md2))*(1.-smoothstep(.006,.02,gFP))*(1.-mch);\n"
-     "          if(mtw>.01){float mth=atan(md2.y,md2.x)*.5;vec2 mdv=vec2(cos(mth),sin(mth)),mdp=vec2(-mdv.y,mdv.x);float ms=dot(wp,mdv)/.068,mc=dot(wp,mdp)/.085;\n"
-     "            float mk=fract(ms+.5*mod(floor(mc),2.)),mlug=smoothstep(.08,.16,mk)*(1.-smoothstep(.5,.58,mk))*smoothstep(.06,.16,fract(mc))*(1.-smoothstep(.84,.94,fract(mc)));\n"
-     "            alb*=1.-.22*mlug*mtw;gG+=mdv*(smoothstep(.08,.16,mk)-smoothstep(.5,.58,mk))*.9*mtw;}\n"
-     "          alb*=1.-.26*mpr;alb=mix(alb,cL*1.05,smoothstep(.008,.05,mberm)*(1.-mch)*.5*wlm*(1.-moist));\n"
-     "          alb*=1.-.22*smoothstep(.03,.22,mrut)*(1.-mch*.3);em*=1.-.3*smoothstep(.02,.2,mrut);\n"
-     "          spec=mix(spec,.22,max(mpr*.3,moist*mch*.85));shin=mix(shin,mix(40.,90.,wc+ws),max(mpr*.5,moist*mch));\n"
-     "          gG+=(vec2(vn(wp*31.),vn(wp*31.+3.1))-.5)*.25*mch*maa*(1.-ws-wq*.5);\n"
-     "          /* wet tracks, drying over a minute and a half */\n"
-     "          float wd=1.-clamp((uMLq.w-w0.a)/90.,0.,1.);wd*=wd;alb*=1.-.42*wd;spec=mix(spec,.28,wd*.6);shin=mix(shin,70.,wd*.6);\n"
-     "          /* water lying in ruts past the patch (the patch's own ruts are under the water's own surface) */\n"
-     "          if(!(uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985))pud=smoothstep(0.,.01,wtab)*.85;}}\n"
-     "#endif\n"
-     "      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){")
+# (Mud Lab 8) the soil's painting, the water's, the trunks', the leaves' and the picture's sharpening are in
+# src/ml-look.glsl, in pieces (each starts at a line "//@@ name")
+GL = {}
+for part in re.split(r'^//@@ ', rd('src/ml-look.glsl'), flags=re.M)[1:]:
+    nm, body = part.split('\n', 1); GL[nm.strip()] = body
+# inside the world the soil paints the ground: the engine's own ground is worked out only outside it (the bank, the
+# grassland beyond), and where the soil's program isn't the one in use (the plain ground a laptop shows while landSoil builds)
+swap("      /* the ground: weights for grass, rock and mud in the colour (salt as negative mud: they never meet), ambient\n         occlusion in its alpha */\n",
+     "      /* the ground: weights for grass, rock and mud in the colour (salt as negative mud: they never meet), ambient\n         occlusion in its alpha */\n" + GL['base0'])
+swap("      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){", "      }\n" + GL['soil'].replace('@@SAND@@', SC) + "      ao=mix(1.,em,.85);em=0.;\n    }\n    else if(m==41){")
 # the water: muddy and level, the bottom showing through where it's shallow
 swap("      N=normalize(vec3(gw.x,1.,gw.y));alb=vec3(.025,.03,.018);spec=.6;shin=2000.;ssr=1.;ground=false;\n",
-     "      N=normalize(vec3(gw.x,1.,gw.y));alb=vec3(.025,.03,.018);spec=.6;shin=2000.;ssr=1.;ground=false;\n"
-     "#if !defined(PROBE)&&defined(MLSOIL)\n"
-     "      if(vC.a>.5&&mlIn){float gy=mlWin?textureLod(uMLd,mlW,0.).r+textureLod(uMLt,mlW,0.).r:textureLod(uMLs0,mlUV,0.).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.1,dep);\n"
-     "        alb=mix(vec3(.05,.036,.022),vec3(.085,.064,.04),sh);spec=mix(.2,.32,sh);shin=mix(180.,700.,sh);ssr=mix(.25,.55,sh);N=normalize(vec3(gw.x*.6,1.,gw.y*.6));}\n"
-     "#endif\n")
+     "      N=normalize(vec3(gw.x,1.,gw.y));alb=vec3(.025,.03,.018);spec=.6;shin=2000.;ssr=1.;ground=false;\n" + GL['water'])
 # (the soil's textures bound whenever the land's programs are in use: src/ml-soil.js mlHookUse)
 swap("P_LANDP=G.program('landProbe',S.VS,S.FS,Object.assign({PROBE:1},h));", "P_LANDP=G.program('landProbe',S.VS,S.FS,Object.assign({PROBE:1},h));mlHookUse(G);")
 # the patch after the chunks' ground (main pass); the soil's uniforms in every lit pass of the world
@@ -232,7 +195,53 @@ swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&
 swap("let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);", "let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);mlvUI();tris+=mlvDraw(c.eye);")
 swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvShadow())one(mlvParked(),true);")
 swap("/* =====================================================================================\n   THE BOOT: the dots",
-     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + '\n' + rd('src/ml-look.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+# ---------- MUD LAB 8: THE LAND'S SHADER CLEANED OUT, AND THE LOOK (src/ml-look.glsl, src/ml-look.js) ----------
+# The land's fragment shader is the engine's whole county: the drag strip, the park's tracks, the dry lake, the gravel and
+# the public roads, the town's facades and traffic signals, concrete, sheet metal, hay, boulders, the salt flats and
+# their course line, rock in the ground. None of it is ever drawn in Mud Lab (checked: tools/test/ml-mats.py goes round
+# every place, both SUVs, the Heron and the bay, and lists the materials of every mesh made: 0-27, 40, 46, 48, 50,
+# 70-108, 120). Out of all three of the land's programs: less for a phone's graphics chip to carry, and much less for
+# Windows' shader compiler to chew through (the laptop's wait).
+def cut(a, b):
+    global s
+    assert s.count(a) == 1, f'cut from, found {s.count(a)}: {a[:80]!r}'; i = s.index(a); j = s.index(b, i + len(a))
+    assert s.count(b, i) == 1, f'cut to, found {s.count(b, i)} after: {b[:80]!r}'; n = j - i; s = s[:i] + s[j:]; return n
+ML_CUT = 0
+# the salt flats and their course line, rock in the ground (the world's ground carries no salt and no rock)
+ML_CUT += cut("      /* the salt flats (City Limits'): pale crust and tan clay in big soft patches, cracked into plates in places */\n", "      /* (Salt & Sand) the white gypsum")
+ML_CUT += cut("      if(rw>.004){alb=mix(alb,photoTri(rockCol(Pw),T_ROCK,Pw,N),rw);\n", "      spec=.03;shin=8.;\n      if(mw>0.)")
+swap("rw=smoothstep(.35,.65,vC.g+(n3-.5)*.3),mw=", "rw=0.,mw=")
+swap("      float sw=smoothstep(.05,.75,-vC.b+(n2-.5)*.18);\n", "      const float sw=0.;\n")
+# boulders (41), the drag strip (42), the engine's two-tracks (43), the mud track (44), concrete (45), the planks (46: in
+# Mud Lab only the trees' trunks, which get bark) and sheet metal (47)
+ML_CUT += cut("    else if(m==41){\n", "    else if(m==48){\n")
+swap("    else if(m==48){\n", GL['trunk'] + "    else if(m==48){\n")
+# hay (49); the painted lines, gravel, asphalt, lanes, the oval, the dry lake, the public roads, the town's walls, the
+# traffic signals (52 to 61)
+ML_CUT += cut("    else if(m==49){", "    else if(m==50){\n")
+ML_CUT += cut("    else if(m==52){alb=vec3(.7,.68,.63);}\n", "    /* rain soaks the porous ground dark")
+# the leaves
+swap("      /* leaves: light comes through them; the crown is darker underneath and deep inside */\n      alb*=.6+.55*vn3(Pw*2.2);spec=.05;shin=10.;trans=.45;ground=false;\n      ao=.45+.55*sat(N.y*.5+.5)*sat(vL.y/7.+.2);\n", GL['leaves'])
+# the pictures' two ways of being looked up (src/ml-look.glsl's first piece), before the engine's picture helpers; the
+# engine's own three that the ground still uses, through it; and the phone's tier named to the shader
+swap("const MATFN=`\nuniform samplerCube uProbe;uniform float uProbeLod;\n", "const MATFN=`\nuniform samplerCube uProbe;uniform float uProbeLod;\n" + GL['pre'])
+swap("  vec3 t=mix(texture(uTex,vec3(uv,float(L))).rgb,texture(uTex,vec3(rot2(uv,2.1)*.73+5.2,float(L))).rgb,n);return photoMix(alb,t,I.rgb);}",
+     "  vec2 dx=mlDx/I.w,dy=mlDy/I.w;vec3 t=mix(mlTx(vec3(uv,float(L)),dx,dy).rgb,mlTx(vec3(rot2(uv,2.1)*.73+5.2,float(L)),rot2(dx,2.1)*.73,rot2(dy,2.1)*.73).rgb,n);return photoMix(alb,t,I.rgb);}")
+swap("  vec3 t=mix(texture(uTex,vec3(uv,float(L))).rgb,texture(uTex,vec3(rot2(uv,1.3)*1.11+2.4,float(L2))).rgb,n);return photoMix(alb,t,mix(I.rgb,I2.rgb,n));}",
+     "  vec2 dx=mlDx/I.w,dy=mlDy/I.w;vec3 t=mix(mlTx(vec3(uv,float(L)),dx,dy).rgb,mlTx(vec3(rot2(uv,1.3)*1.11+2.4,float(L2)),rot2(dx,1.3)*1.11,rot2(dy,1.3)*1.11).rgb,n);return photoMix(alb,t,mix(I.rgb,I2.rgb,n));}")
+swap("vec4 I=TEXINFO[L];return photoGrain(alb,texture(uTex,vec3(wp/I.w,float(L))).rgb,I.rgb,k);}", "vec4 I=TEXINFO[L];return photoGrain(alb,mlTx(vec3(wp/I.w,float(L)),mlDx/I.w,mlDy/I.w).rgb,I.rgb,k);}")
+swap("function landDefs(){const d={};if(halfOn())d.HALF=1;", "function landDefs(){const d={};if(GFX.level==='mobile')d.MLPHONE=1;if(halfOn())d.HALF=1;")
+# how much of the sun's glint the ground gives back (mlSpec: src/ml-look.glsl)
+swap("s.ao=ao;s.spec=1.;s.trans=trans;", "s.ao=ao;s.spec=mlSpec;s.trans=trans;")
+# the soil's own helpers, before the fragment shader's inputs
+swap("in vec3 vP;in vec3 vN;in vec4 vC;in float vMat;in vec3 vL;in vec4 vCur;in vec4 vPrev;in vec2 vUV;\n", GL['fn'] + "in vec3 vP;in vec3 vN;in vec4 vC;in float vMat;in vec3 vL;in vec4 vCur;in vec4 vPrev;in vec2 vUV;\n")
+# (the numbers, when they're on (src/ml-ui.js: a tap on the build's name), stand aside while the big map is open: they sat over its west side)
+swap("const on=DEVW.hud==='perf'&&GAME.state==='drive';", "const on=DEVW.hud==='perf'&&GAME.state==='drive'&&!APP.bigMap;")
+# the finished picture: sharpened (in place of the lens's colour fringe)
+swap("  vec2 cq=uv-.5;vec3 c;\n  if(uCA>0.0){vec2 sh=cq*dot(cq,cq)*uCA*.012;c=vec3(texture(uSrc,uv-sh).r,texture(uSrc,uv).g,texture(uSrc,uv+sh).b);}else c=texture(uSrc,uv).rgb;\n",
+     "  vec2 cq=uv-.5;\n" + GL['sharpen'])
+print('cut from the land\'s shader:', ML_CUT, 'characters')
 import base64
 i = s.index("<script>\n(()=>{\n'use strict';")
 # (the Heron's paint IS its picture (Mud Lab 6, from the review): his Heron paint goes in place of the original Redtail

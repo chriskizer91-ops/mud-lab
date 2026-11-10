@@ -4,11 +4,13 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-7.html`** (one self-contained page, 17 MB). Pick ROCK & MUD or STOCK SUV on the title; START
+**Open `builds/mud-lab-8.html`** (one self-contained page, 16 MB). Pick ROCK & MUD or STOCK SUV on the title; START
 drives out from the Trailhead; the map shows the whole world with every place named (tap a name, JUMP, and the truck is
 there; SUV: swaps the SUV you're in); the Heron waits on its strip (drive up, stop, HERON); G (or the Grip button on the
 map) switches the grip physics; on a keyboard Enter is HERON/TRUCK, L the low range (his SUV: AWD, 4 HI, 4 LO),
-Backspace rakes the ground smooth. Earlier builds stay as they were (`mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no stock SUV, hangs on Windows
+Backspace rakes the ground smooth; a tap on the build's name in the corner of the title switches the numbers on (frames a
+second, triangles: F on a keyboard). Earlier builds stay as they were (`mud-lab-7.html`: the look before Mud Lab 8, lit as
+Salt & Sand's desert; `mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no stock SUV, hangs on Windows
 laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
 
 ## What it's made of
@@ -23,9 +25,116 @@ laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-
 | The sound coming back | `src/ml-audio.js` | Out of sight, the sound stops; back, the engine's synth is made fresh and fades in (Mud Lab 7). |
 | The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. |
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
+| The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
-| The build | `src/build.py` | `python3 src/build.py` writes `builds/mud-lab-4.html` (next build: change the name in it, never overwrite) with exact text swaps on the engine. |
-| Tests | `tools/test/ml-run.py` | Headless Chrome: `python3 tools/test/ml-run.py file://$PWD/builds/mud-lab-2.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop). |
+| The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
+| Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). |
+
+## Mud Lab 8 (Nov 9 2026): the look
+
+His ask: make the game look better without slowing it down (the Pixel 7a first, the laptop too), inside the limits that
+had already bitten: 16 texture samplers in the phone's fragment shader and no more, the laptop's slow shader compiler
+(landSoil no bigger), about 175,000 triangles at the start (230-270,000 with the Heron or the stock SUV near), nothing
+of the physics, the soil's behaviour or the sound touched, no new buttons.
+
+**What was wrong with the picture** (looked at at the phone's real picture size, which the old test shots weren't):
+the day was still Salt & Sand's (High noon in the desert's air: thin haze, a blank pale sky, the exposure aimed 1.8
+times as bright); the fields were one orange carpet (a tint over his dry-grass picture, 40% red dirt blended evenly
+through it, and the picture's tiling as a grid from 30 m out); the woods' floor was hard-edged blotches that read as
+camouflage; water was a grey sheet; the trunks were his wood-planks picture wrapped round a post; the crowns glowed.
+
+**What changed, biggest first** (`src/ml-look.js`, `src/ml-look.glsl`; shots in `docs/shots/mud-lab-8-*.jpg`):
+1. *Its own daylight.* The sun lower and warmer from the west-south-west (32 degrees up, so ruts and the lie of the
+   land show), a deeper blue sky with fair-weather clouds, three times the haze (distance reads as distance), all of
+   the sky's light in the shade, the exposure down to 1.3 (from 1.8). Free: the same passes, other numbers. Golden hour and the
+   full moon are as they were.
+2. *The ground.* Sod lies in patches with bare soil between (not blended through); straw where it's dry and his green
+   bog-grass picture where it's damp, in big soft patches; the woods' floor is leaf litter and moss; big light and dark
+   patches so a field isn't flat from far off; his pictures fade to their own colour where a whole tile is only a few
+   dots across (the grid over the fields was that tiling); dry grass, litter and dry soil no longer glint white toward
+   the sun.
+3. *Water.* Muddy brown, cloudy where it's deeper, the wet bed showing at its edge, the sky in it by how low you
+   look. A water's far shore follows the ground's own heights, not the triangles of the land's coarse mesh.
+4. *Trees.* Bark on the trunks. Crowns with clumps of leaves and gaps in their colour, deeper shade under them, and
+   some sun through to the side away from it. No triangles added. Past where trees are drawn (340 m on the phone) the
+   woods' floor is painted as canopy, so from the Heron the woods are woods, not brown ground.
+5. *A sharper picture.* The phone draws at 75% and rebuilds; four looks round each pixel in the last pass put the edges
+   back (never brighter or darker than the pixels round it). In place of the lens's colour fringe.
+
+And one old fault found on the way: the engine's ground detail starts afresh every 4,096 m, and one of those lines
+(x = 0) runs north to south through the middle of Mud Lab's world: every pattern on the ground broke along it. The
+soil's detail is now laid out from the world's own corner.
+
+**What pays for it: the land's shader cleaned out** (`src/build.py`, "MUD LAB 8").
+- It was the engine's whole county. Out: the drag strip, the park's tracks, the dry lake, gravel and public roads, the
+  town's walls and traffic signals, concrete, sheet metal, hay, boulders, the salt flats and their course line, rock
+  in the ground: 19,065 characters that Mud Lab never reaches (`tools/test/ml-mats.py` lists every material a mesh is
+  made with: 0-27, 40, 46, 48, 50, 70-108, 120).
+- Inside the world the engine painted its own ground and the soil then painted over it. Now it's one or the other.
+- The soil worked out all five soils, the sod and the woods' floor for every pixel. Now each only where there's some
+  of it and it shows. His pictures were looked at 11 to 17 times a pixel of ground; now 2 to 5 near, none far off.
+- His pictures are looked up two ways (`MLPHONE`, set on the Mobile tier): the phone's own cheapest way; everywhere
+  else with gradients worked out once (textureGrad), so Windows' compiler isn't asked for gradients inside a branch
+  anywhere in the ground (Mud Lab 6's "left for later").
+- The rock's, salt's, gravel's and planks' pictures aren't carried: the page is 1.5 MB smaller, four fewer pictures
+  to decode at the start, 5.6 MB less on the phone's graphics card.
+
+**Numbers** (`tools/test/ml-views.py` on both builds; phone size is 858 x 386 rebuilt to 1144 x 515, the Mobile tier
+at its best). The test browser has no graphics card: its times are only good for before against after, and they
+drift from one sitting to the next (Mud Lab 8 was timed twice, straight after Mud Lab 7's run and an hour later), so
+read them as "a third to a half less", not to the decimal. And it probably overstates what a phone will gain: the gain
+is about the same in every view, mud, woods or open field, which suggests the software renderer was paying for much
+of the shader on every pixel whichever branch it took (the county's roads on every pixel of mud); a phone's chip pays
+only for the branch it takes. What the phone gets for certain is fewer looks at the pictures, the ground painted
+once, and a smaller shader to hold.
+
+| View (phone size) | Triangles, 7 | Triangles, 8 | Test browser, one frame, 7 | 8 (two sittings) |
+| --- | --- | --- | --- | --- |
+| The Trailhead at Start (the Heron parked 70 m off) | 230,723 | 230,723 | 4.5 s | 2.1 s, 2.8 s |
+| Tracks across the dry field | 251,171 | 250,595 | 8.3 s | 4.0 s, 5.2 s |
+| A trail through the woods | 304,757 | 304,341 | 10.9 s | 5.4 s, 6.8 s |
+| The Mud Hole | 229,157 | 227,909 | 10.8 s | 5.0 s, 6.3 s |
+| The Lower Ford | 197,304 | 194,064 | 7.5 s | 3.6 s, 4.5 s |
+| The Pond | 252,688 | 252,688 | 12.4 s | 5.8 s, 7.5 s |
+| The Clay Pan | 218,782 | 218,814 | 9.4 s | 4.6 s, 6.3 s |
+| The woods by the Quarry | 217,442 | 217,442 | 10.7 s | 5.2 s, 6.8 s |
+| The Bottoms | 217,566 | 229,174 | 9.1 s | 4.4 s, 5.6 s |
+| Pines on the Ridge | 316,884 | 316,884 | 13.7 s | 7.6 s, 9.0 s |
+| Beside the Heron | 232,933 | 232,933 | 5.3 s | 3.0 s, 3.2 s |
+| The stock SUV | 223,217 | 223,217 | 6.0 s | 3.1 s, 3.7 s |
+| From the Heron, 170 m up | 185,379 | 185,379 | 2.4 s | 1.5 s, 1.6 s |
+| All thirteen | | | 111 s | 55 s, 69 s (50%, 62%) |
+
+| | Mud Lab 7 | Mud Lab 8 |
+| --- | --- | --- |
+| landSoil, the full ground shader, as the browser hands it to the graphics driver (phone tier / laptop tier) | 683,160 / 700,653 | 500,259 / 516,565 |
+| land, the plain one the title waits for | 598,866 / 616,360 | 388,104 / 395,630 |
+| texture samplers in landSoil (the phone's limit is 16) | 16 | 16 |
+| the page | 17.3 MB | 15.8 MB |
+
+Triangles are the same view for view: nothing was added. (Where they differ it is clods in the air, 32 triangles
+each, and in the Bottoms a stand of trees that had arrived for one picture and not the other.) At the laptop's size (1280 x 720, the High tier) the Trailhead's frame went from
+19 s to 12 s in the test browser. From opening the page to the full ground being drawn took the test browser 58 s
+with Mud Lab 7 and 33 to 40 s with Mud Lab 8 at the phone's tier, 146 s and 88 s at the laptop's (its own shader
+compiler, not Edge's). **Checked:** `tools/test/ml-same.py builds/mud-lab-7.html builds/mud-lab-8.html`: seven drives (the Rock & Mud
+over the dry field, through the Mud Hole, into the pond's bottoms and over the quarry's sand; the stock SUV into the
+Mud Hole and in 4 LO on the clay pan; the Heron's take-off run), every number the same in both builds to the fourth
+decimal: where it ends up, its speed, each wheel's spin, the ruts' depth, the soil dug, the clods thrown. The physics,
+the soil and the sound are untouched. Both tiers' shaders build with no errors; golden hour and the full moon keep
+their own light; the bay, the map and the driving screen's buttons are as they were.
+
+**Not measured here, and how to see it:** the phone's own frame time, and how long Edge on Windows takes to build
+landSoil (it should be shorter: the shader is a quarter smaller and the ground no longer needs gradients in
+branches; the test machine has no Direct3D to prove it). On the phone: tap the build's name in the corner of the
+title (it says "numbers on"), start, and the engine's readout shows frames a second, the frame's and the graphics
+chip's time, the picture's size and the triangles; tap it again to switch it off. It's saved, so Mud Lab 7 opened
+from the same place shows it too. On a keyboard it's F.
+
+**The limits as they stand, for the next change:** the phone's fragment shader still uses all 16 samplers; landSoil is
+about a quarter under Mud Lab 7's size (keep it under 683,000 on the phone tier's count: `tools/test/ml-shaders.py` prints it);
+four picture slots are free in the ground's texture array (a forest floor, bark, green grass of his own would go
+straight in). Not done, because they cost triangles or want his say: grass blades standing up out of the sod near
+the truck (about 15,000 triangles), rounder tree crowns, his own pictures for the woods' floor and the bark.
 
 ## Mud Lab 7 (Nov 9 2026): the sound after another app
 

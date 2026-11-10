@@ -399,7 +399,11 @@ function mlUniforms(P){
     MLP.cx=Math.round(c.p[0]*2)/2;MLP.cz=Math.round(c.p[2]*2)/2;MLP.on=Math.abs(MLP.cx-A.x)<lim&&Math.abs(MLP.cz-A.z)<lim;}else MLP.on=false;
   const cs=MLS.T*MLS.C,wx=MLS.x0+(MLS.wc[0]+.5)*cs,wz=MLS.z0+(MLS.wc[1]+.5)*cs,half=(MLS.NW/MLS.T/2-1)*cs;
   G.uni(P,'uMLo',[MLS.x0-RO[0],MLS.z0-RO[2],1/MLS.WS,on]);G.uni(P,'uMLw',[wx-RO[0],wz-RO[2],1/(MLS.NW*MLS.C),Number.isFinite(wx)?half:-1]);
-  G.uni(P,'uMLp',[MLP.cx-RO[0],MLP.cz-RO[2],MLP.E,MLP.on?1:0]);G.uni(P,'uMLq',[1/MLS.NW,MLS.C,MLS.h0-RO[1],on?mlNow():0]);G.uni(P,'uMLv',0);mlBindUnits();
+  G.uni(P,'uMLp',[MLP.cx-RO[0],MLP.cz-RO[2],MLP.E,MLP.on?1:0]);G.uni(P,'uMLq',[1/MLS.NW,MLS.C,MLS.h0-RO[1],on?mlNow():0]);G.uni(P,'uMLv',0);
+  /* (Mud Lab 8, src/ml-look.glsl) how far the trees are drawn: past it the woods' floor is painted as their canopy; and
+     where his ground pictures fade to their own colour (metres across a pixel: by how sharply this tier filters them) */
+  {const f=GFX.level==='mobile'?Math.min(GFX.q.propD,BUDGET.treeD):GFX.q.propD,a=GFX.q.texAniso||4;G.uni(P,'uMLf',[f*.72,f*.97,.06*a,.25*a]);}
+  mlBindUnits();
 }
 /* the patch, and the water, after the chunks' ground (the main pass only) */
 function mlPatchDraw(u){
