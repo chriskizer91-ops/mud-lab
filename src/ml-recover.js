@@ -14,7 +14,8 @@
      rolls free with its wheels straight.
    Buttons only when they can do something (his rule): one button on the driving screen that reads WINCH, STRAP or
    UNHOOK (U on a keyboard), and, during a rescue, the other SUV's name to get into it (Enter).
-   Nothing of the soil, the grip or either SUV's own physics is changed here: the lines only pull on the bodies.
+   Nothing of the soil, the grip or either SUV's own physics is changed here: the lines only pull on the bodies (and,
+   while one pulls, the pulled belly ploughs the mud it is sunk in: mlrPlough).
    ===================================================================================== */
 const MLR={mode:(()=>{try{return localStorage.getItem('mudlab:play')==='real'?'real':'free';}catch(e){return 'free';}})(),
   other:null,made:false,live:false,stuck:false,stuckT:0,freeT:0,rescue:-1,note:'',t0:0,can:'',canSaid:'',seatOk:false,
@@ -46,14 +47,16 @@ function mlrStrapSub(dt,t,o){const S=MLR.strap,A=mlrHook(t,S.a,MLR_A),B=mlrHook(
   MLR_F[0]=dx/d*T;MLR_F[1]=dy/d*T;MLR_F[2]=dz/d*T;mlrPush(t,A,MLR_F,dt);MLR_G[0]=-MLR_F[0];MLR_G[1]=-MLR_F[1];MLR_G[2]=-MLR_F[2];mlrPush(o,B,MLR_G,dt);}
 /* a body dragged by a line ploughs its own trough. The engine holds a hull out of the ground as if the ground were
    rock, so a truck sunk to its floor stood fast against any pull; real mud gives way. While a line is pulling (and
-   only then: nothing of driving changes), the soil the hull is into is cut down to it and left churned */
+   only then: nothing of driving changes), the soil the belly is into is cut down to it and left churned. Limits,
+   each learned from a hole it dug: only the lowest of the hull; only soil standing less than 40 cm over it; no
+   trough deeper than a metre (Mud Lab 10: build 9 carved a valley into the pond's bank); and never where the land
+   itself slopes more than about 11 degrees (Mud Lab 11: at a bank's foot it dug a pit instead of climbing) */
 function mlrPlough(v){if(!MLS.ready||!v.hull)return 0;const C=MLS.C,N=MLS.N,M=v.M,p=v.p;let n=0;
-  /* (Mud Lab 10: his winch pulled him at a bank near the pond and the body carved a valley into it. Only the belly
-     ploughs (the lowest of the hull, not the bumpers); only soil that stands less than 40 cm over it (mud it has sunk
-     into, never a bank's face); and no trough deeper than a metre) */
   if(!v.mlBelly){let lo=1e9;for(const hp of v.hull)lo=Math.min(lo,hp[1]);v.mlBelly=v.hull.filter(hp=>hp[1]<lo+.3);}
   for(const hp of v.mlBelly){const x=p[0]+M[0]*hp[0]+M[1]*hp[1]+M[2]*hp[2],y=p[1]+M[3]*hp[0]+M[4]*hp[1]+M[5]*hp[2],z=p[2]+M[6]*hp[0]+M[7]*hp[1]+M[8]*hp[2];
-    const ci=Math.floor((x-MLS.x0)/C),cj=Math.floor((z-MLS.z0)/C);if(ci<6||cj<6||ci>N-7||cj>N-7)continue;const Hc=y-MLS.h0-.03;
+    const ci=Math.floor((x-MLS.x0)/C),cj=Math.floor((z-MLS.z0)/C);if(ci<6||cj<6||ci>N-7||cj>N-7)continue;
+    if(Math.hypot(mlBase(x+1,z)-mlBase(x-1,z),mlBase(x,z+1)-mlBase(x,z-1))>.4)continue;
+    const Hc=y-MLS.h0-.03;
     for(let j=cj-3;j<=cj+3;j++)for(let i=ci-3;i<=ci+3;i++){const T=mlTile(i>>6,j>>6,true),k=((j&63)<<6)|(i&63),cur=mlBase(MLS.x0+(i+.5)*C,MLS.z0+(j+.5)*C)+T.r[k],over=cur-Hc;
       if(over>0&&over<.4&&T.r[k]>-1){T.r[k]=Math.max(-1,T.r[k]-over);T.ch[k]=Math.min(255,T.ch[k]+60);mlDirtyT(T);n++;}}}
   return n;}
@@ -173,7 +176,7 @@ function mlrTick(){const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip||ML
           if(rise/run>.25)mlrUnhook('TOO STEEP FOR THE WINCH: LINE OFF');
           else if(!Wn.said){Wn.said=1;say('THE WINCH IS AT ITS LIMIT: HELP IT WITH THE WHEELS',3.2);}}}}}
   if(MLR.strap&&(!o||MLR.strap.d>MLR_STRAP+14))mlrUnhook('THE STRAP CAME OFF');
-  if(MLR.winch&&MLR.winch.T>2000)MLR.cut=mlrPlough(t);
+  if(MLR.winch&&MLR.winch.T>2000)mlrPlough(t);
   if(MLR.strap&&MLR.strap.T>2000&&o){mlrPlough(o);mlrPlough(t);}
   /* what the button can do now */
   let can='',seat=false;
@@ -219,7 +222,7 @@ function mlrTitle(root){const row=root.querySelector('#mlPick');if(!row)return;
   row.insertAdjacentHTML('beforeend','<span class="gap"></span><button type="button" data-m="free">Free play</button><button type="button" data-m="real">Real</button>');
   const note=document.createElement('div');note.id='mlPlayNote';row.parentNode.insertBefore(note,row.nextSibling);
   const paint=()=>{for(const x of row.children)if(x.dataset.m)x.classList.toggle('on',x.dataset.m===MLR.mode);
-    note.textContent=MLR.mode==='real'?'Real: no jumps. Bogged means rock it out, winch to a tree, strap it out with the other SUV, or a tow home.':'Free play: jump anywhere on the map. Bogged, RESET sets you on firm ground. The winch and the strap are there too.';};
+    note.textContent=(MLR.mode==='real'?'Real: no jumps. Bogged means rock it out, winch to a tree, strap it out with the other SUV, or a tow home.':'Free play: jump anywhere on the map. Bogged, RESET sets you on firm ground. The winch and the strap are there too.')+' Tap your SUV again for bigger tyres.';};
   row.addEventListener('click',e=>{const m=e.target&&e.target.dataset&&e.target.dataset.m;if(m){MLR.mode=m;try{localStorage.setItem('mudlab:play',m);}catch(_){}}paint();});paint();
   const st=document.createElement('style');st.textContent='#mlPick .gap{display:inline-block;width:14px}#mlPlayNote{font:12px system-ui,sans-serif;opacity:.85;margin:-6px auto 12px;max-width:520px;min-height:30px;text-shadow:0 1px 6px rgba(0,0,0,.6)}';document.head.appendChild(st);}
 /* ---------- drawn: the other SUV where it stands (its coarse copy past 45 m), its shadow near you, the lines ---------- */
@@ -248,12 +251,33 @@ function mlrLines(){const t=GAME.car,o=MLR.other;if(!t||t.rt||!(MLR.winch||MLR.s
    its shadow still falls where it should. Past 30 m the other SUV is its coarse copy) */
 function mlrSeen(P,r){const cam=CAM.last;if(!cam||!cam.VPw)return true;if(MLR.frT!==APP.t){MLR.frT=APP.t;MLR.fr=frustum(cam.VPw);}
   for(let q=0;q<6;q++){const p=MLR.fr[q];if(p[0]*P[0]+p[1]*P[1]+p[2]*P[2]+p[3]<-r)return false;}return true;}
+/* ---------- (Mud Lab 11) the Heron from far off: the same model with its corners merged on a 10 cm grid, drawn in its
+   place (and into the shadows) from more than 70 m away on a phone (130 m on a laptop), where a pixel is wider than that. The model had no
+   simpler copy: all 60,481 triangles were drawn out to 450 m ---------- */
+const MLF={on:false,full:0,far:0,parts:[]};
+function mlFarMesh(d,cell){try{const pos=d.pos,n=pos.length/3,map=new Map(),remap=new Uint32Array(n),keep=[];
+    for(let k=0;k<n;k++){const key=Math.round(pos[k*3]/cell)+','+Math.round(pos[k*3+1]/cell)+','+Math.round(pos[k*3+2]/cell)+','+(d.mat?d.mat[k]:0);let q=map.get(key);if(q===undefined){q=keep.length;map.set(key,q);keep.push(k);}remap[k]=q;}
+    const src=d.idx,out=[];for(let q=0;q<src.length;q+=3){const a=remap[src[q]],b=remap[src[q+1]],c=remap[src[q+2]];if(a!==b&&b!==c&&a!==c)out.push(a,b,c);}
+    if(out.length<9||out.length>src.length*.85)return null;
+    const pick=(arr,st)=>{if(!arr)return undefined;const o=new Float32Array(keep.length*st);for(let q=0;q<keep.length;q++)for(let c=0;c<st;c++)o[q*st+c]=arr[keep[q]*st+c];return o;};
+    const f={pos:pick(pos,3),nrm:pick(d.nrm,3),col:pick(d.col,4),mat:pick(d.mat,1),idx:keep.length>65535?new Uint32Array(out):new Uint16Array(out)};if(d.uv)f.uv=pick(d.uv,2);
+    const m=makeMesh(f);m.tris=out.length/3;return m;}catch(e){console.warn('far copy',e);return null;}}
+/* (a piece's far copy: on the 10 cm grid; a piece that mostly vanishes on it (struts, gear legs: tubes thinner than the
+   grid) is tried on a 4 cm grid, and kept whole if it still mostly vanishes) */
+function mlFarPiece(m,d,nm,full){let f=mlFarMesh(d,.1),c=.1;if(!f||f.tris<full*.22){f=mlFarMesh(d,.04);c=.04;if(f&&f.tris<full*.22)f=null;}
+  MLF.parts.push([nm,full,f?f.tris:full,f?c:0]);MLF.full+=full;MLF.far+=f?f.tris:full;if(f)m.far=f;}
+const MLF_DM=drawMesh;
+drawMesh=function(m){return MLF_DM(MLF.on&&m.far?m.far:m);};
+/* (from 70 m on the phone's tier; from 130 m on a laptop's, whose pixels are finer) */
+const mlfFar=(P,x,z)=>!!(P&&P.rt&&MLF.far>0&&Math.hypot(P.p[0]-x,P.p[2]-z)>(GFX.level==='mobile'?70:130));
+const MLF_SH=mlvShadow;
+mlvShadow=function(){const r=MLF_SH();if(r){const t=GAME.car;MLF.on=!!t&&mlfFar(mlvParked(),t.p[0],t.p[2]);}return r;};
 const MLR_VD=mlvDraw;
-mlvDraw=function(eye){if(MLR.off)return MLR_VD(eye);let n=0;const P=mlvParked(),o=MLR.other;
-  if(P&&mlrSeen(P.p,P.rt?10:5))n=MLR_VD(eye);
+mlvDraw=function(eye){MLF.on=false;if(MLR.off)return MLR_VD(eye);let n=0;const P=mlvParked(),o=MLR.other;
+  if(P&&mlrSeen(P.p,P.rt?10:5)){const far=mlfFar(P,eye[0],eye[2]);MLF.on=far;n=MLR_VD(eye);MLF.on=false;if(far&&n>MLF.full-MLF.far)n-=MLF.full-MLF.far;}
   if(GAME.state!=='drive')return n;
   if(o&&mlrSeen(o.p,5)){const d=Math.hypot(o.p[0]-eye[0],o.p[2]-eye[2]);if(d<450)n+=drawWorldCar(o,null,o.mlDirt||0,d>30,false)||0;}
   return n+mlrLines()+mlbDraw(eye);};
-const mlrShadow=()=>{const o=MLR.other,t=GAME.car;return o&&t&&!MLR.off&&GAME.state==='drive'&&Math.hypot(o.p[0]-t.p[0],o.p[2]-t.p[2])<60?o:null;};
+const mlrShadow=()=>{MLF.on=false;const o=MLR.other,t=GAME.car;return o&&t&&!MLR.off&&GAME.state==='drive'&&Math.hypot(o.p[0]-t.p[0],o.p[2]-t.p[2])<60?o:null;};
 /* (for the tests: no other SUV, nothing hooked) */
-window.__mlr={MLR,mlrSeat,mlrBring,mlrHome,mlrHookUp,mlrUnhook,mlrTree,mlrTrees,mlrReach,mlrMake,mlrFirm,mlrAirSet,mlrAirNext,ML_AIRS,mlrPlough,testClear(){MLR.other=null;MLR.made=true;MLR.winch=null;MLR.strap=null;MLR.pull=null;MLR.stuck=false;MLR.stuckT=0;MLR.rescue=-1;}};
+window.__mlr={MLR,MLF,mlrSeat,mlrBring,mlrHome,mlrHookUp,mlrUnhook,mlrTree,mlrTrees,mlrReach,mlrMake,mlrFirm,mlrAirSet,mlrAirNext,ML_AIRS,testClear(){MLR.other=null;MLR.made=true;MLR.winch=null;MLR.strap=null;MLR.pull=null;MLR.stuck=false;MLR.stuckT=0;MLR.rescue=-1;}};

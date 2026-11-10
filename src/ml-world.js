@@ -91,9 +91,15 @@ function mlZone(u,v,o){
   if(dc<hw+6){const k=Math.max(0,1-(dc/hw)**2);h=Math.min(h,-1.0*k+.05*(1-k));if(dc<hw*1.05)wl=ML_CL;}
   silt+=sst(30,6,dc)*bot;sand+=sst(.62,.75,vn(u/22,v/22,837))*sst(22,8,dc)*sst(hw*.7,hw*1.3,dc);
   peat+=bot*sst(.55,.68,fbm(u/70,v/70,2,838))*sst(30,50,dc);if(peat>.2){h-=.06*peat*(vn(u/2.2,v/2.2,839)-.3);}
+  let bankCut=0;
   /* the pond, in the Bottoms */
   {const P=ML_POND,cs=Math.cos(P.r),sn=Math.sin(P.r),x=u-P.u,z=v-P.v,a=(x*cs+z*sn)/P.a,b=(-x*sn+z*cs)/P.b,r=Math.hypot(a,b)+n1*.1;
-    if(r<1.4){const d=1.1*sst(1,.2,r);if(r<1){h=Math.min(h,ML_CL-d);wl=ML_CL;}else h=Math.min(h,ML_CL+.2*sst(1,1.4,r));silt=Math.max(silt,sst(1.4,1.05,r));moist=Math.max(moist,1-sst(1,1.4,r)*.4);}}
+    if(r<1.4){const d=1.1*sst(1,.2,r);if(r<1){h=Math.min(h,ML_CL-d);wl=ML_CL;}else h=Math.min(h,ML_CL+.2*sst(1,1.4,r));silt=Math.max(silt,sst(1.4,1.05,r));moist=Math.max(moist,1-sst(1,1.4,r)*.4);}
+    /* (Mud Lab 11) the bank: where the pond was cut into the hills its rim ended in a sheer 10 m step. Now a steep
+       slope down to the rim, 27 to 35 degrees: you can ease a SUV down it into the pond, and winch back up from
+       tree to tree (the woods on it thinned to a third, so there's room to drive and something to hook) */
+    /* (its foot curves up over the first 6 m, so a bumper doesn't meet the slope before the wheels do) */
+    else if(r<2.8){const hn=h,ds=(r-1.4)/r*Math.hypot(x,z);h=Math.min(h,ML_CL+.2+(ds<6?ds*ds/24:1.5+.5*(ds-6)));bankCut=hn-h;}}
   /* the Clay Pan: flat cracked clay, dry; a few low spots stay wet */
   {const r=Math.hypot((u-ML_CLAY.u)/170,(v-ML_CLAY.v)/120)+n2*.4;if(r<1.3){const k=sst(1.3,.9,r);clay=Math.max(clay,k);h=h+(4.5+.25*n1-h)*k;moist=moist*(1-k)+(.12+.5*sst(.6,.72,vn(u/30,v/30,840)))*k;}}
   clay=Math.max(clay,sst(.7,.8,fbm(u/90+7,v/90,2,843))*(1-bot)*sst(60,-120,v));
@@ -123,7 +129,7 @@ function mlZone(u,v,o){
   /* the woods: most of the north and the east; open fields round the camp; thin in the Bottoms; none on the pan,
      the trails, the water or the bank */
   let wood=sst(.42,.56,fbm(u/300,v/300,3,844)+.22*sst(-100,-500,v)+.15*sst(150,500,u)-.35*sst(330,560,v))*(1-.7*bot)*(1-clay*.9)*(1-sand*.8)*(1-bank);
-  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;wood*=1-bogK;
+  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;wood*=1-bogK;if(bankCut>.3)wood*=.35;
   if(stripD<99){const f=(u-ML_STRIP.u0)/(ML_STRIP.u1-ML_STRIP.u0);wood*=Math.min(1,sst(ML_STRIP.hw+18,ML_STRIP.hw+60,stripD)+1-sst(-.2,-.05,f)*sst(1.2,1.05,f));}
   const grass=(1-wood)*(1-sst(.3,.7,clay+sand+peat+silt))*(trail<99?sst(1.4,2.6,trail):1)*(wl>ML_NONE+1?0:1)*(.6+.4*sst(.15,.5,moist));
   /* (the strip: mown grass, the dirt track down its middle 3 m each side) */

@@ -4,8 +4,8 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-10.html`** (one self-contained page, 16 MB). On the title pick ROCK & MUD or STOCK SUV, and FREE
-PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
+**Open `builds/mud-lab-11.html`** (one self-contained page, 16 MB). On the title pick ROCK & MUD or STOCK SUV (tap
+your pick again for a tyre size up: 33s on the stock SUV, 40s on the Rock & Mud), and FREE PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
 with every place named (Free play: tap a name, JUMP, and you're there), the three graded trails (EASY: Field Track,
 MEDIUM: Creek Loop, HARD: Gumbo Trail), and GET IN: to change SUVs; the Heron waits on its strip (drive up, stop,
 HERON); G (or the Grip button on the map) switches the grip physics, and TYRES: on the map airs the tyres down (35, 20, 12 psi). THE BOG, north-east of the
@@ -13,7 +13,8 @@ Trailhead, measures how far you get; the post by its start is the PULL TEST. Bog
 or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
 L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-9.html`: no Bog, pull test or tyre pressure, and a winch could drag the SUV into a bank and carve it away;
+(`mud-lab-10.html`: one tyre size each, a sheer 34 ft step at the pond's rim, the Heron always drawn in full;
+`mud-lab-9.html`: no Bog, pull test or tyre pressure, and a winch could drag the SUV into a bank and carve it away;
 `mud-lab-8.html`: one SUV at a time, no winch or strap, the trails' holes ungraded; `mud-lab-7.html`: the look before
 Mud Lab 8, lit as Salt & Sand's desert; `mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no
 stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world;
@@ -37,6 +38,62 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+
+## Mud Lab 11 (Nov 10 2026): the pond's bank, a tyre size up, and the Heron from far off
+
+His asks: the cliff at the pond made a steep slope you can drive down ("unstably of course"), splash into the pond and
+winch back out of; then tyres (his idea: the stock SUV on bigger tyres, the Rock & Mud on bigger ones still) and the
+vehicle models.
+
+**The pond's bank.** Where the pond was cut into the hills its rim ended in a sheer 10.5 m (34 ft) step. It is now a
+slope, 27 to 35 degrees, its foot curving up over the first 6 m, the woods on it thinned to a third (room to drive,
+trees to hook). Tested from the top with the brakes dragging: both SUVs get down upright (the Rock & Mud in 32 s,
+nose down 27 degrees and leaning as much, never over 7 mph; it does not stop on the brakes alone before the water).
+Winched from the water's edge back up: 23 m of line, 4.5 m of height, 52 s, "AT THE TREE"; further up is the next tree.
+Neither SUV drives back up it.
+The winch's trough (build 10) no longer cuts where the land itself slopes more than about 11 degrees: at this bank's
+foot it had dug a 1.25 m pit instead of climbing. (Letting a pulled hull pass through the soil instead was tried and
+is worse: the SUV sinks a metre and the tyres cut their own tunnel.)
+
+**A tyre size up** (the title: tap your SUV again; each SUV's own, remembered). Built by the engine's own garage, so
+the radius, width, weight, tread and the taller gearing are the engine's, and the soil reads them as any tyre.
+
+| | Stock SUV | Stock SUV, 33s | Rock & Mud | Rock & Mud, 40s |
+| --- | --- | --- | --- | --- |
+| Tyre | 245/65R17 all-season | 33x12.5R17 all-terrain, 2 in leveling kit | 37x12.5R17 mud-terrain | 40x13.5R17 mud-terrain (new to the garage) |
+| Radius, width | 37.8 cm, 24.5 cm | 42.0 cm, 31.8 cm | 47.0 cm, 31.8 cm | 50.8 cm, 34.3 cm |
+| Sills above the ground | 31.5 cm | 40.7 cm | 55.7 cm | 59.5 cm |
+| Weight | 2,180 kg | 2,223 kg | 2,530 kg | 2,548 kg |
+| The Bog, steady throttle | 75 ft AWD, 104 ft 4 HI | 168-170 ft | 175-205 ft | 205 ft (258 at 12 psi) |
+| The Bog, floored | 76-103 ft | - | 158 ft | 137 ft |
+| Stopped in an easy puddle | bogged | bogged still; cruising through, 10.5 mph at its slowest (7) | - | - |
+| Stopped in a hard pit | - | - | bogged (11 of 13) | drove out (the one try) |
+| Big Creek's ford | bogged | bogged still | - | - |
+
+So the 33s more than double the stock SUV's mark on the Bog (its sills clear the fourth and fifth pits' water) without
+letting it restart in a puddle or cross the creek; the 40s give the Rock & Mud 4 cm and little else. The Rock & Mud's
+baked wheels are drawn 8% larger on 40s; its body is the same model, riding 4 cm higher.
+
+**The vehicle models: what was done, and what wasn't.**
+- Done, the cost: the Heron had no simpler copy, so all 60,481 of its triangles were drawn out to 450 m. It now has
+  one, made as the page loads by merging its corners on a grid (10 cm; 4 cm for the pieces with thin parts, the
+  struts and gear legs, which a 10 cm grid erased): 26,636 triangles, used (and for its shadow) from more than 70 m
+  away on the phone, 130 m on a laptop. The Heron on its strip seen from 85 m: 217,331 triangles in the frame in
+  build 10, 183,486 in build 11; side by side in `docs/shots/mud-lab-11-heron.jpg` (left the full model).
+- Where the triangles are: the Rock & Mud is 24,978 for the body and 6,169 a wheel (half of it is wheels); the stock
+  SUV is the game's own built model, about 51,000; the Heron 60,481.
+- Not done, the finer look. The Rock & Mud looks finer than its triangle count because the 800,000-triangle Studio 2
+  model was baked onto it as pictures (colour, normals, roughness). The stock SUV is still the game's plain built
+  model; giving it the same treatment (and both SUVs sharper pictures) is the real step, and it needs the bake tools
+  that made `base/truck-rock-mud-50k.js`, which are in his other repo, not this one.
+
+**Checked:** `tools/test/ml-same.py builds/mud-lab-10.html builds/mud-lab-11.html`: every drive ends in the same place
+at the same speed with the same ruts (7 of 7, to four decimals). In one, the pond's bottoms, the count of clods and
+splashes thrown differs (3,721 / 3,740 and 4,033 / 4,092): they fly to the bank, whose shape changed. (Run on the
+build before two last changes that touch no physics: the title row's spacing and the far copy's grid.) No shader
+changed. The title's row of four picks is at its width on the phone.
+
+![The pond's bank](docs/shots/mud-lab-11-bank.jpg) ![A tyre size up](docs/shots/mud-lab-11-tyres.jpg)
 
 ## Mud Lab 10 (Nov 10 2026): the Bog, the pull test, tyre pressure; and the winch at a bank
 
