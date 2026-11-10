@@ -25,7 +25,7 @@ window.T9=/* Mud Lab test drivers (tools/test/ml-pits.py, ml-rescue.py): put a S
  /* through a hole. style 'mom': full throttle from run m back. 'stop': in at part throttle, stop in the middle, then full throttle for secs.
     'rock': after the stop, forward 1.2 s, reverse 1.2 s ... */
  run(kind,k,style,o){o=o||{};this.sign();const H=this.hole(k),dir=o.dir||1,run=o.run||25,cs=Math.cos(H.r),sn=Math.sin(H.r),s0=-(H.L+run)*dir;
-   __ml.mlRake();const t=this.put(kind,H.u+cs*s0,H.v+sn*s0,dir>0?-H.r:-H.r+Math.PI,o.mode);
+   __ml.mlRake();const t=this.put(kind,H.u+cs*s0,H.v+sn*s0,dir>0?-H.r:-H.r+Math.PI,o.mode);if(o.air)this.air(o.air);
    const out={kind,k,style,L:H.L,d:H.d};let vmin=99,vin=null,tt=0;const thr=o.thr||1,end=(H.L+6);
    const prog=()=>this.at(t,H).s*dir;
    if(style==='mom'||style==='cruise'){const vT=o.v||7;
@@ -43,7 +43,7 @@ window.T9=/* Mud Lab test drivers (tools/test/ml-pits.py, ml-rescue.py): put a S
        out.moved=this.f(prog()-p0);out.through=prog()>end||prog()<-end;out.endMph=this.f(t.speed*2.237);out.secs=this.f(t2);}}
    const S=__ml.mlStats();out.rutCm=S.deepestCm;out.lat=this.f(this.at(t,H).lat);out.mu=t.wheels.map(w=>this.f(w.mlGrip===undefined?-1:w.mlGrip)).join(',');out.clog=t.wheels.map(w=>this.f(w.mlClog||0)).join(',');
    return out;},
- c(kind,k,style,o){const r=this.run(kind,k,style,o),H=this.hole(k);return (H.pit||k)+' '+kind.slice(0,5)+' '+style+(o&&o.mode?'/'+o.mode:'')+': in '+r.inMph+(style!=='stop'&&style!=='rock'?' min '+r.minMph:' stopAt '+r.stopAt+' moved '+r.moved)+' thr '+((o&&o.thr)||1)+' run '+((o&&o.run)||25)+' through '+r.through+(r.at!==undefined?' at '+r.at:'')+' t '+r.secs+' rut '+r.rutCm+' lat '+r.lat+' mu '+r.mu.split(',')[0]+' clog '+r.clog.split(',')[0];},
+ c(kind,k,style,o){const r=this.run(kind,k,style,o),H=this.hole(k);return (H.pit||k)+' '+kind.slice(0,5)+' '+style+(o&&o.mode?'/'+o.mode:'')+(o&&o.air?' '+__mlr.ML_AIRS[o.air].psi+'psi':'')+': in '+r.inMph+(style!=='stop'&&style!=='rock'?' min '+r.minMph:' stopAt '+r.stopAt+' moved '+r.moved)+' thr '+((o&&o.thr)||1)+' run '+((o&&o.run)||25)+' through '+r.through+(r.at!==undefined?' at '+r.at:'')+' t '+r.secs+' rut '+r.rutCm+' lat '+r.lat+' mu '+r.mu.split(',')[0]+' clog '+r.clog.split(',')[0];},
  holes(){return __dyb.WG.mlHoles.map((H,k)=>({k,u:Math.round(H.u),v:Math.round(H.v),L:H.L,W:H.W,d:H.d,big:H.big||0}));}
 };
 Object.assign(T9,{
@@ -104,4 +104,23 @@ Object.assign(T9,{
      const thr=Math.max(0,Math.min(o.thr||1,(vT-t.speed)*.6+.15)),st=Math.max(-1,Math.min(1,this.sgn*e*1.8));this.inp({thr,steer:st});this.steps(12);tt+=.1;
      const a=this.at(t,H);if(Math.abs(a.s)<14&&Math.round(tt*10)%4===0)out.push('s'+this.f(a.s)+' lat'+this.f(a.lat)+' '+this.f(t.speed*2.237)+'mph thr'+this.f(thr)+' st'+this.f(st)+' g'+t.pt.gear+' rpm'+Math.round(t.pt.rpm||0)+' w'+t.wheels.map(w=>Math.round(w.w*w.R*2.237)).join('/')+' wd'+this.f((__ml.MLS.wd||0)*100)+' pl'+Math.round(__ml.MLS.plough||0));}
    return out;}
+});
+/* Mud Lab 10: tyre pressure, the Bog, the pull test, the winch at a bank */
+Object.assign(T9,{
+ air(i){if(__mlr.mlrAirSet)__mlr.mlrAirSet(__dyb.GAME.car,i||0);return i||0;},
+ /* down the Bog from 30 m back on a held throttle: how far (the game's own mark) */
+ bogRun(kind,i,thr,mode){this.sign();const B=__dyb.WG.mlBog;__ml.mlRake();__mlb.MLB.cool=false;__mlb.MLB.run=null;__mlb.MLB.last=null;const t=this.put(kind,B.u0-30,B.v,0,mode);this.air(i);
+   const A=__dyb.WG.mlA;let tt=0;while(tt<60&&!__mlb.MLB.last){let e=0-this.yaw(t);const lat=(t.p[2]-A.z-B.v);this.inp({thr,steer:Math.max(-1,Math.min(1,this.sgn*(e*1.6+lat*.12)))});this.steps(12);tt+=.1;}
+   const L=__mlb.MLB.last;return kind.slice(0,5)+' '+__mlr.ML_AIRS[i||0].psi+'psi thr'+thr+': '+(L?L.ft+' ft':'no mark')+' in '+this.f(tt)+' s';},
+ /* drawbar pull: tied by the tail to a point 5 m behind, the throttle held for secs: the pull held over the last half, and the wheels' slip */
+ pull(kind,u,v,yaw,i,thr,secs,mode){const t=this.put(kind,u,v,yaw,mode);this.air(i);const A=__dyb.WG.mlA,M=t.M;__mlb.mlbPullAt(t,t.p[0]-M[0]*7.5,t.p[2]-M[6]*7.5);
+   const P=__mlr.MLR.pull;let sum=0,n=0,pk=0,slip=0;const N=Math.round((secs||6)*10);for(let q=0;q<N;q++){this.inp({thr:thr||.7});this.steps(12);pk=Math.max(pk,P.T);if(q>=N/2){sum+=P.T;n++;slip+=t.wheels.reduce((a,w)=>a+Math.abs(w.w*w.R),0)/4;}}
+   const W=t.m*9.81,S=__ml.mlStats();this.inp({});__mlr.mlrUnhook();return kind.slice(0,5)+' '+__mlr.ML_AIRS[i||0].psi+'psi @'+u+','+v+' '+(S.here?S.here.main+' m'+S.here.moist:'')+': held '+this.f(sum/n/1000)+' kN ('+this.f(sum/n/W)+' W) peak '+this.f(pk/1000)+' wheels '+this.f(slip/n*2.237)+' mph ruts '+S.deepestCm+' cm';},
+ /* the steepest drop at the pond's rim, and a winch pull at it */
+ cliff(){const P={u:232,v:104,a:62,b:34,r:-.5},cs=Math.cos(P.r),sn=Math.sin(P.r),Z={},at=(r,f)=>{const a=r*Math.cos(f),b=r*Math.sin(f);return [P.u+a*P.a*cs-b*P.b*sn,P.v+a*P.a*sn+b*P.b*cs];};let best=null;
+   for(let k=0;k<72;k++){const f=k/72*6.2832,p0=at(1.22,f),p1=at(1.6,f),h0=__dyb.WG.mlZone(p0[0],p0[1],Z).h,h1=__dyb.WG.mlZone(p1[0],p1[1],Z).h;if(!best||h1-h0>best.dh)best={dh:this.f(h1-h0),f,p0,p1,trees:this.treesAt(p1[0],p1[1])};}return best;},
+ cliffWinch(secs){const C=this.cliff(),dx=C.p1[0]-C.p0[0],dz=C.p1[1]-C.p0[1];__ml.mlRake();const t=this.put('crawler',C.p0[0],C.p0[1],Math.atan2(-dz,dx)),M=this.R(),y0=t.p[1],x0=t.p[0],z0=t.p[2];
+   this.go({},.5);M.stuck=true;M.treeT=-9;this.go({},.3);const can=this.st().can;__mlr.mlrHookUp();const out=['drop '+C.dh+' m, trees '+C.trees,can];let last='';
+   for(let i=0;i<(secs||45);i++){M.stuck=true;const s=this.go({},1);if(!s.winch){last=s.msgs.slice(-1)[0];out.push('line off after '+(i+1)+' s: '+last);break;}}
+   const S=__ml.mlStats();out.push('moved '+this.f(Math.hypot(t.p[0]-x0,t.p[2]-z0))+' m, up '+this.f(t.p[1]-y0)+' m, deepest cut '+S.deepestCm+' cm, pitch '+this.f(Math.asin(Math.max(-1,Math.min(1,t.M[3])))*57.3)+' deg');return out;}
 });

@@ -26,7 +26,7 @@ MORE = r"""window.R9={
    let n=0;while(n<10&&!T.R().stuck){T.go({thr:1},1);n++;}T.go({},.5);const A=__dyb.WG.mlA;return {bogged:T.R().stuck,after:n,at:[T.f(t.p[0]-A.x),T.f(t.p[2]-A.z)],can:T.R().can};}
 };"""
 async def main():
-    want = sys.argv[3].split(',') if len(sys.argv) > 3 else ['title', 'start', 'strap', 'winch', 'map']
+    want = sys.argv[3].split(',') if len(sys.argv) > 3 else ['title', 'start', 'strap', 'winch', 'bog', 'pull', 'map']
     num = {}
     async with async_playwright() as p:
         br = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'])
@@ -82,8 +82,17 @@ async def main():
                 n['log'] = log[::6]; n['secs'] = len(log); n['end'] = s; n['moved_m'] = round(((s['p'][0] - p0[0]) ** 2 + (s['p'][1] - p0[1]) ** 2) ** .5, 1)
                 await ev("MLVW.free()"); await shot('winch-out')
             num['winch'] = n
+        if 'bog' in want:
+            # (Mud Lab 10) the Bog: from its start line, then where a floored run with the Rock & Mud ends
+            await ev("(T9.sign(),__ml.mlRake(),__mlb.MLB.cool=false,T9.put('crawler',__dyb.WG.mlBog.u0-13,__dyb.WG.mlBog.v,0),MLVW.free(),1)"); await shot('bog-start')
+            num['bog'] = {'tris': await ev('R9.tris()'), 'run': await ev("T9.bogRun('crawler',0,1,'lock')"), 'stock': await ev("T9.bogRun('stock',0,.6,'4 HI')")}
+            num['bog']['run2'] = await ev("T9.bogRun('crawler',2,.6,'lock')"); await ev("(T9.go({},.3),MLVW.look(-9,4.2,3.2,4,.4,-.6,.9))"); await shot('bog-mark'); num['bog']['best'] = await ev('__mlb.MLB.best')
+        if 'pull' in want:
+            # the pull test: tail to the post, the line on, held at 0.7 throttle, lifted off
+            await ev("(P=>{const A=__dyb.WG.mlA;T9.put('crawler',P.x-A.x+6.5,P.z-A.z,0);})(__mlb.MLB_POST())"); n = {'can': (await ev("T9.go({},1)"))['can']}
+            await ev("__mlr.mlrHookUp()"); await ev("T9.go({thr:.7},4)"); await ev("MLVW.look(3,2.6,7,-3,.5,0,.9)"); n['after'] = (await ev("T9.go({},1)"))['msgs']; n['pulled'] = await ev('__mlb.MLB.pulled'); await shot('pull'); await ev("(__mlr.mlrUnhook(),MLVW.free())"); num['pull'] = n
         if 'map' in want:
-            await ev("(__dyb.placeCar(__dyb.WG.mlA.x+30,__dyb.WG.mlA.z+610,1.571),__mlr.MLR.stuck=false,__game.APP.bigMap=true,__game.APP.photo=false,T9.go({hb:1},.3),1)"); await shot('map', 4); num['map'] = await ev("[...document.querySelectorAll('button')].filter(b=>!b.hidden&&b.offsetParent&&/GET IN|BRING|TOW|JUMP|Grip|GRIP/.test(b.textContent)).map(b=>b.textContent)")
+            await ev("(__dyb.placeCar(__dyb.WG.mlA.x+30,__dyb.WG.mlA.z+610,1.571),__mlr.MLR.stuck=false,__game.APP.bigMap=true,__game.APP.photo=false,T9.go({hb:1},.3),1)"); await shot('map', 4); num['map'] = await ev("[...document.querySelectorAll('button')].filter(b=>!b.hidden&&/GET IN|BRING|TOW|JUMP|Grip|GRIP|TYRES/.test(b.textContent)).map(b=>b.textContent)")
             await ev("(__game.APP.bigMap=false,1)")
         num['errors'] = logs[:5]
         json.dump(num, open(OUT + 'numbers.json', 'w'), indent=1); print(json.dumps(num)[:3000]); await br.close()

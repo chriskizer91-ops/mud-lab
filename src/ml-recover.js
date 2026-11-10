@@ -18,7 +18,7 @@
    ===================================================================================== */
 const MLR={mode:(()=>{try{return localStorage.getItem('mudlab:play')==='real'?'real':'free';}catch(e){return 'free';}})(),
   other:null,made:false,live:false,stuck:false,stuckT:0,freeT:0,rescue:-1,note:'',t0:0,can:'',canSaid:'',seatOk:false,
-  winch:null,strap:null,btn:null,seat:null,mapA:null,trees:[],tc:[1e9,1e9],tree:null,treeT:-9,mesh:null,off:false};
+  winch:null,strap:null,pull:null,btn:null,seat:null,mapA:null,mapB:null,clogSaid:false,trees:[],tc:[1e9,1e9],tree:null,treeT:-9,mesh:null,off:false};
 const MLR_STRAP=14,MLR_LINE=30,MLR_WMAX=42300,MLR_WSPD=.45;
 const MLR_HOLD={steer:0,thr:0,brk:1,hb:1,nos:false},MLR_TOW={steer:0,thr:0,brk:0,hb:0,nos:false},MLR_PAIR=[null,null];
 const MLR_V=()=>new Float64Array(3),MLR_A=MLR_V(),MLR_B=MLR_V(),MLR_F=MLR_V(),MLR_G=MLR_V(),MLR_R=MLR_V(),MLR_X=MLR_V(),MLR_O=MLR_V(),MLR_VA=MLR_V(),MLR_VB=MLR_V(),MLR_Z={};
@@ -48,17 +48,26 @@ function mlrStrapSub(dt,t,o){const S=MLR.strap,A=mlrHook(t,S.a,MLR_A),B=mlrHook(
    rock, so a truck sunk to its floor stood fast against any pull; real mud gives way. While a line is pulling (and
    only then: nothing of driving changes), the soil the hull is into is cut down to it and left churned */
 function mlrPlough(v){if(!MLS.ready||!v.hull)return 0;const C=MLS.C,N=MLS.N,M=v.M,p=v.p;let n=0;
-  for(const hp of v.hull){const x=p[0]+M[0]*hp[0]+M[1]*hp[1]+M[2]*hp[2],y=p[1]+M[3]*hp[0]+M[4]*hp[1]+M[5]*hp[2],z=p[2]+M[6]*hp[0]+M[7]*hp[1]+M[8]*hp[2];
+  /* (Mud Lab 10: his winch pulled him at a bank near the pond and the body carved a valley into it. Only the belly
+     ploughs (the lowest of the hull, not the bumpers); only soil that stands less than 40 cm over it (mud it has sunk
+     into, never a bank's face); and no trough deeper than a metre) */
+  if(!v.mlBelly){let lo=1e9;for(const hp of v.hull)lo=Math.min(lo,hp[1]);v.mlBelly=v.hull.filter(hp=>hp[1]<lo+.3);}
+  for(const hp of v.mlBelly){const x=p[0]+M[0]*hp[0]+M[1]*hp[1]+M[2]*hp[2],y=p[1]+M[3]*hp[0]+M[4]*hp[1]+M[5]*hp[2],z=p[2]+M[6]*hp[0]+M[7]*hp[1]+M[8]*hp[2];
     const ci=Math.floor((x-MLS.x0)/C),cj=Math.floor((z-MLS.z0)/C);if(ci<6||cj<6||ci>N-7||cj>N-7)continue;const Hc=y-MLS.h0-.03;
-    for(let j=cj-3;j<=cj+3;j++)for(let i=ci-3;i<=ci+3;i++){const T=mlTile(i>>6,j>>6,true),k=((j&63)<<6)|(i&63),cur=mlBase(MLS.x0+(i+.5)*C,MLS.z0+(j+.5)*C)+T.r[k];
-      if(cur>Hc){T.r[k]-=cur-Hc;T.ch[k]=Math.min(255,T.ch[k]+60);mlDirtyT(T);n++;}}}
+    for(let j=cj-3;j<=cj+3;j++)for(let i=ci-3;i<=ci+3;i++){const T=mlTile(i>>6,j>>6,true),k=((j&63)<<6)|(i&63),cur=mlBase(MLS.x0+(i+.5)*C,MLS.z0+(j+.5)*C)+T.r[k],over=cur-Hc;
+      if(over>0&&over<.4&&T.r[k]>-1){T.r[k]=Math.max(-1,T.r[k]-over);T.ch[k]=Math.min(255,T.ch[k]+60);mlDirtyT(T);n++;}}}
   return n;}
+/* a fixed line for the pull test (src/ml-bog.js): from the rear hook to a post; it only holds, and reads the pull */
+function mlrPullSub(dt,t){const P=MLR.pull,H=mlrHook(t,-1,MLR_A),dx=P.x-H[0],dy=P.y-H[1],dz=P.z-H[2],d=Math.hypot(dx,dy,dz)||1;P.d=d;
+  const ext=d-P.len;if(ext<=0){P.T=0;return;}
+  const V=mlrVel(t,H,MLR_VA),T=mlrTension(300000,30000,ext,-(V[0]*dx+V[1]*dy+V[2]*dz)/d,400000);P.T=T;
+  MLR_F[0]=dx/d*T;MLR_F[1]=dy/d*T;MLR_F[2]=dz/d*T;mlrPush(t,H,MLR_F,dt);}
 /* each physics step, after yours: the other SUV on the physics while it's strapped, within 8 m (near enough to touch), or still
    moving (otherwise it only stands there, drawn); the two touching; the lines */
 const MLR_TS=trafficSub;
 trafficSub=function(dt){MLR_TS(dt);mlrSub(dt);};
 function mlrSub(dt){const t=GAME.car;MLR.live=false;if(!t||GAME.state!=='drive'||MLR.off||t.rt)return;
-  if(MLR.winch)mlrWinchSub(dt,t);
+  if(MLR.winch)mlrWinchSub(dt,t);if(MLR.pull)mlrPullSub(dt,t);
   const o=MLR.other;if(!o)return;const dx=o.p[0]-t.p[0],dz=o.p[2]-t.p[2],near=dx*dx+dz*dz<72;
   if(!(MLR.strap||near||o.mlMove>0))return;
   /* (towed: out of gear, rolling free, the wheels straight; standing: on its brakes) */
@@ -115,13 +124,14 @@ function mlrTree(t){if(GAME.time-MLR.treeT<.4)return MLR.tree;MLR.treeT=GAME.tim
     if(best)break;}
   return MLR.tree=best;}
 function mlrHookUp(){const t=GAME.car,o=MLR.other;if(!t||t.rt||GAME.state!=='drive')return false;
-  if(MLR.winch||MLR.strap){mlrUnhook(MLR.winch?'WINCH LINE OFF':'STRAP OFF');return true;}
+  if(MLR.winch||MLR.strap||MLR.pull){mlrUnhook(MLR.winch?'WINCH LINE OFF':MLR.pull?'PULL LINE OFF':'STRAP OFF');return true;}
+  if(MLR.can==='PULL TEST')return mlbPullHook(t);
   if(MLR.can==='STRAP'&&o){const R=mlrReach(t,o);if(R.d>MLR_STRAP)return false;MLR.strap={a:R.a,b:R.b,d:R.d,T:0,peak:0};o.mlMove=1;
     say(MLR.stuck?'STRAP ON. GET IN THE '+mlrName(o)+' AND PULL':'STRAP ON: EASE AWAY, THEN PULL',2.8);return true;}
   if(MLR.can==='WINCH'){MLR.treeT=-9;const T=mlrTree(t);if(!T)return false;const P=mlrHook(t,T.end,MLR_A),y=RANCH.W.heightAt(T.x,T.z)+.7,d=Math.hypot(T.x-P[0],y-P[1],T.z-P[2]);
     MLR.winch={x:T.x,y,z:T.z,end:T.end,len:d,d,T:0,stallT:0,said:0};say('WINCH LINE ON A TREE '+Math.round(d*3.281)+' FT '+(T.end>0?'AHEAD':'BEHIND'),2.6);return true;}
   return false;}
-function mlrUnhook(msg){const o=MLR.other;if(MLR.strap){if(o){o.mlStuck=false;o.mlMove=1;}MLR.rescue=GAME.time+240;}MLR.winch=null;MLR.strap=null;if(msg)say(msg,1.8);}
+function mlrUnhook(msg){const o=MLR.other;MLR.pull=null;if(MLR.strap){if(o){o.mlStuck=false;o.mlMove=1;}MLR.rescue=GAME.time+240;}MLR.winch=null;MLR.strap=null;if(msg)say(msg,1.8);}
 /* ---------- RESET: for a roll-over, as it was. Bogged and upright: Free play sets you on the nearest firm ground;
    Real leaves you where you are ---------- */
 const MLR_RESET=resetCar;
@@ -140,24 +150,36 @@ function mlrTick(){const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip||ML
   if(t.rt){mlrShow('',false);mlrMap();return;}
   if(!MLR.other&&!MLR.made)mlrFirst(t);
   const o=MLR.other;if(o){if(o.takeEvents)o.takeEvents();if(o.pt&&o.pt.takeEvents)o.pt.takeEvents();}
+  /* tyre pressure: each SUV keeps its own (remembered) */
+  if(t.mlAirI===undefined)mlrAirSet(t,mlrAirGet(mlSuvKind(t)));if(o&&o.mlAirI===undefined)mlrAirSet(o,mlrAirGet(mlSuvKind(o)));
+  /* the tread packed with clay (the soil's own clogging, as it always was: now it says so, once each time) */
+  {let c=0;for(const w of t.wheels)c+=w.mlClog||0;c/=4;if(c>.45&&!MLR.clogSaid){MLR.clogSaid=true;say('TREAD PACKED WITH CLAY: SPIN IT CLEAN',2.8);}else if(c<.2)MLR.clogSaid=false;}
+  mlbTick(t,dt);
   /* bogged: the throttle down (either way) on soil and going nowhere for a couple of seconds; out: moving again */
   const soil=t.wheels.some(w=>w.mlOn);
-  if(soil&&(t.thrIn||0)>.5&&t.speed<.45)MLR.stuckT+=dt;else MLR.stuckT=Math.max(0,MLR.stuckT-dt*1.5);
+  /* (not while it's held by the pull test's line: standing still at full throttle is the test) */
+  if(soil&&!MLR.pull&&(t.thrIn||0)>.5&&t.speed<.45)MLR.stuckT+=dt;else MLR.stuckT=Math.max(0,MLR.stuckT-dt*1.5);
   if(!MLR.stuck&&MLR.stuckT>2.2){MLR.stuck=true;MLR.freeT=0;MLR.treeT=-9;
     say(MLR.mode==='real'?'BOGGED. ROCK IT, WINCH TO A TREE, OR GET THE OTHER SUV (MAP)':'BOGGED. ROCK IT, WINCH, STRAP, OR RESET',3.6);}
   if(MLR.stuck){if(t.speed>2.2){MLR.freeT+=dt;if(MLR.freeT>1.2){MLR.stuck=false;MLR.stuckT=0;}}else MLR.freeT=0;}
   if(MLR.winch){const Wn=MLR.winch;
     if(Wn.d<3.4)mlrUnhook('AT THE TREE: WINCH LINE OFF');
     else if(Wn.d>MLR_LINE+6)mlrUnhook('WINCH LINE OFF');
-    else if(Wn.T>=MLR_WMAX*.97){Wn.stallT+=dt;if(Wn.stallT>2.5&&!Wn.said){Wn.said=1;say('THE WINCH IS AT ITS LIMIT: HELP IT WITH THE WHEELS',3.2);}}else Wn.stallT=0;}
+    else{
+      /* (stalled: the line has come in less than a foot in four seconds. Climbing more than about 14 degrees to its
+         tree, it's pulling you at a bank, not along the ground: it lets go. Otherwise it says to help it) */
+      Wn.stallT+=dt;if(Wn.stallT>4){const took=(Wn.len0===undefined?Wn.len+9:Wn.len0)-Wn.len;Wn.len0=Wn.len;Wn.stallT=0;
+        if(took<.3){const P=mlrHook(t,Wn.end,MLR_A),rise=Wn.y-P[1],run=Math.hypot(Wn.x-P[0],Wn.z-P[2])||1;
+          if(rise/run>.25)mlrUnhook('TOO STEEP FOR THE WINCH: LINE OFF');
+          else if(!Wn.said){Wn.said=1;say('THE WINCH IS AT ITS LIMIT: HELP IT WITH THE WHEELS',3.2);}}}}}
   if(MLR.strap&&(!o||MLR.strap.d>MLR_STRAP+14))mlrUnhook('THE STRAP CAME OFF');
   if(MLR.winch&&MLR.winch.T>2000)MLR.cut=mlrPlough(t);
   if(MLR.strap&&MLR.strap.T>2000&&o){mlrPlough(o);mlrPlough(t);}
   /* what the button can do now */
   let can='',seat=false;
-  if(MLR.winch||MLR.strap)can='UNHOOK';
+  if(MLR.winch||MLR.strap||MLR.pull)can='UNHOOK';
   else if(t.speed<1.5){const help=MLR.stuck||o&&o.mlStuck||MLR.rescue>now;
-    if(o&&help&&mlrReach(t,o).d<=MLR_STRAP)can='STRAP';else if(MLR.stuck&&mlrTree(t))can='WINCH';}
+    if(o&&help&&mlrReach(t,o).d<=MLR_STRAP)can='STRAP';else if(MLR.stuck&&mlrTree(t))can='WINCH';else if(mlbPullCan(t))can='PULL TEST';}
   if(o&&t.speed<1.5&&(MLR.strap||MLR.stuck||o.mlStuck||MLR.rescue>now)&&Math.hypot(o.p[0]-t.p[0],o.p[2]-t.p[2])<MLR_STRAP+10)seat=true;
   MLR.can=can;MLR.seatOk=seat;mlrShow(can,seat);
   if(can&&can!==MLR.canSaid&&!GAME.touch&&can!=='UNHOOK')say('U: '+can,1.8);MLR.canSaid=can;
@@ -173,11 +195,25 @@ addEventListener('keydown',e=>{if(e.code==='KeyU'&&!e.repeat&&GAME.state==='driv
 const MLR_SW=mlvSwap;
 mlvSwap=function(){if(!MLV.can&&MLR.seatOk&&GAME.car&&!GAME.car.rt)return mlrSeat();return MLR_SW();};
 /* on the map, under the SUV's own button: BRING IT HERE (Free play), or A TOW HOME when you're bogged (Real) */
-function mlrMap(){const t=GAME.car,o=MLR.other;let b=MLR.mapA;const show=APP.bigMap&&GAME.state==='drive'&&t&&!t.rt&&o&&(MLR.mode==='free'||MLR.stuck);
+function mlrMap(){mlrAirBtn();const t=GAME.car,o=MLR.other;let b=MLR.mapA;const show=APP.bigMap&&GAME.state==='drive'&&t&&!t.rt&&o&&(MLR.mode==='free'||MLR.stuck);
   if(!b){if(!show)return;b=MLR.mapA=document.createElement('button');b.type='button';b.id='mlBring';
     b.style.cssText='position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(50% + 6px);z-index:61;font:600 13px system-ui,sans-serif;letter-spacing:.05em;padding:9px 16px;border-radius:999px;border:1px solid rgba(242,230,210,.35);background:rgba(20,14,9,.72);color:#f2e6d2;cursor:pointer';
     b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();if(MLR.mode==='free')mlrBring();else mlrHome();});document.body.appendChild(b);}
   if(b.hidden!==!show)b.hidden=!show;if(show){const nm=MLR.mode==='free'?'BRING THE '+ML_SUV_SHORT[mlSuvKind(o)]+' HERE':'A TOW HOME';if(b.textContent!==nm)b.textContent=nm;}}
+/* ---------- tyre pressure (Mud Lab 10): road, trail, soft. Aired down, the footprint is longer and a little wider:
+   the tyre sinks less and grips soft or slick ground better (src/ml-soil.js), and drags a little on firm ground.
+   On the map, TYRES: steps through them, stopped. Road pressure is the SUV exactly as it always drove ---------- */
+const ML_AIRS=[{name:'ROAD',psi:35,kL:1,kW:1,g:0,rr:0},{name:'TRAIL',psi:20,kL:1.25,kW:1.04,g:.1,rr:.012},{name:'SOFT',psi:12,kL:1.5,kW:1.08,g:.18,rr:.03}];
+function mlrAirGet(k){try{const i=+localStorage.getItem('mudlab:air:'+k);return i===1||i===2?i:0;}catch(e){return 0;}}
+function mlrAirSet(v,i){v.mlAirI=i;v.mlAir=i?ML_AIRS[i]:null;}
+function mlrAirNext(){const t=GAME.car;if(!t||t.rt)return;if(t.speed>1.5){say('STOP FIRST',1.4);return;}
+  const i=((t.mlAirI||0)+1)%3,A=ML_AIRS[i];mlrAirSet(t,i);try{localStorage.setItem('mudlab:air:'+mlSuvKind(t),i);}catch(e){}
+  say(i?'TYRES AT '+A.psi+' PSI: A LONGER FOOTPRINT, LESS SINKING':'TYRES BACK AT '+A.psi+' PSI',2.6);}
+function mlrAirBtn(){const t=GAME.car;let b=MLR.mapB;const show=APP.bigMap&&GAME.state==='drive'&&t&&!t.rt;
+  if(!b){if(!show)return;b=MLR.mapB=document.createElement('button');b.type='button';b.id='mlAir';
+    b.style.cssText='position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(50% + 50px);z-index:61;font:600 13px system-ui,sans-serif;letter-spacing:.05em;padding:9px 16px;border-radius:999px;border:1px solid rgba(242,230,210,.35);background:rgba(20,14,9,.72);color:#f2e6d2;cursor:pointer';
+    b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();mlrAirNext();mlrAirBtn();});document.body.appendChild(b);}
+  if(b.hidden!==!show)b.hidden=!show;if(show){const A=ML_AIRS[t.mlAirI||0],nm='TYRES: '+A.name+' '+A.psi+' PSI';if(b.textContent!==nm)b.textContent=nm;}}
 /* ---------- the title: which way to play ---------- */
 function mlrTitle(root){const row=root.querySelector('#mlPick');if(!row)return;
   row.insertAdjacentHTML('beforeend','<span class="gap"></span><button type="button" data-m="free">Free play</button><button type="button" data-m="real">Real</button>');
@@ -201,10 +237,11 @@ function mlrSeg(mesh,A,B,r){const dx=B[0]-A[0],dy=B[1]-A[1],dz=B[2]-A[2],L=Math.
 function mlrRope(mesh,A,B,slack,r){const n=6;let tris=0,p0=[A[0],A[1],A[2]];const sag=Math.max(0,Math.min(1.4,slack*.7));
   for(let k=1;k<=n;k++){const s=k/n,p=[A[0]+(B[0]-A[0])*s,A[1]+(B[1]-A[1])*s-sag*4*s*(1-s),A[2]+(B[2]-A[2])*s];
     if(k<n&&sag>.02){const g=RANCH.W.heightAt(p[0],p[2])+.04;if(p[1]<g)p[1]=g;}tris+=mlrSeg(mesh,p0,p,r);p0=p;}return tris;}
-function mlrLines(){const t=GAME.car,o=MLR.other;if(!t||t.rt||!(MLR.winch||MLR.strap))return 0;
+function mlrLines(){const t=GAME.car,o=MLR.other;if(!t||t.rt||!(MLR.winch||MLR.strap||MLR.pull))return 0;
   if(!MLR.mesh)MLR.mesh={strap:mlrMesh([.62,.36,.03]),line:mlrMesh([.09,.09,.1])};
   const u=CUR.u;if(u.uMudOff)gl.uniform1f(u.uMudOff,1);let n=0;
   if(MLR.winch){const Wn=MLR.winch,P=mlrHook(t,Wn.end,MLR_A);n+=mlrRope(MLR.mesh.line,P,[Wn.x,Wn.y,Wn.z],Math.max(0,Wn.len-Wn.d),.02);}
+  if(MLR.pull){const P=MLR.pull,H=mlrHook(t,-1,MLR_A);n+=mlrRope(MLR.mesh.strap,[H[0],H[1],H[2]],[P.x,P.y,P.z],Math.max(0,P.len-P.d),.03);}
   if(MLR.strap&&o){const A=mlrHook(t,MLR.strap.a,MLR_A),B=mlrHook(o,MLR.strap.b,MLR_B);n+=mlrRope(MLR.mesh.strap,[A[0],A[1],A[2]],B,Math.max(0,MLR_STRAP-MLR.strap.d),.03);}
   return n;}
 /* (a parked vehicle outside the picture isn't drawn: the Heron on its strip behind you was 60,000 triangles a frame;
@@ -216,7 +253,7 @@ mlvDraw=function(eye){if(MLR.off)return MLR_VD(eye);let n=0;const P=mlvParked(),
   if(P&&mlrSeen(P.p,P.rt?10:5))n=MLR_VD(eye);
   if(GAME.state!=='drive')return n;
   if(o&&mlrSeen(o.p,5)){const d=Math.hypot(o.p[0]-eye[0],o.p[2]-eye[2]);if(d<450)n+=drawWorldCar(o,null,o.mlDirt||0,d>30,false)||0;}
-  return n+mlrLines();};
+  return n+mlrLines()+mlbDraw(eye);};
 const mlrShadow=()=>{const o=MLR.other,t=GAME.car;return o&&t&&!MLR.off&&GAME.state==='drive'&&Math.hypot(o.p[0]-t.p[0],o.p[2]-t.p[2])<60?o:null;};
 /* (for the tests: no other SUV, nothing hooked) */
-window.__mlr={MLR,mlrSeat,mlrBring,mlrHome,mlrHookUp,mlrUnhook,mlrTree,mlrTrees,mlrReach,mlrMake,mlrFirm,testClear(){MLR.other=null;MLR.made=true;MLR.winch=null;MLR.strap=null;MLR.stuck=false;MLR.stuckT=0;MLR.rescue=-1;}};
+window.__mlr={MLR,mlrSeat,mlrBring,mlrHome,mlrHookUp,mlrUnhook,mlrTree,mlrTrees,mlrReach,mlrMake,mlrFirm,mlrAirSet,mlrAirNext,ML_AIRS,mlrPlough,testClear(){MLR.other=null;MLR.made=true;MLR.winch=null;MLR.strap=null;MLR.pull=null;MLR.stuck=false;MLR.stuckT=0;MLR.rescue=-1;}};

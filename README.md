@@ -4,15 +4,17 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-9.html`** (one self-contained page, 16 MB). On the title pick ROCK & MUD or STOCK SUV, and FREE
+**Open `builds/mud-lab-10.html`** (one self-contained page, 16 MB). On the title pick ROCK & MUD or STOCK SUV, and FREE
 PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
 with every place named (Free play: tap a name, JUMP, and you're there), the three graded trails (EASY: Field Track,
 MEDIUM: Creek Loop, HARD: Gumbo Trail), and GET IN: to change SUVs; the Heron waits on its strip (drive up, stop,
-HERON); G (or the Grip button on the map) switches the grip physics. Bogged, a button appears: WINCH (a tree in reach)
+HERON); G (or the Grip button on the map) switches the grip physics, and TYRES: on the map airs the tyres down (35, 20, 12 psi). THE BOG, north-east of the
+Trailhead, measures how far you get; the post by its start is the PULL TEST. Bogged, a button appears: WINCH (a tree in reach)
 or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
 L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-8.html`: one SUV at a time, no winch or strap, the trails' holes ungraded; `mud-lab-7.html`: the look before
+(`mud-lab-9.html`: no Bog, pull test or tyre pressure, and a winch could drag the SUV into a bank and carve it away;
+`mud-lab-8.html`: one SUV at a time, no winch or strap, the trails' holes ungraded; `mud-lab-7.html`: the look before
 Mud Lab 8, lit as Salt & Sand's desert; `mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no
 stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world;
 `mud-lab-2.html`: the 96 m field).
@@ -31,9 +33,73 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
 | The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. |
 | Getting stuck | `src/ml-recover.js` | Mud Lab 9: Free play and Real, both SUVs in the world at once, the winch, the strap, what RESET does when you're bogged. |
+| The Bog and the pull test | `src/ml-bog.js` | Mud Lab 10: the measured lane's marks, stakes and bests; the pull post and its reading. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+
+## Mud Lab 10 (Nov 10 2026): the Bog, the pull test, tyre pressure; and the winch at a bank
+
+His asks: on to the measured bog and pull test, tyre pressure, clay in the tread, then the vehicle models; and a fault
+from playing build 9: winched out near the pond, the line (on a tree above a sudden 30 ft drop) went on pulling him at
+the drop, "which made the cliff erode away", and the SUV ended up stuck in a valley of its own making.
+
+**The winch at a bank (the fault).** Build 9 let a pulled body cut the soil it was into, with no limit, so the winch
+dragged the SUV straight into the bank. Now only the belly ploughs (not the bumpers), only soil standing less than 40 cm
+over it (mud it has sunk into, never a bank's face), and never deeper than a metre; and a winch that has stopped
+taking in line while it climbs more than about 14 degrees to its tree lets go ("TOO STEEP FOR THE WINCH"). The same
+test in both builds (the Rock & Mud at the foot of the pond's steepest bank, winch on a tree above): build 9, 17 m into
+the bank and a cut 12.3 m deep; build 10, 4.2 m to the foot of the bank, 40 cm of churn, line off after 17 s. Winching
+out of the hard pits is as it was (23 m of line in 48 s). The drop itself is the pond's rim: the pond was cut into the
+hillside and its rim ends in a 10.5 m (34 ft) step. It is as it was; it could be eased into a slope if he wants.
+
+**The Bog** (on the map; north-east of the Trailhead): 262 ft of eight clay pits end to end, each deeper than the last
+(30 cm of water in the first, 115 in the last), a post every 25 ft, a taller one every 100. Drive in from the west;
+where you stand still for two seconds is your mark; a stake stays at each SUV's best (remembered).
+
+| SUV | Road pressure (35 psi) | Aired down (12 psi) |
+| --- | --- | --- |
+| Stock, AWD | 75 ft | 104 ft |
+| Stock, 4 HI | 103-105 ft | 104-105 ft |
+| Rock & Mud, lockers, steady throttle | 175-205 ft | 233-262 ft (all of it on one run) |
+| Rock & Mud, lockers, floored | 158 ft | 172 ft |
+| Rock & Mud, low range | 174-223 ft | 207-248 ft |
+
+(A first try, one long pit of water deepening to a metre, stopped nobody: kept moving, both SUVs half float across.
+In this soil what stops a SUV is climbing out of a pit.)
+
+**The pull test** (drawbar pull: what a vehicle can pull, as a share of its own weight; the number traction is
+measured by). A post by the Bog's start: stopped with your tail to it, PULL TEST puts a line on; drive off, hold it,
+lift off, and it reads the pull held and the peak in pounds. For the soils elsewhere `tools/test/ml-pits.py` ties the
+same line anywhere (`T9.pull`). This is the card to check the soil against after it moves into another game
+(0.7 throttle, 6 s, the pull held over the last 3 s; road pressure -> 12 psi):
+
+| Soil (where) | Stock SUV | Rock & Mud |
+| --- | --- | --- |
+| Dry loam (the Trailhead's field) | 0.80 -> 0.83 | 1.28 -> 1.29 |
+| Damp clay (the Clay Pan) | 0.69 -> 0.71 | 0.99 -> 0.99 |
+| Dry sand (the Quarry) | 0.60 -> 0.66 | 0.66 -> 0.73 |
+| Wet clay under water (the Mud Hole) | 0.37 -> 0.42 | 0.45 -> 0.54 |
+| Wet silt (the pond's bottoms) | 0.12 -> none (it couldn't take up the line's slack) | 0.73 -> 0.86 |
+
+**Tyre pressure** (the map: TYRES: ROAD 35 PSI -> TRAIL 20 -> SOFT 12, stopped; each SUV keeps its own, remembered).
+Aired down, the footprint is longer (x1.25, x1.5) and a little wider: the same weight presses less, so the tyre sinks
+less; soft or slick ground grips up to 10% / 18% better (both grip physics; in Soil science the longer footprint also
+counts in its own sum); firm ground drags a little. At road pressure nothing is changed: the SUVs are exactly as they
+drove. What it does: the stock SUV crosses an easy puddle no slower than 10 mph at 12 psi (7 at road), but stopped in
+one it is still bogged at any pressure; the Rock & Mud, stopped in a hard pit and floored, is bogged at road pressure and
+drives out in 6 s at 12 psi.
+
+**Clay in the tread** was already the soil's (it packs in wet clay, costs up to half the grip, and spins out; a mud
+tyre's lugs clear sooner): it now says so, once each time: "TREAD PACKED WITH CLAY: SPIN IT CLEAN". Nothing of it is
+changed, so the two SUVs stay balanced as they are.
+
+**Checked:** `tools/test/ml-same.py builds/mud-lab-9.html builds/mud-lab-10.html`: 7 of 7 drives the same to four
+decimals (road pressure, no line on: the SUVs drive exactly as in builds 8 and 9). No shader changed; the
+Bog's posts are about 370 triangles. **Not done:** bigger tyres for each SUV (his idea), the three vehicles' models.
+The Bog was measured on Game grip.
+
+![The Bog](docs/shots/mud-lab-10-bog.jpg) ![The pull test](docs/shots/mud-lab-10-pull.jpg)
 
 ## Mud Lab 9 (Nov 10 2026): getting stuck is the game
 

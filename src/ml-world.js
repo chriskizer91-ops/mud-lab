@@ -31,6 +31,11 @@ const ML_TRAILS=[
   {name:'Gumbo Trail',pts:mlLine([[-74,40],[-200,-22],[-330,-122],[-420,-242],[-520,-322],[-562,-452],[-462,-560],[-300,-560],[-180,-480],[-84,-380],[-62,-300]])},
   {name:'Deer Run',pts:mlLine([[300,40],[400,122],[520,182],[622,102],[662,-52],[602,-202],[520,-262]])},
   {name:'Field Track',pts:mlLine([[-170,606],[-60,640],[0,650],[110,630],[230,598],[350,566],[442,530]])}];
+/* the Bog (Mud Lab 10): a measured mud lane in the field north-east of the Trailhead, 80 m (262 ft) long, running
+   east: eight clay pits end to end, each 8 m long and deeper than the one before (30 cm of water in the first, 115 in
+   the last), a low ridge between each; the field laid level round it. (One long pit of deepening water didn't stop
+   either SUV: kept moving, they half float across. What stops them is climbing out of a pit, so it is pits) */
+const ML_BOG={u0:150,u1:230,v:536,hw:3.6,lv:null,deep:[.3,.4,.5,.6,.72,.86,1,1.15]};
 /* the mud holes on the trails (in their low, shady spots), each its own pool; and the big one.
    Mud Lab 9: three of the trails are graded, each hole's recipe (how long, how deep, how much clay) found on a row of
    trial pits with both SUVs (README, Mud Lab 9; tools/test/ml-pits.py):
@@ -45,6 +50,7 @@ const ML_HOLES=[];
 (()=>{const add=(tr,f,L,W,d,c)=>{const P=ML_TRAILS[tr].pts,i=Math.max(1,Math.min(P.length-2,Math.round(f*(P.length-1)))),a=P[i-1],b=P[i+1],r=Math.atan2(b[1]-a[1],b[0]-a[0]),H={u:P[i][0],v:P[i][1],L,W,r,d,lv:null,tr};if(c!==undefined)H.c=c;ML_HOLES.push(H);};
   [[0,.12,4,4.6,.3,.8],[0,.34,4,4.6,.3,.8],[0,.58,4,4.6,.3,.8],[0,.86,4,4.6,.3,.8],[1,.22,12,5,.4],[1,.48,8,4.6,.3],[1,.74,14,5,.45],[2,.145,10,5,.72,1],[2,.232,10,5,.72,1],[2,.625,10,5,.72,1],[2,.738,10,5,.72,1],
    [3,.3,12,5,.4],[3,.62,10,4.8,.38],[4,.12,4,4.6,.3,.8],[4,.4,4,4.6,.3,.8],[4,.52,4,4.6,.3,.8],[4,.64,4,4.6,.3,.8],[4,.76,4,4.6,.3,.8],[4,.88,4,4.6,.3,.8]].forEach(a=>add(...a));
+  ML_BOG.deep.forEach((d,k)=>ML_HOLES.push({u:ML_BOG.u0+5+k*10,v:ML_BOG.v,L:4.2,W:3.6,r:0,d,c:1,lv:null,bog:1}));
   ML_HOLES.push({u:-172,v:556,L:30,W:19,r:.35,d:.75,lv:null,big:1});})();
 const ML_POND={u:232,v:104,a:62,b:34,r:-.5};
 const ML_QUARRY={u:450,v:516,a:66,b:48};
@@ -53,7 +59,7 @@ const ML_CLAY={u:-470,v:-300};
    its ground laid level end to end; the Heron waits at its west end, facing east along it */
 const ML_STRIP={u0:-60,u1:340,v:690,hw:12,h0:null,h1:null};
 /* the places for the map: name, where, and what (for its mark) */
-const ML_PLACES=[['TRAILHEAD',0,650,'camp'],['MUD HOLE',-172,556,'hole'],['QUARRY',450,516,'sand'],['THE POND',232,104,'water'],['BIG CREEK',-340,300,'water'],
+const ML_PLACES=[['TRAILHEAD',0,650,'camp'],['MUD HOLE',-172,556,'hole'],['THE BOG',196,512,'hole'],['QUARRY',450,516,'sand'],['THE POND',232,104,'water'],['BIG CREEK',-340,300,'water'],
   ['THE BOTTOMS',380,-110,'bog'],['CLAY PAN',-470,-300,'clay'],['THE RIDGE',220,-640,'hill'],['HILL CLIMB',62,-482,'hill'],['LOWER FORD',-24,150,'ford'],['UPPER FORD',282,-48,'ford'],
   ['EASY: FIELD TRACK',120,600,'trail'],['MEDIUM: CREEK LOOP',80,410,'trail'],['HARD: GUMBO TRAIL',-110,22,'trail'],['RIDGE TRAIL',400,-560,'trail'],['DEER RUN',600,80,'trail'],['HERON STRIP',250,690,'strip']];
 /* ---------- quick nearest-line lookups: each line's segments in 32 m buckets ---------- */
@@ -96,9 +102,14 @@ function mlZone(u,v,o){
   /* the trails: worn two-tracks a little below the ground round them, wetter in the woods */
   mlNear(ML_IDX.trail,ML_TR_F,u,v,MLT);let trail=99;
   if(MLT.d<3.6){trail=MLT.d;const k=sst(3.6,1.6,MLT.d);h-=.14*k;moist=Math.min(1,moist+.12*k);}
+  /* the Bog: the field laid level round its pits */
+  let bogK=0;
+  {const B=ML_BOG,f=(u-B.u0)/(B.u1-B.u0),dv=Math.abs(v-B.v);if(f>-.5&&f<1.3&&dv<B.hw+26){
+    if(B.lv===null)B.lv=mlHills((B.u0+B.u1)/2,B.v);
+    bogK=sst(B.hw+26,B.hw+7,dv)*sst(-.5,-.3,f)*sst(1.3,1.1,f);h=h+(B.lv-h)*bogK;}}
   /* the mud holes: each a pool at its own level, the bed under it; the big one dug deep */
   for(const H of ML_HOLES){const x=u-H.u,z=v-H.v;if(Math.abs(x)>H.L+8||Math.abs(z)>H.L+8)continue;const cs=Math.cos(H.r),sn=Math.sin(H.r),a=(x*cs+z*sn)/H.L,b=(-x*sn+z*cs)/H.W,r=Math.hypot(a,b)+n3*.12;
-    if(r<1.5){if(H.lv===null)H.lv=mlHillsAt(H)-.14-.12*(H.big||0);const k=sst(1.5,1,r);
+    if(r<1.5){if(H.lv===null)H.lv=H.bog?(ML_BOG.lv===null?(ML_BOG.lv=mlHills((ML_BOG.u0+ML_BOG.u1)/2,ML_BOG.v)):ML_BOG.lv)-.14:mlHillsAt(H)-.14-.12*(H.big||0);const k=sst(1.5,1,r);
       h=r<1?Math.min(h,H.lv-H.d*sst(1,.15,r)):h+(Math.max(H.lv+.12,Math.min(h,H.lv+.4))-h)*k;if(r<1)wl=H.lv;moist=Math.max(moist,1-.5*sst(1,1.5,r));clay=Math.max(clay,(H.c!==undefined?H.c:H.big?.7:.35)*sst(1.5,1,r));if(H.s)silt=Math.max(silt,H.s*sst(1.5,1,r));}}
   /* the Heron Strip: level, dry and hard, no trees near it */
   let strip=0,stripD=99;
@@ -112,7 +123,7 @@ function mlZone(u,v,o){
   /* the woods: most of the north and the east; open fields round the camp; thin in the Bottoms; none on the pan,
      the trails, the water or the bank */
   let wood=sst(.42,.56,fbm(u/300,v/300,3,844)+.22*sst(-100,-500,v)+.15*sst(150,500,u)-.35*sst(330,560,v))*(1-.7*bot)*(1-clay*.9)*(1-sand*.8)*(1-bank);
-  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;
+  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;wood*=1-bogK;
   if(stripD<99){const f=(u-ML_STRIP.u0)/(ML_STRIP.u1-ML_STRIP.u0);wood*=Math.min(1,sst(ML_STRIP.hw+18,ML_STRIP.hw+60,stripD)+1-sst(-.2,-.05,f)*sst(1.2,1.05,f));}
   const grass=(1-wood)*(1-sst(.3,.7,clay+sand+peat+silt))*(trail<99?sst(1.4,2.6,trail):1)*(wl>ML_NONE+1?0:1)*(.6+.4*sst(.15,.5,moist));
   /* (the strip: mown grass, the dirt track down its middle 3 m each side) */
@@ -152,6 +163,7 @@ function mlTrees(x0,z0,x1,z1,addTree){
 function mlPlace(u,v){const e=Math.max(Math.abs(u),Math.abs(v));if(e>752)return 'Outside';if(e>724)return 'The bank';
   const o=mlZone(u,v,{});
   if(o.strip>.5)return 'The Heron Strip';
+  {const B=ML_BOG;if(u>B.u0-6&&u<B.u1+4&&Math.abs(v-B.v)<B.hw+3)return 'The Bog';}
   for(const H of ML_HOLES)if(Math.hypot(u-H.u,v-H.v)<H.L+3)return H.big?'The Mud Hole':'A mud hole';
   if(o.trail<3.6){mlNear(ML_IDX.trail,ML_TR_F,u,v,MLT);if(MLT.n>=0)return ML_TRAILS[MLT.n].name;}
   if(o.wl>ML_NONE+1&&o.wl>o.h)return Math.hypot(u-ML_POND.u,v-ML_POND.v)<70?'The Pond':'Big Creek';
