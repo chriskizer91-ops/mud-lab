@@ -21,6 +21,8 @@ HELP = r"""window.MLS2={
    /* (the soil's own clock from nought: sums from a different start round differently, and soft mud multiplies the last digit) */
    __ml.MLS.clock=0;
    /* (a vehicle made new, where the drive starts: made anywhere else, it brings the last digits of where it stood) */
+   /* (Mud Lab 9: the other SUV isn't part of these drives) */
+   if(window.__mlr)__mlr.testClear();
    D.setTestInput({steer:0,thr:0,brk:0,hb:1,nos:false});__mlsv.mlSuvSet('stock');__mlsv.mlSuvSet('crawler');
    __game.spawnCar(__mlsv.MLSV.bi[kind],A.x+dx,A.z+dz,yaw);__mlsv.MLSV.pick=kind;__game.FX.length=0;__ml.mlRake();__ml.MLS.clock=0;__seed(seed);for(let i=0;i<480;i++)D.step(1/120);
    for(const [thr,steer,brk,secs] of legs){D.setTestInput({steer,thr,brk,hb:0,nos:false});for(let i=0;i<Math.round(secs*120);i++)D.step(1/120);}

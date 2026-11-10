@@ -4,14 +4,18 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-8.html`** (one self-contained page, 16 MB). Pick ROCK & MUD or STOCK SUV on the title; START
-drives out from the Trailhead; the map shows the whole world with every place named (tap a name, JUMP, and the truck is
-there; SUV: swaps the SUV you're in); the Heron waits on its strip (drive up, stop, HERON); G (or the Grip button on the
-map) switches the grip physics; on a keyboard Enter is HERON/TRUCK, L the low range (his SUV: AWD, 4 HI, 4 LO),
-Backspace rakes the ground smooth; a tap on the build's name in the corner of the title switches the numbers on (frames a
-second, triangles: F on a keyboard). Earlier builds stay as they were (`mud-lab-7.html`: the look before Mud Lab 8, lit as
-Salt & Sand's desert; `mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no stock SUV, hangs on Windows
-laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-lab-2.html`: the 96 m field).
+**Open `builds/mud-lab-9.html`** (one self-contained page, 16 MB). On the title pick ROCK & MUD or STOCK SUV, and FREE
+PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
+with every place named (Free play: tap a name, JUMP, and you're there), the three graded trails (EASY: Field Track,
+MEDIUM: Creek Loop, HARD: Gumbo Trail), and GET IN: to change SUVs; the Heron waits on its strip (drive up, stop,
+HERON); G (or the Grip button on the map) switches the grip physics. Bogged, a button appears: WINCH (a tree in reach)
+or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
+L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
+the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
+(`mud-lab-8.html`: one SUV at a time, no winch or strap, the trails' holes ungraded; `mud-lab-7.html`: the look before
+Mud Lab 8, lit as Salt & Sand's desert; `mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no
+stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world;
+`mud-lab-2.html`: the 96 m field).
 
 ## What it's made of
 
@@ -26,9 +30,73 @@ laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html`: the 1,075 ft world; `mud-
 | The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. |
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
 | The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. |
+| Getting stuck | `src/ml-recover.js` | Mud Lab 9: Free play and Real, both SUVs in the world at once, the winch, the strap, what RESET does when you're bogged. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
-| Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). |
+| Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+
+## Mud Lab 9 (Nov 10 2026): getting stuck is the game
+
+His ask: two ways to play (free play, and a realistic one where bogged means recovered, not reset); a winch to the
+trees and a tow strap from the other SUV; three trails, easy, medium and hard, tuned to the two SUVs; leaning into how
+mud is really driven (keep moving, don't gun it, rock it out). Still to come, in his order: a measured mud bog and pull
+test, tyre pressure, clay packing the tread as a bigger part of the driving (only if the two SUVs stay balanced as they
+are), and last the three vehicles' models reworked to look finer and cost less.
+
+**Two ways to play** (the title; remembered):
+- *Free play*: as before. JUMP anywhere from the map. Bogged and upright, RESET sets you on the nearest firm ground.
+- *Real*: no jumps (you drive there, or fly). RESET only rights a rolled truck. Bogged, you rock it out, winch to a
+  tree, get the other SUV and strap out, or take A TOW HOME from the map (both SUVs back to the Trailhead).
+
+**Both SUVs are in the world at once.** The one you didn't pick stands by the Trailhead. On the map GET IN: puts you in
+it, where it stands (the one you leave stays where it is, engine off); in Free play BRING THE ... HERE sets it on firm
+ground within the strap's reach, facing away, ready to pull; its name is on the map too.
+
+**The winch** (both SUVs; 9,500 lb, 100 ft of line, 1 mph). Bogged with a tree within reach and within 60 degrees of
+straight ahead (or, failing that, behind), WINCH appears; it takes the tree that gives the longest straight pull. The
+line reels in by itself, pulls up to its rating and stalls there (a message says to help with the wheels), and lets go
+3 m from the tree. UNHOOK any time.
+
+**The strap** (46 ft, a stretchy kinetic rope). With the other SUV in reach of a bogged one, STRAP appears: hooked
+between the two nearer ends. During a rescue the other SUV's name is a button too: get in it, drive off, and the strap
+comes tight. The towed SUV rolls free, out of gear, engine off.
+
+**What had to give:** the engine holds a body out of the ground as if the ground were rock, so a truck sunk to its floor
+stood fast against the winch's whole 42 kN. Now, only while a line is pulling, the soil the hull is into gives way and
+is left churned (a trough). Driving without a line on is untouched.
+
+**The three trails** (each hole's recipe found on a row of trial pits in the open field, then checked where it lies):
+
+| Trail | Holes | What the tests show |
+| --- | --- | --- |
+| EASY: the Field Track (Mud Hole to Trailhead to Quarry) | six puddles, 8 m long, 30 cm deep, mostly clay | Stock SUV at a steady 10-20 mph: through in 16 of 18 drives (it slows to about 7 mph in each). Stopped in one: bogged, 6 of 6, 4 LO included. The whole trail: through in AWD at 11 mph (94 s) and in 4 HI at 20 mph (58 s); bogged in the first puddle in AWD at 16 mph (it was changing gear as it went in). Rock & Mud: 49 s, never under 15 mph. |
+| MEDIUM: the Creek Loop | four of the same puddles, and Big Creek's two fords (as they were) | Stock SUV: through all four puddles (12 of 12 drives), bogged in a ford every time (3 of 3). The Rock & Mud's test driver, which only holds a speed, bogged in the fords too (6 of 6); he crosses them by hand. |
+| HARD: the Gumbo Trail | four pits, 20 m long, 72 cm deep, all clay, on level stretches in the woods | Rock & Mud kept moving: through in 12 of 16 drives, down to 0-5 mph in the middle. Stopped in one, then floored: bogged in 11 of 13 tries. Winched out of three of them in 37-56 s (24-28 m of line, 4-26 kN), and drove away each time. |
+
+The Ridge Trail's and Deer Run's holes, the Mud Hole, the creek, the pond, the Clay Pan and the Quarry are as they were.
+Trees for the winch: plenty at the hard pits (28-58 within 30 m); none along the Field Track or at the fords (open
+ground: there it's the strap, or rocking it out).
+
+What the trial pits showed (Game grip): the stock SUV's limit is water over its sills (32 cm): at 40 cm a cruising stock
+SUV bogged in 10 of 12 trail drives, at 30 cm it gets through and still can't restart from a stop. The Rock & Mud's
+limit is about 80 cm: at 72 it crawls through, at 80 it's a coin toss, at 90 it never gets through. Flooring it in a
+deep pit digs it in where half throttle carries it through (his "gunning it makes you more stuck"). Near the limit the
+same drive can go either way from one try to the next: judge on several.
+
+**Numbers.** At the start the phone draws 221,738 triangles (build 8: 230,723) with the other SUV in the picture: a
+parked vehicle outside the picture isn't drawn any more (the Heron on its strip behind you was 60,000 triangles a
+frame), and the other SUV is its coarse copy past 30 m. With both SUVs and the Heron all in the picture near the
+Trailhead it would be about 280,000. The other SUV is on the physics only when strapped, within 8 m, or moving. No
+shader changed (the lines are drawn as plain bars with the trucks). Strap test: the Rock & Mud at light throttle pulled
+the bogged stock SUV 26 m clear in 6 s, 4-18 kN on the strap, 71 kN at the snatch. Driving physics, soil and sound:
+`tools/test/ml-same.py builds/mud-lab-8.html builds/mud-lab-9.html`: 7 of 7 drives the same to four decimals (the
+dry field, the Mud Hole, the pond, the quarry, the clay pan, the Heron's take-off).
+
+**Not done or not measurable here:** the trails were graded on Game grip; Soil science grip is harder everywhere and
+wasn't re-graded. Rocking a bogged SUV out by hand couldn't be scripted (a crude forward-reverse robot didn't free the
+stock SUV from an easy puddle). The phone's real frame time, as always. Ruts are still forgotten when the page closes.
+
+![The strap](docs/shots/mud-lab-9-strap.jpg) ![The winch](docs/shots/mud-lab-9-winch.jpg)
 
 ## Mud Lab 8 (Nov 9 2026): the look
 

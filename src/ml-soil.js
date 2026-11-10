@@ -315,6 +315,15 @@ const ML_LUG={};
 function mlLug(tr){if(ML_LUG[tr]===undefined){const T=TREAD_MU[tr],M=TREAD_MU.mud;ML_LUG[tr]=T&&M?Math.max(.5,Math.min(1.1,T.mud/M.mud)):1;}return ML_LUG[tr];}
 function mlStep(dt,t){
   if(!WG.mlA||MLS.off)return;if(!MLS.ready)mlInit();if(!MLS.ready||!t||t.rt)return;MLS.clock+=dt;
+  mlStepCar(dt,t);
+  /* (Mud Lab 9) the other SUV, while it's on the physics (strapped, or beside you: src/ml-recover.js): the same soil
+     under its tyres; the readouts stay yours */
+  {const o=mlrLive();if(o){const k=[MLS.wd,MLS.buoy,MLS.plough,MLS.res,GAME.dirt];mlStepCar(dt,o);o.mlDirt=Math.min(1,(o.mlDirt||0)+Math.max(0,GAME.dirt-k[4]));MLS.wd=k[0];MLS.buoy=k[1];MLS.plough=k[2];MLS.res=k[3];GAME.dirt=k[4];}}
+  if(!APP.bigMap&&MLS.gripBtn)MLS.gripBtn.hidden=true;
+  mlSettle(dt);mlWindow();mlUpload();
+}
+/* one vehicle's tyres and belly on the soil, for this frame */
+function mlStepCar(dt,t){
   /* (the soil's grip on each tyre, in place of or times the engine's own) */
   {const P=Object.getPrototypeOf(t);if(!P.__mlg){const o=P._smu;P._smu=function(wh,s){return MLS.terra&&wh.mlOn&&wh.mlMuT!==undefined?wh.mlMuT:o.call(this,wh,s)*(wh.mlGrip===undefined?1:wh.mlGrip);};P.__mlg=1;}}
   mlWater(dt,t);let res=0,zS=0,nZ=0;const m=t.c.mass||2500;
@@ -347,8 +356,7 @@ function mlStep(dt,t){
   if(nZ>=2&&t.__mlClr!==undefined){const pen=zS/nZ-(t.__mlClr-.07);MLS.plough=0;
     if(pen>0){const W=mlWeights(t.p[0],t.p[2],MLW),S=mlParams(W),F=Math.min(.6*m*9.81,1.2*pen*(S.c*1000*4+9000*pen)),vx=t.v[0],vz=t.v[2],vl=Math.hypot(vx,vz);
       if(vl>1e-3){const dv=Math.min(vl,F/m*dt);t.v[0]-=vx/vl*dv;t.v[2]-=vz/vl*dv;}MLS.plough=F;res+=F;}}
-  MLS.res=res;if(!APP.bigMap&&MLS.gripBtn)MLS.gripBtn.hidden=true;
-  mlSettle(dt);mlWindow();mlUpload();
+  MLS.res=res;
 }
 /* ---------- the graphics card's soil: a window of 24 x 24 squares round the truck, wrapping as it moves ---------- */
 function mlWindow(){const c=GAME.car;if(!c)return;const cs=MLS.T*MLS.C,ci=Math.floor((c.p[0]-MLS.x0)/cs),cj=Math.floor((c.p[2]-MLS.z0)/cs),H=MLS.NW/MLS.T/2;

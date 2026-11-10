@@ -102,11 +102,14 @@ addEventListener('keydown',e=>{if((e.code==='Enter'||e.code==='NumpadEnter')&&!e
 
 /* ---------- THE MAP: the strip and the Heron on it; tap a name to pick it, JUMP to go there in the truck ---------- */
 function mlvPlaces(){const A=WG.mlA,o=WG.mlPlaces.map(([name,u,v,kind])=>({name,u,v,kind}));
-  const t=GAME.car,P=t&&!t.rt?mlvParked():null;if(P&&P.rt)o.push({name:'THE HERON',u:P.p[0]-A.x,v:P.p[2]-A.z,kind:'heron'});return o;}
+  const t=GAME.car,P=t&&!t.rt?mlvParked():null;if(P&&P.rt)o.push({name:'THE HERON',u:P.p[0]-A.x,v:P.p[2]-A.z,kind:'heron'});
+  /* (Mud Lab 9) the SUV you're not in, where it stands */
+  if(t&&!t.rt&&MLR.other&&!MLR.off)o.push({name:ML_SUV_NAME[mlSuvKind(MLR.other)],u:MLR.other.p[0]-A.x,v:MLR.other.p[2]-A.z,kind:'suv'});return o;}
 function mlvMap(toM){
   const S=WG.mlStrip,[a0,b0]=toM(S.u0,S.v),[a1]=toM(S.u1,S.v);hLine(a0,b0,a1,b0,pack(236,232,214,200));
   MLV.hits=[];for(const p of mlvPlaces()){const [a,b]=toM(p.u,p.v);MLV.hits.push({p,a,b,w:p.name.length*4+6});
-    if(p.kind==='heron'){hDisc(a,b,1.6,PAL.gold);otxt3('THE HERON',a+3,b+2,PAL.gold);}}
+    if(p.kind==='heron'){hDisc(a,b,1.6,PAL.gold);otxt3('THE HERON',a+3,b+2,PAL.gold);}
+    if(p.kind==='suv'){hDisc(a,b,1.4,PAL.white);otxt3(p.name,a+3,b+2,PAL.white);}}
   if(MLV.sel){const [a,b]=toM(MLV.sel.u,MLV.sel.v);hRing(a,b,3.2,(APP.t*4|0)%2?PAL.white:PAL.gold);}}
 /* (a tap on the map: on a name or its dot, that place; anywhere else closes it, as before) */
 addEventListener('pointerdown',e=>{
@@ -116,7 +119,10 @@ addEventListener('pointerdown',e=>{
   const hx=(e.clientX-RECT.x)/RECT.w*W,hy=(e.clientY-RECT.y)/RECT.h*H;let best=null,bd=1e9;
   for(const h of MLV.hits){const inBox=hx>=h.a-3&&hx<=h.a+h.w&&hy>=h.b-9&&hy<=h.b+(h.p.kind==='heron'?9:3),d=Math.hypot(hx-h.a,hy-h.b);
     const s=inBox?d*.2:d;if((inBox||d<7)&&s<bd){bd=s;best=h.p;}}
-  if(!best)return;e.stopPropagation();e.preventDefault();MLV.sel=best;mlvJumpBtn();},true);
+  if(!best)return;e.stopPropagation();e.preventDefault();
+  /* (Mud Lab 9) Real: no jumps: you drive there, or fly */
+  if(MLR.mode==='real'&&!MLR.off){say('REAL: NO JUMPS. DRIVE THERE, OR FLY',2);return;}
+  MLV.sel=best;mlvJumpBtn();},true);
 function mlvJumpBtn(){let b=MLV.jb;if(!b){b=MLV.jb=document.createElement('button');b.type='button';b.id='mlJump';
     b.style.cssText='position:fixed;left:calc(env(safe-area-inset-left) + 12px);top:calc(50% - 30px);max-width:calc(50vw - 49vh - 24px);min-width:120px;white-space:normal;z-index:61;font:700 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 18px;border-radius:999px;border:0;background:#c98f4a;color:#1d140a;box-shadow:0 4px 16px rgba(0,0,0,.4);cursor:pointer';
     b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();if(MLV.sel)mlvJump(MLV.sel);});document.body.appendChild(b);}
@@ -125,6 +131,7 @@ function mlvJumpBtn(){let b=MLV.jb;if(!b){b=MLV.jb=document.createElement('butto
 function mlvJump(p){
   const A=WG.mlA,t=GAME.car;let x=A.x+p.u,z=A.z+p.v,spot;
   if(p.kind==='heron'){const P=mlvParked();spot=mlvBeside(P.p[0],P.p[2],mlvYaw(P));}
+  else if(p.kind==='suv'){spot=mlvSpot(x+9,z,x,z,7);spot.yaw=Math.atan2(-(z-spot.z),x-spot.x);}
   else{spot=mlvSpot(x,z);const dx=x-spot.x,dz=z-spot.z;spot.yaw=Math.hypot(dx,dz)>2?Math.atan2(-dz,dx):(t?mlvYaw(t):0);
     if(p.kind==='strip'){spot=mlvSpot(A.x+WG.mlStrip.u0+22,A.z+WG.mlStrip.v-34);spot.yaw=-Math.PI/2;}}
   if(t&&t.rt){const h=t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]),sp=Math.hypot(t.v[0],t.v[1],t.v[2]);

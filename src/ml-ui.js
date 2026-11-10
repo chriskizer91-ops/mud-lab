@@ -14,7 +14,7 @@ function mlTitle(){
 #mlTitle .mlT{text-align:center;padding:16px 24px;max-width:680px}
 #mlTitle small{letter-spacing:.32em;text-transform:uppercase;font-size:13px;opacity:.85;font-family:system-ui,sans-serif}
 #mlTitle h1{font-size:min(10vw,16vh,96px);white-space:nowrap;font-weight:400;font-style:italic;margin:4px 0 2px;text-shadow:0 2px 18px rgba(0,0,0,.45)}
-#mlTitle p{font-size:clamp(14px,2.2vw,18px);margin:0 0 22px;opacity:.92;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+#mlTitle p{font-size:clamp(13px,2vw,17px);margin:0 0 12px;opacity:.92;text-shadow:0 1px 8px rgba(0,0,0,.5)}
 #mlTitle button{font:600 18px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;border:0;border-radius:999px;cursor:pointer;margin:6px}
 #mlGo{background:#c98f4a;color:#1d140a;padding:16px 54px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
 #mlOut{background:rgba(20,14,9,.55);color:#f2e6d2;padding:12px 26px;font-size:14px!important;border:1px solid rgba(242,230,210,.35)!important}
@@ -23,10 +23,10 @@ function mlTitle(){
   const h=document.querySelector('#menu .mhead h1');if(h)h.innerHTML='Mud Lab <small class="tagw">'+ML_BUILD+'</small>';
   document.title='Mud Lab';
   const d=document.createElement('div');d.id='mlTitle';
-  d.innerHTML='<div class="mlT"><small>Two SUVs and a bush plane</small><h1>Mud Lab</h1><p>Five thousand feet of soil, wet and dry: creek bottoms, a clay pan, a quarry, mud trails through the woods. And the Heron, waiting on its strip.</p>'+
+  d.innerHTML='<div class="mlT"><small>Two SUVs and a bush plane</small><h1>Mud Lab</h1><p>Five thousand feet of soil, wet and dry. Three mud trails: easy, medium, hard. A winch, a strap, and the Heron on its strip.</p>'+
     '<button id="mlGo" type="button">Start</button><br><button id="mlOut" type="button">Bay</button></div><i>'+ML_BUILD+'</i>';
   /* (the game holds behind the title: nothing drawn under it (Mud Lab 6), so the soil's preparation gets the time) */
-  document.body.appendChild(d);mlSuvTitle(d);GAME.hold=true;
+  document.body.appendChild(d);mlSuvTitle(d);mlrTitle(d);GAME.hold=true;
   d.querySelector('#mlGo').addEventListener('click',()=>{d.remove();GAME.hold=false;mlSuvStart();const b=$('sasDrive');if(b)b.click();mlSoilNote();});
   d.querySelector('#mlOut').addEventListener('click',()=>{d.remove();GAME.hold=false;mlSuvStart();});
   /* (Mud Lab 8) the numbers on the phone, with no button of their own: a tap on the build's name in the corner switches the

@@ -31,11 +31,20 @@ const ML_TRAILS=[
   {name:'Gumbo Trail',pts:mlLine([[-74,40],[-200,-22],[-330,-122],[-420,-242],[-520,-322],[-562,-452],[-462,-560],[-300,-560],[-180,-480],[-84,-380],[-62,-300]])},
   {name:'Deer Run',pts:mlLine([[300,40],[400,122],[520,182],[622,102],[662,-52],[602,-202],[520,-262]])},
   {name:'Field Track',pts:mlLine([[-170,606],[-60,640],[0,650],[110,630],[230,598],[350,566],[442,530]])}];
-/* the mud holes on the trails (in their low, shady spots), each its own pool; and the big one */
+/* the mud holes on the trails (in their low, shady spots), each its own pool; and the big one.
+   Mud Lab 9: three of the trails are graded, each hole's recipe (how long, how deep, how much clay) found on a row of
+   trial pits with both SUVs (README, Mud Lab 9; tools/test/ml-pits.py):
+   - the Field Track, EASY: six puddles 8 m long, 30 cm deep, mostly clay. The stock SUV gets through each at a steady
+     10 to 20 mph, and is bogged if it stops in one (in 4 LO too). Nothing to the Rock & Mud.
+   - the Creek Loop, MEDIUM: four of the same puddles, and Big Creek's two fords, which stop the stock SUV every time.
+   - the Gumbo Trail, HARD: four pits 20 m long, 72 cm deep, all clay, on level stretches in the woods (trees for the
+     winch): the Rock & Mud crawls through at 2 to 5 mph if it keeps moving (12 of 16 test drives), and is bogged if it
+     stops in one (11 of 13).
+   (the Ridge Trail's and Deer Run's holes are as they were) */
 const ML_HOLES=[];
-(()=>{const add=(tr,f,L,W,d)=>{const P=ML_TRAILS[tr].pts,i=Math.max(1,Math.min(P.length-2,Math.round(f*(P.length-1)))),a=P[i-1],b=P[i+1],r=Math.atan2(b[1]-a[1],b[0]-a[0]);ML_HOLES.push({u:P[i][0],v:P[i][1],L,W,r,d,lv:null});};
-  [[0,.12,13,5,.4],[0,.34,9,4.6,.32],[0,.58,15,5,.45],[0,.86,10,4.8,.35],[1,.22,12,5,.4],[1,.48,8,4.6,.3],[1,.74,14,5,.45],[2,.18,11,5,.42],[2,.42,16,5.2,.5],[2,.66,9,4.6,.35],[2,.88,12,5,.4],
-   [3,.3,12,5,.4],[3,.62,10,4.8,.38],[4,.2,8,4.6,.28]].forEach(a=>add(...a));
+(()=>{const add=(tr,f,L,W,d,c)=>{const P=ML_TRAILS[tr].pts,i=Math.max(1,Math.min(P.length-2,Math.round(f*(P.length-1)))),a=P[i-1],b=P[i+1],r=Math.atan2(b[1]-a[1],b[0]-a[0]),H={u:P[i][0],v:P[i][1],L,W,r,d,lv:null,tr};if(c!==undefined)H.c=c;ML_HOLES.push(H);};
+  [[0,.12,4,4.6,.3,.8],[0,.34,4,4.6,.3,.8],[0,.58,4,4.6,.3,.8],[0,.86,4,4.6,.3,.8],[1,.22,12,5,.4],[1,.48,8,4.6,.3],[1,.74,14,5,.45],[2,.145,10,5,.72,1],[2,.232,10,5,.72,1],[2,.625,10,5,.72,1],[2,.738,10,5,.72,1],
+   [3,.3,12,5,.4],[3,.62,10,4.8,.38],[4,.12,4,4.6,.3,.8],[4,.4,4,4.6,.3,.8],[4,.52,4,4.6,.3,.8],[4,.64,4,4.6,.3,.8],[4,.76,4,4.6,.3,.8],[4,.88,4,4.6,.3,.8]].forEach(a=>add(...a));
   ML_HOLES.push({u:-172,v:556,L:30,W:19,r:.35,d:.75,lv:null,big:1});})();
 const ML_POND={u:232,v:104,a:62,b:34,r:-.5};
 const ML_QUARRY={u:450,v:516,a:66,b:48};
@@ -46,7 +55,7 @@ const ML_STRIP={u0:-60,u1:340,v:690,hw:12,h0:null,h1:null};
 /* the places for the map: name, where, and what (for its mark) */
 const ML_PLACES=[['TRAILHEAD',0,650,'camp'],['MUD HOLE',-172,556,'hole'],['QUARRY',450,516,'sand'],['THE POND',232,104,'water'],['BIG CREEK',-340,300,'water'],
   ['THE BOTTOMS',380,-110,'bog'],['CLAY PAN',-470,-300,'clay'],['THE RIDGE',220,-640,'hill'],['HILL CLIMB',62,-482,'hill'],['LOWER FORD',-24,150,'ford'],['UPPER FORD',282,-48,'ford'],
-  ['CREEK LOOP',150,340,'trail'],['RIDGE TRAIL',400,-560,'trail'],['GUMBO TRAIL',-540,-400,'trail'],['DEER RUN',600,80,'trail'],['HERON STRIP',250,690,'strip']];
+  ['EASY: FIELD TRACK',120,600,'trail'],['MEDIUM: CREEK LOOP',80,410,'trail'],['HARD: GUMBO TRAIL',-110,22,'trail'],['RIDGE TRAIL',400,-560,'trail'],['DEER RUN',600,80,'trail'],['HERON STRIP',250,690,'strip']];
 /* ---------- quick nearest-line lookups: each line's segments in 32 m buckets ---------- */
 const ML_BK=32,ML_BN=Math.ceil(2*(ML_A.h+ML_A.m)/ML_BK)+2;
 const ML_IDX={creek:new Map(),trail:new Map()};
@@ -90,7 +99,7 @@ function mlZone(u,v,o){
   /* the mud holes: each a pool at its own level, the bed under it; the big one dug deep */
   for(const H of ML_HOLES){const x=u-H.u,z=v-H.v;if(Math.abs(x)>H.L+8||Math.abs(z)>H.L+8)continue;const cs=Math.cos(H.r),sn=Math.sin(H.r),a=(x*cs+z*sn)/H.L,b=(-x*sn+z*cs)/H.W,r=Math.hypot(a,b)+n3*.12;
     if(r<1.5){if(H.lv===null)H.lv=mlHillsAt(H)-.14-.12*(H.big||0);const k=sst(1.5,1,r);
-      h=r<1?Math.min(h,H.lv-H.d*sst(1,.15,r)):h+(Math.max(H.lv+.12,Math.min(h,H.lv+.4))-h)*k;if(r<1)wl=H.lv;moist=Math.max(moist,1-.5*sst(1,1.5,r));clay=Math.max(clay,(H.big?.7:.35)*sst(1.5,1,r));}}
+      h=r<1?Math.min(h,H.lv-H.d*sst(1,.15,r)):h+(Math.max(H.lv+.12,Math.min(h,H.lv+.4))-h)*k;if(r<1)wl=H.lv;moist=Math.max(moist,1-.5*sst(1,1.5,r));clay=Math.max(clay,(H.c!==undefined?H.c:H.big?.7:.35)*sst(1.5,1,r));if(H.s)silt=Math.max(silt,H.s*sst(1.5,1,r));}}
   /* the Heron Strip: level, dry and hard, no trees near it */
   let strip=0,stripD=99;
   {const S=ML_STRIP,dv=Math.abs(v-S.v),f=(u-S.u0)/(S.u1-S.u0);if(dv<60&&f>-.2&&f<1.2){

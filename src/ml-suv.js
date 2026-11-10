@@ -5,8 +5,8 @@
    driven into the same mud. Nothing about either is changed; the soil reads their tyres (src/ml-soil.js: an
    all-season's small tread voids bite less into soft soil and pack with sticky clay sooner than a mud-terrain's lugs).
    - the title: pick ROCK & MUD or STOCK SUV under the title (remembered); BAY shows the one picked;
-   - on the map: SUV: STOCK / SUV: ROCK & MUD (right, under the grip) swaps the one you're in, where it stands, when
-     it's stopped; the Heron's TRUCK puts you in the one you drove last;
+   - on the map (Mud Lab 9: both SUVs are in the world now, src/ml-recover.js): GET IN: STOCK / GET IN: ROCK & MUD
+     (right, under the grip) puts you in the other one, where it stands, when you're stopped; the Heron's TRUCK puts you in the one you drove last;
    - his SUV's four-wheel drive, as its transfer case has it (the game's Stock has the two-speed one): the button (L on a
      keyboard) goes AWD (the centre coupling slips, the brakes send the torque) -> 4 HI (the centre locked: front and
      rear turn together) -> 4 LO (locked, and the 2.64 low range) -> AWD.
@@ -46,10 +46,10 @@ function mlSuvBtn(){
     b.addEventListener('pointerdown',e=>e.stopPropagation());
     b.addEventListener('click',e=>{e.stopPropagation();const c=GAME.car;if(!c||c.rt)return;
       if(Math.hypot(c.v[0],c.v[1],c.v[2])>3){say('STOP FIRST',1.4);return;}
-      mlSuvSet(mlSuvKind(c)==='stock'?'crawler':'stock');mlSuvBtn();});
+      if(MLR.other&&!MLR.off)mlrSeat();else mlSuvSet(mlSuvKind(c)==='stock'?'crawler':'stock');mlSuvBtn();});
     document.body.appendChild(b);}
   const show=APP.bigMap&&GAME.state==='drive'&&t&&!t.rt;b.hidden=!show;
-  if(show){const nm='SUV: '+ML_SUV_SHORT[mlSuvKind(t)];if(b.textContent!==nm)b.textContent=nm;}}
+  if(show){const nm=MLR.other&&!MLR.off?'GET IN: '+ML_SUV_SHORT[mlSuvKind(MLR.other)]:'SUV: '+ML_SUV_SHORT[mlSuvKind(t)];if(b.textContent!==nm)b.textContent=nm;}}
 /* ---------- the title: which one to drive ---------- */
 function mlSuvTitle(root){
   const row=document.createElement('div');row.id='mlPick';
