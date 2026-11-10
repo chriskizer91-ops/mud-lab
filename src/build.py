@@ -3,10 +3,10 @@ the Road Not Found engine, as it was on Nov 7 2026), the Rock & Mud's play model
 ground pictures (base/texpack.js), with this game's own code (src/). Nothing here is shared with Ground Truth: if the
 soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
-usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-10: give the
+usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-11: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-10'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-11'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -29,9 +29,12 @@ swap("function drawBigMap(){\n", "function drawBigMap(){\n  if(WG.mlA&&MLS.map)r
 # ---------- THE TRUCK (src/ml-truck.js): the SUV is the Rock & Mud, drawn as its 50k play model ----------
 swap("const CAR_STOCK={suv:'stock',", "const CAR_STOCK={suv:'crawler',")
 swap("if(t===GAME.car&&!far){const S2=s2For(t.bi),k=s2Key(t.bi);", "if(t===GAME.car&&!far&&!ML_PLAY(t)&&!mlIsStock(t)){const S2=s2For(t.bi),k=s2Key(t.bi);")
-swap("const i=t.bi,b=t.build,u=CUR.u,M0=carMatrix(t);let Mb=M0,T=far?truckFar(i):truck(i);", "const i=t.bi,b=t.build,u=CUR.u,M0=carMatrix(t);let Mb=M0,T=far?truckFar(i):truck(i);const MLP2=!far&&ML_PLAY(t);if(MLP2)T=mltT(T);")
+swap("const i=t.bi,b=t.build,u=CUR.u,M0=carMatrix(t);let Mb=M0,T=far?truckFar(i):truck(i);", "const i=t.bi,b=t.build,u=CUR.u,M0=carMatrix(t);let Mb=M0,T=far?truckFar(i):truck(i);const MLP2=!far&&ML_PLAY(t);if(MLP2)T=mltT(T,t);")
 swap("  if(!depth){carUniformsW(t,v,dirt);gl.uniform1f(u.uMudLocal,1);gl.uniform1f(u.uMudOff,0);gl.uniform1f(u.uPrevOn,1);}\n  const fx=D.X(D.uFa)",
      "  if(!depth){carUniformsW(t,v,dirt);gl.uniform1f(u.uMudLocal,1);gl.uniform1f(u.uMudOff,0);gl.uniform1f(u.uPrevOn,1);if(MLP2)mltBind();}\n  const fx=D.X(D.uFa)")
+# (Mud Lab 11) a bigger tyre than the garage had, for the Rock & Mud: 40 in mud-terrains (src/ml-suv.js ML_BIG)
+swap("T_P('mt37','37x12.5R17 mud-terrain',.47,.318,17,'mt','mud',TY_MT,60,1.15,.15),T_P('slick','310/680R18 slick',.345,.31,18,'slick','slick',TY_SLICK,-10,.95,-1,.05)],",
+     "T_P('mt37','37x12.5R17 mud-terrain',.47,.318,17,'mt','mud',TY_MT,60,1.15,.15),T_P('mt40','40x13.5R17 mud-terrain',.508,.343,17,'mt','mud',TY_MT,78,1.18,.15),T_P('slick','310/680R18 slick',.345,.31,18,'slick','slick',TY_SLICK,-10,.95,-1,.05)],")
 # its baked pictures in the land's shaders: texture coordinates through the vertex shader, material 120 in the fragment
 swap('layout(location=3) in float aMat;\nlayout(location=5) in vec4 iA;', 'layout(location=3) in float aMat;layout(location=4) in vec2 aUV;\nlayout(location=5) in vec4 iA;')
 swap('out vec3 vP;out vec3 vN;out vec4 vC;out float vMat;out vec3 vL;out vec4 vCur;out vec4 vPrev;\nvoid main(){\n  vec3 w,pw;',
@@ -162,6 +165,9 @@ swap("const FX_CAP={mobile:220,low:300};", "const FX_CAP={mobile:600,low:800};")
 heron = rd('base/heron/rt-game.js').replace('/*@@FLY@@*/', rd('base/heron/rt-fly.js'))
 for a_, b_ in [("if(RT.want)say('THE REDTAIL',2);", "if(RT.want)say('THE HERON',2);"), ("{id:'redtail',name:'Redtail',gov:0,", "{id:'redtail',name:'Heron',gov:0,")]:
     assert heron.count(a_) == 1, a_; heron = heron.replace(a_, b_)
+# (Mud Lab 11) each of the Heron's pieces gets a far copy (src/ml-recover.js mlFarMesh)
+_a = "ms[nm]=makeMesh(d);ms[nm].pv=e.pv;ms[nm].tris=e.n/3;}"; assert heron.count(_a) == 1
+heron = heron.replace(_a, "ms[nm]=makeMesh(d);ms[nm].pv=e.pv;ms[nm].tris=e.n/3;mlFarPiece(ms[nm],d,nm,e.n/3);}")
 # ---------- THE STOCK SUV (src/ml-suv.js): his SUV's 4WD mode on the LOW button and key, and its name on the HUD
 swap("    if(inp.low)say(setLow(t,!t.low)?(t.low?'Low range':'High range'):'No low range on this car',1.4);", "    if(inp.low)say(mlLow(t),1.4);")
 swap("$('tLow').hidden=!c.low;", "$('tLow').hidden=!c.low&&!mlIsStock(GAME.car);")

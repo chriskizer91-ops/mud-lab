@@ -11,12 +11,20 @@
      keyboard) goes AWD (the centre coupling slips, the brakes send the torque) -> 4 HI (the centre locked: front and
      rear turn together) -> 4 LO (locked, and the 2.64 low range) -> AWD.
    ===================================================================================== */
-const MLSV={pick:(()=>{try{return localStorage.getItem('mudlab:suv')==='stock'?'stock':'crawler';}catch(e){return 'crawler';}})(),bi:{crawler:-1,stock:-1},btn:null};
+const MLSV={pick:(()=>{try{return localStorage.getItem('mudlab:suv')==='stock'?'stock':'crawler';}catch(e){return 'crawler';}})(),bi:{crawler:-1,stock:-1},btn:null,
+  /* (Mud Lab 11) a tyre size up for each, his idea: the stock SUV on 33 in all-terrains with the 2 in leveling kit they
+     need; the Rock & Mud on 40 in mud-terrains. Built by the engine's own garage (rigBuild), so the bigger tyre's
+     radius, width, weight, tread and the taller gearing it gives are the engine's; the soil reads them as it reads
+     any tyre. Picked on the title (tap your SUV's name again), each SUV's own, remembered */
+  big:{crawler:false,stock:false},bib:{crawler:-1,stock:-1}};
+for(const k of ['crawler','stock'])try{MLSV.big[k]=localStorage.getItem('mudlab:big:'+k)==='1';}catch(e){}
+const ML_BIG={stock:{tires:'at33',ride:'lift2'},crawler:{tires:'mt40'}},ML_TYRE={stock:['29s','33s'],crawler:['37s','40s']};
 const mlSuvKind=v=>v&&!v.rt&&v.build&&(v.build.kit||v.build.id)==='stock'?'stock':'crawler';
 const mlIsStock=v=>!!(v&&!v.rt&&v.build&&(v.build.kit||v.build.id)==='stock');
 const ML_SUV_NAME={crawler:'ROCK & MUD',stock:'STOCK SUV'},ML_SUV_SHORT={crawler:'ROCK & MUD',stock:'STOCK'};
 /* (the builds: the Rock & Mud as the game made it at boot; his SUV as its garage preset) */
 function mlSuvIdx(k){
+  if(MLSV.big[k]){if(MLSV.bib[k]<0){try{MLSV.bib[k]=rigBuild('suv',Object.assign(presetRig(k),ML_BIG[k]));}catch(e){console.warn('big tyres',e);MLSV.big[k]=false;}}if(MLSV.bib[k]>=0)return MLSV.bib[k];}
   if(k==='crawler'){if(MLSV.bi.crawler<0){const c=GAME.car;MLSV.bi.crawler=c&&!c.rt&&(c.build.kit||c.build.id)==='crawler'?c.bi:BUILDS.findIndex(b=>b.id==='crawler');}return MLSV.bi.crawler;}
   if(MLSV.bi.stock<0){try{MLSV.bi.stock=rigBuild('suv',presetRig('stock'));}catch(e){MLSV.bi.stock=BUILDS.findIndex(b=>b.id==='stock');}}return MLSV.bi.stock;}
 /* into the other SUV, where this one stands (or, before the drive, the one the bay shows) */
@@ -52,13 +60,19 @@ function mlSuvBtn(){
   if(show){const nm=MLR.other&&!MLR.off?'GET IN: '+ML_SUV_SHORT[mlSuvKind(MLR.other)]:'SUV: '+ML_SUV_SHORT[mlSuvKind(t)];if(b.textContent!==nm)b.textContent=nm;}}
 /* ---------- the title: which one to drive ---------- */
 function mlSuvTitle(root){
+  /* (the Rock & Mud as the game made it at boot: noted before any other is made) */
+  if(MLSV.bi.crawler<0){const c=GAME.car;if(c&&!c.rt&&(c.build.kit||c.build.id)==='crawler')MLSV.bi.crawler=c.bi;}
   const row=document.createElement('div');row.id='mlPick';
   row.innerHTML='<button type="button" data-k="crawler">Rock &amp; Mud</button><button type="button" data-k="stock">Stock SUV</button>';
-  const paint=()=>{for(const x of row.children)x.classList.toggle('on',x.dataset.k===MLSV.pick);};
-  row.addEventListener('click',e=>{const k=e.target&&e.target.dataset&&e.target.dataset.k;if(!k)return;mlSuvSet(k);paint();});
+  const NM={crawler:'Rock & Mud',stock:'Stock SUV'},paint=()=>{for(const x of row.children){const k=x.dataset.k;if(!k)continue;x.classList.toggle('on',k===MLSV.pick);x.textContent=NM[k]+' \u00b7 '+ML_TYRE[k][MLSV.big[k]?1:0];}};
+  row.addEventListener('click',e=>{const k=e.target&&e.target.dataset&&e.target.dataset.k;if(!k)return;
+    if(k===MLSV.pick){MLSV.big[k]=!MLSV.big[k];try{localStorage.setItem('mudlab:big:'+k,MLSV.big[k]?'1':'0');}catch(_){}}
+    mlSuvSet(k);if(GAME.state!=='drive'&&GAME.car&&GAME.car.bi!==mlSuvIdx(k))spawnCar(mlSuvIdx(k));paint();});
   paint();const go=root.querySelector('#mlGo');go.parentNode.insertBefore(row,go);
-  const st=document.createElement('style');st.textContent=`#mlPick{margin:0 0 12px}#mlPick button{background:rgba(20,14,9,.45);color:#f2e6d2;padding:9px 20px;font-size:14px!important;border:1px solid rgba(242,230,210,.3)!important;margin:4px}
+  const st=document.createElement('style');st.textContent=`#mlTitle .mlT{max-width:800px}#mlPick{margin:0 0 12px;white-space:nowrap}#mlPick button{background:rgba(20,14,9,.45);color:#f2e6d2;padding:9px 13px;font-size:13px!important;letter-spacing:.1em!important;border:1px solid rgba(242,230,210,.3)!important;margin:4px}
 #mlPick button.on{background:#f2e6d2;color:#1d140a;border-color:#f2e6d2!important}`;document.head.appendChild(st);}
 /* (at Start, the one picked: the game makes the Rock & Mud at boot) */
-function mlSuvStart(){mlSuvIdx('crawler');if(MLSV.pick==='stock'&&mlSuvKind(GAME.car)!=='stock')mlSuvSet('stock');}
+function mlSuvStart(){if(MLSV.pick==='stock'&&mlSuvKind(GAME.car)!=='stock')mlSuvSet('stock');
+  /* (the size picked: the game makes the standard one) */
+  {const i=mlSuvIdx(MLSV.pick);if(GAME.car&&!GAME.car.rt&&i>=0&&GAME.car.bi!==i)spawnCar(i);}}
 window.__mlsv={MLSV,mlSuvSet,mlSuvIdx,mlIsStock,mlLow,mlMode};

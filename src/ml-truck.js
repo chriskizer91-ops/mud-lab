@@ -29,13 +29,15 @@ function mltBuild(){
     /* (the glass keeps the game's own glass materials; the underside (16 in the bake's numbering) is plain dark colour) */
     for(let k=0;k<n;k++){const m=m8[k];mat[k]=m===16?0:m;const c=m===120?1:m===16?.03:.025;col[k*4]=col[k*4+1]=col[k*4+2]=c;col[k*4+3]=0;}
     const ib=MLT_U8(e.idx),idx=e.i32?new Uint32Array(ib.buffer):new Uint16Array(ib.buffer);
-    ms[nm]=makeMesh({pos,nrm,col,mat,idx,uv});ms[nm].tris=e.n/3;}
+    ms[nm]=makeMesh({pos,nrm,col,mat,idx,uv});ms[nm].tris=e.n/3;
+    /* (Mud Lab 11) the same wheel a size up, for the 40 in tyres (37 in as baked: 0.47 m radius; 0.508) */
+    if(nm==='wheel'){const k=.508/.47,p2=new Float32Array(pos.length);for(let q=0;q<pos.length;q++)p2[q]=pos[q]*k;ms.wheelBig=makeMesh({pos:p2,nrm,col,mat,idx,uv});ms.wheelBig.tris=e.n/3;}}
   MLT.mesh=ms;MLT.tex={};MLT.px=0;
   for(const k of ['a','n','o'])mltTex(D.tex[k],(tx,w,h)=>{MLT.tex[k]=tx;MLT.texN++;MLT.px=w;});
   return true;}
 /* the engine's truck for your Rock & Mud: its numbers as they are, the play model's meshes in place of its own */
-function mltT(T){if(!MLT.mesh&&!mltBuild())return T;if(MLT.texN<3)return T;
-  let C=MLT.T.get(T);if(!C){C=Object.create(T);Object.assign(C,{body:MLT.mesh.body,hood:null,hide:null,engineOut:false,bay:null,rider:null,wheel:MLT.mesh.wheel,wheelR:MLT.mesh.wheel,
+function mltT(T,t){if(!MLT.mesh&&!mltBuild())return T;if(MLT.texN<3)return T;
+  let C=MLT.T.get(T);if(!C){const W=t&&t.build&&t.build.look&&t.build.look.tyre&&t.build.look.tyre.R>.49&&MLT.mesh.wheelBig?MLT.mesh.wheelBig:MLT.mesh.wheel;C=Object.create(T);Object.assign(C,{body:MLT.mesh.body,hood:null,hide:null,engineOut:false,bay:null,rider:null,wheel:W,wheelR:W,
     tris:window.LR_TRUCK.tris});MLT.T.set(T,C);}return C;}
 /* (its three pictures on units 13 to 15) */
 function mltBind(){if(MLT.texN<3)return;

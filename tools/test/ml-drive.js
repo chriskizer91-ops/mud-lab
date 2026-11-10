@@ -7,7 +7,7 @@ window.T9=/* Mud Lab test drivers (tools/test/ml-pits.py, ml-rescue.py): put a S
  /* a vehicle made new at u,v (the world's own coordinates), facing yaw; mode: stock 'AWD'|'4 HI'|'4 LO', crawler 'open'|'lock'|'low' */
  put(kind,u,v,yaw,mode){const D=__dyb,A=D.WG.mlA;__game.FX.length=0;this.inp({hb:1});
    if(window.__mlr&&__mlr.testClear)__mlr.testClear();
-   __mlsv.mlSuvIdx('stock');__mlsv.mlSuvIdx('crawler');__game.spawnCar(__mlsv.MLSV.bi[kind],A.x+u,A.z+v,yaw);__mlsv.MLSV.pick=kind;__game.FX.length=0;this.steps(240);
+   __mlsv.mlSuvIdx('stock');__mlsv.mlSuvIdx('crawler');__game.spawnCar(this.bigOn&&__mlsv.MLSV.big?(__mlsv.MLSV.big[kind]=true,__mlsv.mlSuvIdx(kind)):(__mlsv.MLSV.big&&(__mlsv.MLSV.big[kind]=false),__mlsv.MLSV.bi[kind]),A.x+u,A.z+v,yaw);__mlsv.MLSV.pick=kind;__game.FX.length=0;this.steps(240);
    const t=D.GAME.car;
    if(kind==='stock'){let g=0;while(__mlsv.mlMode(t)!==(mode||'4 HI')&&g++<4)__mlsv.mlLow(t);}
    else{if(mode==='lock'||mode==='low'||!mode){t.locked=true;const d=t.c.diff;if(d.can.r){d.rLock=true;if(d.can.f)d.fLock=true;}}if(mode==='low')__mlsv.mlLow(t);}
@@ -123,4 +123,18 @@ Object.assign(T9,{
    this.go({},.5);M.stuck=true;M.treeT=-9;this.go({},.3);const can=this.st().can;__mlr.mlrHookUp();const out=['drop '+C.dh+' m, trees '+C.trees,can];let last='';
    for(let i=0;i<(secs||45);i++){M.stuck=true;const s=this.go({},1);if(!s.winch){last=s.msgs.slice(-1)[0];out.push('line off after '+(i+1)+' s: '+last);break;}}
    const S=__ml.mlStats();out.push('moved '+this.f(Math.hypot(t.p[0]-x0,t.p[2]-z0))+' m, up '+this.f(t.p[1]-y0)+' m, deepest cut '+S.deepestCm+' cm, pitch '+this.f(Math.asin(Math.max(-1,Math.min(1,t.M[3])))*57.3)+' deg');return out;}
+});
+/* Mud Lab 11: the tyre size up (T9.bigOn=true before a drive), and the pond's bank */
+Object.assign(T9,{bigOn:false,
+ facts(kind){const t=this.put(kind,0,620,0);this.go({},1);const c=t.c;return kind.slice(0,5)+(this.bigOn?' big':' std')+': tyre R '+c.R+' W '+c.tyreW+' tread '+c.tread+', '+Math.round(t.m)+' kg, sills '+this.f(t.__mlClr*100)+' cm';},
+ /* down the pond's bank from its top (the brakes dragging), into the pond; then the winch back up */
+ bank(kind){const C=this.cliff(),dx=C.p0[0]-C.p1[0],dz=C.p0[1]-C.p1[1],l=Math.hypot(dx,dz),ux=dx/l,uz=dz/l,Z={};__ml.mlRake();
+   /* (the top: back from the rim until the ground stops rising) */
+   let top=C.p1,hT=__dyb.WG.mlZone(top[0],top[1],Z).h;for(let d=2;d<40;d+=2){const q=[C.p1[0]-ux*d,C.p1[1]-uz*d],h=__dyb.WG.mlZone(q[0],q[1],Z).h;if(h<hT+.3){break;}top=q;hT=h;}
+   const st=[top[0]-ux*6,top[1]-uz*6],t=this.put(kind,st[0],st[1],Math.atan2(-uz,ux)),y0=t.p[1];let tt=0,pit=0,roll=0,vmax=0,up=true;
+   while(tt<40){const sp=t.speed;this.inp(sp<2.5?{thr:.25}:{brk:.5});this.steps(12);tt+=.1;pit=Math.max(pit,Math.abs(Math.asin(Math.max(-1,Math.min(1,t.M[3])))*57.3));roll=Math.max(roll,Math.abs(Math.asin(Math.max(-1,Math.min(1,t.M[5])))*57.3));vmax=Math.max(vmax,sp);if(t.M[4]<.5)up=false;if((__ml.MLS.wd||0)>.3)break;}
+   const out=[kind+(this.bigOn?' big':'')+': top '+this.f(hT)+' m over the pond, down in '+this.f(tt)+' s, steepest '+this.f(pit)+' deg, leaned '+this.f(roll)+' deg, fastest '+this.f(vmax*2.237)+' mph, upright '+up+', in water '+this.f((__ml.MLS.wd||0)*100)+' cm, dropped '+this.f(y0-t.p[1])+' m'];
+   for(let q=0;q<60&&t.speed>.4;q++)this.go({brk:1,hb:1},.5);const M=this.R(),y1=t.p[1];out.push('stopped in '+this.f((__ml.MLS.wd||0)*100)+' cm of water, '+this.f(y0-t.p[1])+' m below the top');M.stuck=true;M.treeT=-9;this.go({hb:1,brk:1},.4);M.stuck=true;M.treeT=-9;this.go({hb:1,brk:1},.1);out.push(this.st().can+' at '+this.st().mph+' mph, trees '+JSON.stringify(this.trees()));__mlr.mlrHookUp();const W=this.st().winch;out.push(W?'line '+W.len+' m '+(W.end>0?'ahead':'behind'):'no line');
+   let i=0;for(;i<90;i++){M.stuck=true;const s=this.go({},1);if(!s.winch){out.push('line off after '+(i+1)+' s: '+s.msgs.slice(-1)[0]);break;}}
+   out.push('winched up '+this.f(t.p[1]-y1)+' m, upright '+(t.M[4]>.5));return out;}
 });

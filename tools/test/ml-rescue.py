@@ -38,7 +38,9 @@ async def main():
             await asyncio.sleep(1)
             if await pg.evaluate("()=>{try{return __dyb.GAME.state}catch(e){return 'x'}}") == 'menu' and i > 5: break
         if 'title' in want:
+            if 'tyres' in want: await pg.evaluate("()=>{const b=document.querySelector('#mlPick [data-k='+__mlsv.MLSV.pick+']');b.click();}")
             await pg.screenshot(path=OUT + 'title.png')
+            if 'tyres' in want: await pg.evaluate("()=>{const b=document.querySelector('#mlPick [data-k='+__mlsv.MLSV.pick+']');b.click();}")
             await pg.evaluate("()=>document.querySelector('#mlPick [data-m=real]').click()"); await pg.screenshot(path=OUT + 'title-real.png')
             await pg.evaluate("()=>document.querySelector('#mlPick [data-m=free]').click()")
         await pg.evaluate("()=>document.querySelector('#mlGo').click()")
@@ -82,6 +84,17 @@ async def main():
                 n['log'] = log[::6]; n['secs'] = len(log); n['end'] = s; n['moved_m'] = round(((s['p'][0] - p0[0]) ** 2 + (s['p'][1] - p0[1]) ** 2) ** .5, 1)
                 await ev("MLVW.free()"); await shot('winch-out')
             num['winch'] = n
+        if 'tyres' in want:
+            # (Mud Lab 11) each SUV a tyre size up, side by side with its standard self parked beyond
+            num['tyres'] = await ev("(T9.bigOn=true,[T9.facts('stock'),T9.facts('crawler')])")
+            await ev("(T9.put('crawler',-20,612,1.571),T9.bigOn=false,__mlsv.MLSV.big.stock=true,T9.R().other=__mlr.mlrMake('stock',{x:__dyb.WG.mlA.x-14.5,z:__dyb.WG.mlA.z+612,yaw:1.571}),T9.R().made=true,__mlsv.MLSV.big.stock=false,T9.go({hb:1},1),MLVW.look(5,1.5,-9,0,.9,2.6,.75))"); await shot('tyres')
+            await ev("(__mlsv.MLSV.big.crawler=false,T9.put('crawler',-20,612,1.571),T9.R().other=__mlr.mlrMake('stock',{x:__dyb.WG.mlA.x-14.5,z:__dyb.WG.mlA.z+612,yaw:1.571}),T9.R().made=true,T9.go({hb:1},1),MLVW.look(5,1.5,-9,0,.9,2.6,.75))"); await shot('tyres-std')
+        if 'bank' in want:
+            # the pond's bank from its top, the Rock & Mud nosing over
+            await ev("(C=>{const dx=C.p0[0]-C.p1[0],dz=C.p0[1]-C.p1[1],l=Math.hypot(dx,dz);T9.put('crawler',C.p1[0]-dx/l*16,C.p1[1]-dz/l*16,Math.atan2(-dz/l,dx/l));T9.go({thr:.25},2.5);T9.go({brk:1,hb:1},1);MLVW.free();})(T9.cliff())"); await shot('bank'); num['bank'] = {'tris': await ev('R9.tris()')}
+        if 'heronfar' in want:
+            # the Heron on its strip from 130 m off: the triangles in the picture
+            await ev("(H=>{const A=__dyb.WG.mlA;T9.put('crawler',H.x-A.x+%s,H.z-A.z-4,3.1416);T9.go({hb:1},.5);MLVW.look(-6,2.2,.6,20,1.2,0,.5);})(__mlv.mlvHome())" % os.environ.get('HERON_M', '130')); await shot('heronfar'); num['heronfar'] = {'tris': await ev('R9.tris()'), 'far': await ev("__mlr.MLF?JSON.stringify(__mlr.MLF):'no far copy'")}
         if 'bog' in want:
             # (Mud Lab 10) the Bog: from its start line, then where a floored run with the Rock & Mud ends
             await ev("(T9.sign(),__ml.mlRake(),__mlb.MLB.cool=false,T9.put('crawler',__dyb.WG.mlBog.u0-13,__dyb.WG.mlBog.v,0),MLVW.free(),1)"); await shot('bog-start')
