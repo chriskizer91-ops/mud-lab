@@ -69,7 +69,7 @@ function mlSuvTitle(root){
     if(k===MLSV.pick){MLSV.big[k]=!MLSV.big[k];try{localStorage.setItem('mudlab:big:'+k,MLSV.big[k]?'1':'0');}catch(_){}}
     mlSuvSet(k);if(GAME.state!=='drive'&&GAME.car&&GAME.car.bi!==mlSuvIdx(k))spawnCar(mlSuvIdx(k));paint();});
   paint();const go=root.querySelector('#mlGo');go.parentNode.insertBefore(row,go);
-  const st=document.createElement('style');st.textContent=`#mlTitle .mlT{max-width:800px}#mlPick{margin:0 0 12px;white-space:nowrap}#mlPick button{background:rgba(20,14,9,.45);color:#f2e6d2;padding:9px 13px;font-size:13px!important;letter-spacing:.1em!important;border:1px solid rgba(242,230,210,.3)!important;margin:4px}
+  const st=document.createElement('style');st.textContent=`#mlTitle .mlT{max-width:800px}#mlPick{margin:0 0 10px}#mlPick button{background:rgba(20,14,9,.45);color:#f2e6d2;padding:9px 13px;font-size:13px!important;letter-spacing:.1em!important;border:1px solid rgba(242,230,210,.3)!important;margin:4px}
 #mlPick button.on{background:#f2e6d2;color:#1d140a;border-color:#f2e6d2!important}`;document.head.appendChild(st);}
 /* (at Start, the one picked: the game makes the Rock & Mud at boot) */
 function mlSuvStart(){if(MLSV.pick==='stock'&&mlSuvKind(GAME.car)!=='stock')mlSuvSet('stock');

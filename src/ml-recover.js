@@ -147,9 +147,14 @@ resetCar=function(){const t=GAME.car;
 /* ---------- each frame ---------- */
 const MLR_VT=mlvTick;
 mlvTick=function(){MLR_VT();mlrTick();};
+/* (Mud Lab 12) REAR, the engine's own look-back button (Mud Lab had it off the screen): there while a strap, the pull
+   test's line or a winch line to a tree behind is on, so you can watch what you're pulling; gone again after */
+function mlrRear(want){const b=document.getElementById('tRear');if(!b)return;if(b.hidden===want)b.hidden=!want;
+  if(!want&&TOUCH.rear){TOUCH.rear=false;b.classList.remove('lit');}}
 function mlrTick(){const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip||MLR.off)return;
   const now=GAME.time,dt=Math.max(0,Math.min(.1,now-(MLR.t0||now)));MLR.t0=now;mlrUI();
   if(MLR.note){say(MLR.note,3);MLR.note='';}
+  mlrRear(!t.rt&&!!(MLR.strap||MLR.pull||MLR.winch&&MLR.winch.end<0));
   if(t.rt){mlrShow('',false);mlrMap();return;}
   if(!MLR.other&&!MLR.made)mlrFirst(t);
   const o=MLR.other;if(o){if(o.takeEvents)o.takeEvents();if(o.pt&&o.pt.takeEvents)o.pt.takeEvents();}

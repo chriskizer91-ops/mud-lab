@@ -3,10 +3,10 @@ the Road Not Found engine, as it was on Nov 7 2026), the Rock & Mud's play model
 ground pictures (base/texpack.js), with this game's own code (src/). Nothing here is shared with Ground Truth: if the
 soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
-usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-11: give the
+usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-12: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-11'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-12'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -259,7 +259,7 @@ import re as _re
 _hd = rd('base/heron/heron-data.js'); _hp = base64.b64encode(open(os.path.join(R, 'base/heron/redtail-2-heron.webp'), 'rb').read()).decode()
 assert len(_re.findall(r'"a":"[A-Za-z0-9+/=]+"', _hd)) == 1
 _hd = _re.sub(r'"a":"[A-Za-z0-9+/=]+"', lambda m: '"a":"' + _hp + '"', _hd)
-s = s[:i] + '<script>' + rd('base/truck-rock-mud-50k.js') + '\n' + _hd + '\n</script>\n' + s[i:]
+s = s[:i] + '<script>' + rd('base/truck-rock-mud-50k.js') + '\n' + rd('base/suv-stock-baked.js') + '\n' + _hd + '\n</script>\n' + s[i:]
 os.makedirs(os.path.join(R, 'builds'), exist_ok=True); out = os.path.join(R, 'builds', NAME + '.html')
 open(out, 'w', encoding='utf-8').write(re.sub(r"const ML_BUILD='[^']*';", "const ML_BUILD='%s';" % NAME, s, count=1))
 print('written', out, len(s))
