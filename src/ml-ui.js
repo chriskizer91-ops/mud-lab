@@ -18,7 +18,7 @@ function mlTitle(){
 #mlTitle button{font:600 18px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;border:0;border-radius:999px;cursor:pointer;margin:6px}
 #mlGo{background:#c98f4a;color:#1d140a;padding:16px 54px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
 #mlOut{background:rgba(20,14,9,.55);color:#f2e6d2;padding:12px 26px;font-size:14px!important;border:1px solid rgba(242,230,210,.35)!important}
-#mlTitle i{position:absolute;right:12px;bottom:8px;font:12px system-ui,sans-serif;opacity:.6}`;
+#mlTitle i{position:absolute;right:0;bottom:0;padding:16px 12px 8px 28px;font:12px system-ui,sans-serif;opacity:.6;font-style:normal;cursor:pointer}`;
   document.head.appendChild(st);
   const h=document.querySelector('#menu .mhead h1');if(h)h.innerHTML='Mud Lab <small class="tagw">'+ML_BUILD+'</small>';
   document.title='Mud Lab';
@@ -28,5 +28,11 @@ function mlTitle(){
   /* (the game holds behind the title: nothing drawn under it (Mud Lab 6), so the soil's preparation gets the time) */
   document.body.appendChild(d);mlSuvTitle(d);GAME.hold=true;
   d.querySelector('#mlGo').addEventListener('click',()=>{d.remove();GAME.hold=false;mlSuvStart();const b=$('sasDrive');if(b)b.click();mlSoilNote();});
-  d.querySelector('#mlOut').addEventListener('click',()=>{d.remove();GAME.hold=false;mlSuvStart();});}
+  d.querySelector('#mlOut').addEventListener('click',()=>{d.remove();GAME.hold=false;mlSuvStart();});
+  /* (Mud Lab 8) the numbers on the phone, with no button of their own: a tap on the build's name in the corner switches the
+     engine's performance readout on or off (frames a second, the frame's time, the graphics chip's time, the picture's
+     size, triangles: on a keyboard it's F). It's remembered, as F is; the page's address ending #numbers switches it on too */
+  const lab=d.querySelector('i'),num=()=>{lab.textContent=ML_BUILD+(DEVW.hud==='off'?'':' \u00b7 numbers on');};
+  if(/numbers/.test(location.hash)&&DEVW.hud==='off'){DEVW.hud='perf';saveDev();}
+  lab.addEventListener('click',e=>{e.stopPropagation();DEVW.hud=DEVW.hud==='off'?'perf':'off';saveDev();num();});num();}
 window.__mlui={mlTitle,ML_BUILD};
