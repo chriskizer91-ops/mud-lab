@@ -4,7 +4,7 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-11.html`** (one self-contained page, 16 MB). On the title pick ROCK & MUD or STOCK SUV (tap
+**Open `builds/mud-lab-12.html`** (one self-contained page, 20 MB). On the title pick ROCK & MUD or STOCK SUV (tap
 your pick again for a tyre size up: 33s on the stock SUV, 40s on the Rock & Mud), and FREE PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
 with every place named (Free play: tap a name, JUMP, and you're there), the three graded trails (EASY: Field Track,
 MEDIUM: Creek Loop, HARD: Gumbo Trail), and GET IN: to change SUVs; the Heron waits on its strip (drive up, stop,
@@ -13,7 +13,8 @@ Trailhead, measures how far you get; the post by its start is the PULL TEST. Bog
 or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
 L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-10.html`: one tyre size each, a sheer 34 ft step at the pond's rim, the Heron always drawn in full;
+(`mud-lab-11.html`: the stock SUV as the game's plain built model, no look-back button, a title that didn't fit a phone;
+`mud-lab-10.html`: one tyre size each, a sheer 34 ft step at the pond's rim, the Heron always drawn in full;
 `mud-lab-9.html`: no Bog, pull test or tyre pressure, and a winch could drag the SUV into a bank and carve it away;
 `mud-lab-8.html`: one SUV at a time, no winch or strap, the trails' holes ungraded; `mud-lab-7.html`: the look before
 Mud Lab 8, lit as Salt & Sand's desert; `mud-lab-6.html`: the sound garbles after switching apps; `mud-lab-5.html`: no
@@ -25,6 +26,7 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | What | Where | Notes |
 | --- | --- | --- |
 | The engine | `base/engine-salt-and-sand.html` | A frozen copy of Redline County's Salt & Sand page (the Road Not Found engine: renderer, physics, Digital Engine sound), from `chriskizer91-ops/salt-mini-plus` branch `beyond-the-last-road`, Nov 7 2026. Never updated from there: this copy is Mud Lab's own. |
+| The stock SUV's play model | `base/suv-stock-baked.js`, `tools/suv_pack.py`, `src/ml-truck.js` | Mud Lab 12: his own bake of the stock SUV (salt-mini-plus, branch `beyond-the-last-road`, `models/suv/suv_baked_data.js`: the Studio SUV baked onto the game's own stock SUV by that repo's `models/tools/bake.py`), repacked the way the Rock & Mud's is: 51,044 triangles and one 2048 x 3072 atlas (colour, normals, occlusion + roughness + metal). |
 | The truck | `base/truck-rock-mud-50k.js`, `src/ml-truck.js` | Ground Truth's Rock & Mud play model: 49,654 triangles, the Studio 2 baked onto it, Station Sand paint. Its numbers are the engine's own Rock & Mud (`crawler`): checked identical to Ground Truth's (mass 2,530 kg, tyre 0.47 m radius, 0.318 m wide, the same chassis and engine numbers). |
 | His ground pictures | `base/texpack.js` | The textures Ground Truth paints its ground with (red dirt, wet mud, sand, grass...). |
 | The world | `src/ml-world.js` | Mud Lab 4: 1,536 m (5,040 ft) square, every spot a soil and a moisture (below). |
@@ -38,6 +40,45 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+
+## Mud Lab 12 (Nov 10 2026): the stock SUV baked, a look back while towing, a title that fits a phone
+
+His words after playing build 11: "extremely fun"; pulling one truck out with the other needs a rear view or a drone
+view that looks back; the opening screen doesn't show all its options on his phone; and the stock SUV baked like the
+Rock & Mud, with the bake tools from salt-mini-plus, where he made the Studio models.
+
+**The stock SUV, baked.** The bake tools are in salt-mini-plus (branch `beyond-the-last-road`, `models/tools/`:
+`bake.py` runs in Blender, casting a ray from every pixel of the game's own car into the detailed Studio car and
+writing what it finds as pictures), and so is their result for the stock SUV, `models/suv/suv_baked_data.js` and
+`suv_baked.glb`. `tools/suv_pack.py` repacks those into `base/suv-stock-baked.js`, and `src/ml-truck.js` draws it exactly as it draws the
+Rock & Mud's play model (the same three picture slots, whichever SUV is being drawn: no new sampler, no shader change).
+Triangles: 51,044 for the game's built model's 51,586 (the frame in the same view: 234,256 for 235,980). The page
+is 19.5 MB (15.8): the three pictures, 2048 x 3072 each, halved on the phone. Two things had to be put right to draw
+it: the data file's normals are in the car's own axes, and Mud Lab's baked material reads them in the surface's own
+frame, so the bake's other set (in the `.glb`: `skin_tnrm`, `wheel_tnrm`) is laid into the atlas instead; and the
+bake's lamps go back to the game's own lamp materials, so they light.
+How it looks (side by side at the phone's size, `docs/shots/mud-lab-12-stock.jpg`, left build 11): the same shape,
+the wheels and arches better drawn, the paint a flatter, darker taupe, and the chrome grille and bumper dark. The
+bake carries a clear coat and chrome that Mud Lab's baked material doesn't shine (the Rock & Mud has little of
+either), and that material is in the land's shader, which may not grow. So at this size it is not clearly better
+than the plain model yet: his call, on his screens.
+What this is and isn't: it is the bake his pipeline already made, from the first Studio SUV (484,359 triangles). It
+is not a new bake of the Studio 2 SUV: that means running Blender's bake again from the Studio 2 model (about ten
+minutes of baking, plus exporting the Studio 2 SUV's parts), which was not done here. On the 33s the wheel is drawn
+a size up; the body is the standard one, 5 cm higher.
+
+**REAR.** The engine's own look-back button, which Mud Lab had taken off the screen, is back only while a strap, the
+pull test's line, or a winch line to a tree behind is on (tap for the view behind, tap again to return); it goes
+when the line does.
+
+**The title on a phone.** Start and Bay side by side; on a short screen the description gives way and the title
+shrinks; on a narrow one the picks wrap; the page scrolls if it must. All six buttons in view at 915 x 412, 740 x 330,
+640 x 300 and 412 x 780.
+
+**Checked:** `tools/test/ml-same.py builds/mud-lab-11.html builds/mud-lab-12.html`: 7 of 7 drives the same to four
+decimals, no page errors. No shader changed; no physics code changed (drawing, the title and one button).
+
+![The stock SUV, before and after](docs/shots/mud-lab-12-stock.jpg)
 
 ## Mud Lab 11 (Nov 10 2026): the pond's bank, a tyre size up, and the Heron from far off
 
