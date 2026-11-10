@@ -190,7 +190,8 @@ const ML_BK=[],ML_BW=[],ML_BT=[];
 function mlStamp(t,w,dt,S,W){
   const C=MLS.C,N=MLS.N,cp=w.cp,now=mlNow();
   let ux=w.f[0],uz=w.f[2];const fl=Math.hypot(ux,uz)||1;ux/=fl;uz/=fl;const rx=-uz,rz=ux;
-  const R=w.R,hw=(w.front?t.c.tyreW:t.c.tyreWR)*.5,hl=Math.min(.24,.1+R*.12),bw=.2,ext=hw+bw;
+  /* (aired down: the patch longer and a little wider, so the same weight presses less and sinks less) */
+  const A=t.mlAir,R=w.R,hw=(w.front?t.c.tyreW:t.c.tyreWR)*.5*(A?A.kW:1),hl=Math.min(.24,.1+R*.12)*(A?A.kL:1),bw=.2,ext=hw+bw;
   w.mlFz=w.mlFz===undefined?w.Fz:w.mlFz+(w.Fz-w.mlFz)*Math.min(1,dt/.12);const pn=w.mlFz/(4*hw*hl)/ML_PREF,slip=w.w*R-w.vl,aslip=Math.abs(slip),spin=Math.max(0,aslip-.35);
   const p=t.p,v=t.v,Wv=t.w,ry=cp[1]-p[1],qx=cp[0]-p[0],qz=cp[2]-p[2],vx=v[0]+(Wv[1]*qz-Wv[2]*ry),vz=v[2]+(Wv[0]*ry-Wv[1]*qx),vlat=vx*rx+vz*rz,side=Math.max(0,Math.abs(vlat)-.6)*Math.sign(vlat);
   const Hc=cp[1]-MLS.h0,rad=Math.hypot(hl,ext)+C;
@@ -341,11 +342,15 @@ function mlStepCar(dt,t){
     /* wet clay packs into the tread as it rolls; spinning throws it out; other ground wears it off */
     const roll=Math.min(1,Math.abs(w.vl)/3);w.mlClog=Math.max(0,Math.min(1,w.mlClog+dt*(clayWet*.32*roll*(wd<.05?1:.2)/Math.pow(lug,1.5)-w.mlClog*(Math.max(0,wR-5)*.09*lug*lug+(1-clayWet)*.12+(wd>.1?.3:0)))));
     w.mlGrip=S.grip*(1-.5*w.mlClog)*(wd>.05?.92:1);
+    /* (Mud Lab 10) tyres aired down (src/ml-recover.js; nothing at road pressure): a longer footprint grips soft and
+       slick ground better, and costs a little on firm ground */
+    const A=t.mlAir,soft=A?Math.max(sst(.03,.12,S.D),sst(1,.6,S.grip)):0;if(A)w.mlGrip*=1+A.g*soft;
     /* soil science: the soil's strength over the contact patch (which grows as the tyre sinks), the tread's lugs biting
        into it; the work of pushing through it, more the deeper the tyre is in */
-    const z=Math.max(0,-mlRut(fi|0,fj|0))+.01,L=.16+Math.sqrt(2*w.R*z),Ar=(w.front?t.c.tyreW:t.c.tyreWR)*L,Fz=Math.max(800,w.Fz);zS+=z;nZ++;
+    const z=Math.max(0,-mlRut(fi|0,fj|0))+.01,L=(.16+Math.sqrt(2*w.R*z))*(A?A.kL:1),Ar=(w.front?t.c.tyreW:t.c.tyreWR)*L,Fz=Math.max(800,w.Fz);zS+=z;nZ++;
     w.mlMuT=Math.max(.08,Math.min(1.3,1.2*(1-.4*w.mlClog)*(S.c*1000*Ar/Fz*lug+Math.tan(S.phi*Math.PI/180)*(.85+.15*lug))*(wd>.05?.9:1)));
     if(MLS.terra){const Rr=w.Fz*.45*Math.sqrt(z/w.R),fx=w.f[0],fz=w.f[2],fl=Math.hypot(fx,fz)||1,dv=Math.min(Math.abs(w.vl),Rr/m*dt)*Math.sign(w.vl);t.v[0]-=fx/fl*dv;t.v[2]-=fz/fl*dv;res+=Rr;}
+    if(A&&A.rr){const dv=Math.min(Math.abs(w.vl),A.rr*2.45*(1-soft)*dt)*Math.sign(w.vl),fx=w.f[0],fz=w.f[2],fl=Math.hypot(fx,fz)||1;t.v[0]-=fx/fl*dv;t.v[2]-=fz/fl*dv;}
     /* tyres come out of water or wet mud wet, and dry as they roll on */
     const wetSoil=W.moist*Math.max(W.silt+W.peat+W.clay*.6,.4);if(wd>.01||wetSoil>.55)w.mlWet=1;else w.mlWet=Math.max(0,w.mlWet-dt*(.04+.025*Math.abs(w.vl)));
     mlStamp(t,w,dt,S,W);if(!reduce)mlThrow(t,w,dt,S,W,wd);
