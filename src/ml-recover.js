@@ -152,7 +152,7 @@ mlvTick=function(){MLR_VT();mlrTick();};
 function mlrRear(want){const b=document.getElementById('tRear');if(!b)return;if(b.hidden===want)b.hidden=!want;
   if(!want&&TOUCH.rear){TOUCH.rear=false;b.classList.remove('lit');}}
 function mlrTick(){const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip||MLR.off)return;
-  const now=GAME.time,dt=Math.max(0,Math.min(.1,now-(MLR.t0||now)));MLR.t0=now;mlrUI();
+  const now=GAME.time,dt=Math.max(0,Math.min(.1,now-(MLR.t0||now)));MLR.t0=now;mlrUI();mlmTick(t);
   if(MLR.note){say(MLR.note,3);MLR.note='';}
   mlrRear(!t.rt&&!!(MLR.strap||MLR.pull||MLR.winch&&MLR.winch.end<0));
   if(t.rt){mlrShow('',false);mlrMap();return;}

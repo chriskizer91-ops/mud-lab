@@ -4,16 +4,21 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-12.html`** (one self-contained page, 20 MB). On the title pick ROCK & MUD or STOCK SUV (tap
+**Open `builds/mud-lab-13.html`** (one self-contained page, 20 MB). On the title pick ROCK & MUD or STOCK SUV (tap
 your pick again for a tyre size up: 33s on the stock SUV, 40s on the Rock & Mud), and FREE PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
-with every place named (Free play: tap a name, JUMP, and you're there), the three graded trails (EASY: Field Track,
-MEDIUM: Creek Loop, HARD: Gumbo Trail), and GET IN: to change SUVs; the Heron waits on its strip (drive up, stop,
-HERON); G (or the Grip button on the map) switches the grip physics, and TYRES: on the map airs the tyres down (35, 20, 12 psi). THE BOG, north-east of the
+with every place named (Free play: tap a name, then JUMP and you're there, or GUIDE ME THERE and an arrow leads you;
+Real: tap a name and the arrow guides you), the
+three graded trails (EASY: Field Track, MEDIUM: Creek Loop, HARD: Gumbo Trail), and MENU beside it: the other SUV, the
+tyres, the grip, and THINGS TO DO; the Heron waits on its strip (drive up, stop,
+HERON); G (or GRIP in the map's MENU) switches the grip physics; in the MENU, TYRE AIR airs the tyres down (35, 20,
+12 psi), TYRE SIZE changes their size, and THINGS TO DO sets you down at (Free play) or guides you to (Real) the Bog,
+the pull test, the three trails (each a timed run), the pond's bank and a rescue. THE BOG, north-east of the
 Trailhead, measures how far you get; the post by its start is the PULL TEST. Bogged, a button appears: WINCH (a tree in reach)
 or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
 L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-11.html`: the stock SUV as the game's plain built model, no look-back button, a title that didn't fit a phone;
+(`mud-lab-12.html`: four buttons over the open map, no guide arrow, no list of things to do;
+`mud-lab-11.html`: the stock SUV as the game's plain built model, no look-back button, a title that didn't fit a phone;
 `mud-lab-10.html`: one tyre size each, a sheer 34 ft step at the pond's rim, the Heron always drawn in full;
 `mud-lab-9.html`: no Bog, pull test or tyre pressure, and a winch could drag the SUV into a bank and carve it away;
 `mud-lab-8.html`: one SUV at a time, no winch or strap, the trails' holes ungraded; `mud-lab-7.html`: the look before
@@ -37,9 +42,84 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. |
 | Getting stuck | `src/ml-recover.js` | Mud Lab 9: Free play and Real, both SUVs in the world at once, the winch, the strap, what RESET does when you're bogged. |
 | The Bog and the pull test | `src/ml-bog.js` | Mud Lab 10: the measured lane's marks, stakes and bests; the pull post and its reading. |
+| The map's menu | `src/ml-menu.js` | Mud Lab 13: MENU on the open map (the other SUV, bring it, tyre size and air, grip, things to do), the guide arrow, timed trail runs, the rescue. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+
+## Mud Lab 13 (Nov 10 2026): the map's menu, a guide arrow, things to do, timed trails
+
+His words: push 12, the SUVs look as good as they need to; go on with the play and feel and things to do. The Bog, the
+pull test and the tyres weren't easy to find, and the open map's buttons (the other SUV, bring it, the tyres' pressure,
+the grip) covered the map: one button with a drop-down instead. Places easy to get to; "navigate to a location and an
+arrow directs you"; any experience that is easy to add here.
+
+- **MENU** on the open map, beside it (over its corner on an upright phone; on a laptop under the game's own GFX,
+  DOTS and BAY buttons); the four old buttons are gone and nothing lies over the map. It drops down: GET IN the other
+  SUV; BRING IT HERE (Free play) or A TOW HOME (Real, bogged); TYRE SIZE; TYRE AIR (35, 20, 12 psi); GRIP (Game /
+  Soil science); THINGS TO DO. A row that can't be done yet closes the map and says why ("STOP FIRST: YOU ARE STILL
+  ROLLING"): the game's messages are drawn under the open map, so in build 12 a refused GET IN looked like nothing
+  happening. If the other SUV were ever not the other kind, the first row reads SWITCH TO THE ... and swaps on the
+  spot, so either SUV can always be had.
+- **TYRE SIZE** in the menu: the size up or back down on the spot, stopped (29 or 33 in on the stock SUV, 37 or 40 on
+  the Rock & Mud). Before it was only on the title (tap your SUV's name again; still there). In Real: on dry ground
+  only, and not while bogged.
+- **THINGS TO DO**: the Bog, the pull test, the easy, medium and hard trails, the pond's bank, a rescue; this SUV's
+  best beside each that keeps one. In Free play picking one sets you down there facing the way it's done, with a
+  line on what to do; in Real it guides you.
+- **The guide arrow** (by the HUD, under the SUV's name): a pointer that turns to the place, its name, and the feet
+  to go; at 50 ft it says what to do there and goes. In Real a tap on any place's name on the map starts it; in
+  Free play the tap offers JUMP as before and OR GUIDE ME THERE over it. STOP GUIDING is in the menu.
+- **Timed trails**: a trail picked from the list is a run. The arrow leads down it bend by bend (it points at the
+  trail 130 ft ahead) with the feet left and the clock; the clock starts as you pull away and stops at the trail's
+  end: "EASY TRAIL IN 0:48. YOUR FIRST TIME", then against your best, each SUV's own on each trail, remembered. Getting
+  out of a bog with the winch, the strap or the other SUV is part of the run; a jump ahead doesn't count (the run
+  only moves on along the next 200 ft of trail), and a JUMP somewhere else or a tow home ends it. Easy is the Field Track east to the Quarry (1,475 ft, five
+  puddles); medium the whole Creek Loop (5,379 ft, four puddles and both fords); hard the Gumbo Trail (4,589 ft,
+  four pits).
+- **A rescue**: the other SUV is stood in one of the Field Track's puddles; the arrow takes you to it; strap it, pull
+  it clear (20 ft past the puddle's end), unhook: "RESCUED IN 2:41".
+- **The pond's bank** from the list sets you down at its top (32 ft over the water) in a lane between the trees.
+
+**Checked** (the phone's picture size; the physics-only test drives):
+
+| | |
+|---|---|
+| The menu's rows | GET IN THE STOCK, BRING THE STOCK HERE, TYRE SIZE: 37 IN, TYRE AIR: 35 PSI ROAD, GRIP: GAME, THINGS TO DO |
+| Tyre size from the menu (stock SUV) | wheel radius 0.378 m to 0.42 and back; engine running, drives off; the other SUV stays |
+| The same in Real | bogged: "ON DRY GROUND ONLY", nothing changes; on dry ground it changes |
+| Set down from the list (Free play) | all six within 0.8 m of the spot, facing it dead on (0 to 1 degree), upright |
+| The Bog from the list | drive straight on and the run starts ("THE BOG: 262 FT. HOW FAR?") |
+| The pull test from the list | PULL TEST is offered where you're set down |
+| The pond's bank from the list | lane 3.2 m from the nearest tree; down it in 26 s, 32 degrees at the steepest, 6.8 mph at most, upright, into 31 cm of water |
+| Easy trail, Rock & Mud, at about 20 mph | "EASY TRAIL IN 0:48. YOUR FIRST TIME"; again slower: "IN 1:13 (BEST 0:48)"; the list then reads EASY TRAIL 0:48 |
+| A trail in Real | the arrow guides to the start; the run begins there; END THE RUN stops it |
+| A jump to near the trail's end | doesn't count: the run stays where it was |
+| A JUMP from the map during a run | the run is over, the arrow gone |
+| Medium and hard trails, Rock & Mud | the run follows along (60 trail points in 34 s on the medium; bogged in the hard trail's first pit at a steady 16 mph, as that pit should) |
+| A rescue, start to end | the stock SUV stood in a Field Track puddle; arrow to it; STRAP offered beside it; pulled 18 m clear; unhooked: "RESCUED IN 0:07" (the test starts beside it) |
+| A place tapped on the map, Free play | MENU, OR GUIDE ME THERE, JUMP: THE RIDGE; GUIDE closes the map: "THE RIDGE 4,148 FT" |
+| A laptop window (1280 x 720, no touch, Gfx High), real mouse clicks | MENU, GET IN: stock to Rock & Mud and back, four times running, each time in the SUV named (in Real with the bigger tyres saved, and in Free play) |
+| GET IN while rolling at 18 mph | "STOP FIRST: YOU ARE STILL ROLLING", the map closed so it can be read; still in the same SUV |
+| Same seven drives, build 12 against 13 | 7 of 7 the same to four decimals (speed, place, ruts, soil dug, clods); no page errors in either |
+| Page errors | none |
+
+No driving, soil or sound code changed; no shader changed; nothing new is drawn in the world (the arrow and the menu
+are page elements over the picture), so the triangle counts are build 12's.
+
+**His report on build 12 (laptop, Gfx High): "you can't switch back to the stock SUV once you switch to the rock and
+mud SUV."** Not reproduced: in the same laptop-size window build 12's own GET IN button went stock, Rock & Mud, stock,
+Rock & Mud, stock (four clicks, each right, no page errors), and the title's two SUV buttons switch both ways. Two
+things that could look like it are dealt with above (a refusal hidden under the map; the fallback SWITCH row). Asked
+him which button he used and what it did.
+
+Not done: sky and shine painted into the stock SUV's bake (he said it was welcome, not needed). The game still runs
+while the map is open, as before. Ideas offered for after this (not built): a hill climb mark on the Ridge like the
+Bog's; a delivery (a load across the creek); a night run; spotting the bogged SUV from the Heron.
+
+![The menu](docs/shots/mud-lab-13-menu.jpg) ![Things to do](docs/shots/mud-lab-13-todo.jpg)
+![The guide](docs/shots/mud-lab-13-guide.jpg) ![A trail run](docs/shots/mud-lab-13-run.jpg)
+![A place picked on the map](docs/shots/mud-lab-13-pick.jpg) ![On a laptop](docs/shots/mud-lab-13-laptop.jpg)
 
 ## Mud Lab 12 (Nov 10 2026): the stock SUV baked, a look back while towing, a title that fits a phone
 
