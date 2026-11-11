@@ -4,7 +4,7 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-13.html`** (one self-contained page, 20 MB). On the title pick ROCK & MUD or STOCK SUV (tap
+**Open `builds/mud-lab-14.html`** (one self-contained page, 20 MB). On the title pick ROCK & MUD or STOCK SUV (tap
 your pick again for a tyre size up: 33s on the stock SUV, 40s on the Rock & Mud), and FREE PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
 with every place named (Free play: tap a name, then JUMP and you're there, or GUIDE ME THERE and an arrow leads you;
 Real: tap a name and the arrow guides you), the
@@ -12,12 +12,14 @@ three graded trails (EASY: Field Track, MEDIUM: Creek Loop, HARD: Gumbo Trail), 
 tyres, the grip, and THINGS TO DO; the Heron waits on its strip (drive up, stop,
 HERON); G (or GRIP in the map's MENU) switches the grip physics; in the MENU, TYRE AIR airs the tyres down (35, 20,
 12 psi), TYRE SIZE changes their size, and THINGS TO DO sets you down at (Free play) or guides you to (Real) the Bog,
-the pull test, the three trails (each a timed run), the pond's bank and a rescue. THE BOG, north-east of the
-Trailhead, measures how far you get; the post by its start is the PULL TEST. Bogged, a button appears: WINCH (a tree in reach)
+the pull test, the three trails (each a timed run), the Hill Climb, the pond's bank and a rescue. THE BOG, north-east
+of the Trailhead, measures how far you get; the post by its start is the PULL TEST; the HILL CLIMB, on the Ridge, how
+far up a sand slope you get from a stop at its line. Bogged, a button appears: WINCH (a tree in reach)
 or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
 L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-12.html`: four buttons over the open map, no guide arrow, no list of things to do;
+(`mud-lab-13.html`: no Hill Climb, Soil science grip at half the game's grip, reverse half a second away when bogged;
+`mud-lab-12.html`: four buttons over the open map, no guide arrow, no list of things to do;
 `mud-lab-11.html`: the stock SUV as the game's plain built model, no look-back button, a title that didn't fit a phone;
 `mud-lab-10.html`: one tyre size each, a sheer 34 ft step at the pond's rim, the Heron always drawn in full;
 `mud-lab-9.html`: no Bog, pull test or tyre pressure, and a winch could drag the SUV into a bank and carve it away;
@@ -42,10 +44,129 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. |
 | Getting stuck | `src/ml-recover.js` | Mud Lab 9: Free play and Real, both SUVs in the world at once, the winch, the strap, what RESET does when you're bogged. |
 | The Bog and the pull test | `src/ml-bog.js` | Mud Lab 10: the measured lane's marks, stakes and bests; the pull post and its reading. |
+| The Hill Climb | `src/ml-climb.js`, `ML_CLIMB` in `src/ml-world.js` | Mud Lab 14: a sand lane up the Ridge that steepens from 16 to 28 degrees; a standing start, the mark in feet, posts, stakes. |
 | The map's menu | `src/ml-menu.js` | Mud Lab 13: MENU on the open map (the other SUV, bring it, tyre size and air, grip, things to do), the guide arrow, timed trail runs, the rescue. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+
+## Mud Lab 14 (Nov 11 2026): rocking out, Soil science regraded, the Hill Climb
+
+His words: push 13, then "build 14 rocking out and soil science regrade together and the hill climb then I think
+that's for mud lab as it is". All test numbers below are from the physics-only test drives, each started on the same
+dice (`T9.seedN`: the clods a tyre throws are rolled for, and where they land changes the ground, so a drive used to
+depend on the ones before it).
+
+### Rocking out
+
+Measured first, on game grip (which Build 14 doesn't change), with a test driver stopped in the middle of a hole:
+
+| Stopped, then... | Stock SUV in an easy puddle | Rock & Mud in a hard pit |
+|---|---|---|
+| floored | stuck; tyres 36 to 40 cm down | stuck (in low range it claws through in 29 s) |
+| straight back out on its own ruts | out in 5 to 7 s at 0.6 throttle or more (AWD, 4 HI); too gentle (0.3 to 0.45) stalls on the puddle's rim; in 4 LO the other way round: 0.3 is out, more spins and digs in within a metre | out in about 10 s |
+| back out, then a run at it | - | back 13 m, then through in one go |
+
+So the soil already paid for backing out on your own packed ruts and taking a run; two things were in the way:
+
+- **Reverse was half a second away.** The engine goes into reverse when the brake has been held half a second at a
+  standstill. Now, while the SUV is going nowhere in the soft (the throttle down, all but stopped, for 0.6 s, a
+  tyre sunk 6 cm or in water) and for a second and a half after, it is a tenth of a second: gas until it stops
+  gaining, brake (reverse) until it stops gaining, and again. Measured: 0.11 s straight off the gas, 0.51 s as before
+  otherwise. Stopping at a line, parking, a dry slope and the Hill Climb are as they were. (One swap in
+  `src/build.py`; `mlRock` in `src/ml-recover.js`.)
+- **Nothing said so.** Once each time the wheels are spinning to no purpose (and the tread isn't packed with clay,
+  when "SPIN IT CLEAN" is said as before): "WHEELSPIN DIGS YOU IN. BACK OUT ON YOUR OWN RUTS AND TAKE A RUN, OR ROCK IT".
+
+The soil and the game grip are not changed: the same seven drives end the same in 13 and 14 (below). What it can't do:
+once the ruts are deeper than the belly sits (floored for several seconds in low range), the SUV is on its belly and
+it's the winch or the strap, as before.
+
+### Soil science regraded
+
+Under Soil science (G, or GRIP in the menu) nothing was graded: his SUV stopped in every easy puddle and the Rock & Mud
+in every hard pit, moving or not. Three causes, found by tracing the same drives under both grips:
+
+1. **Half the grip.** This game's ground gives every surface but sand double the tyre's own grip (the engine's
+   `world.grip`: 2). Soil science worked its grip out from the soil and left that out.
+2. **Its drag was on the body, and three times too much.** The work of pushing through soil the tyre has sunk into
+   was 0.45 x sqrt(depth / radius) of the wheel's load, pulled straight off the SUV's speed. The wheels felt none of
+   it, spun to 150 mph and dug themselves in. It is now 0.12 of that, given to the engine as rolling drag on each
+   wheel (the way the game's own mud holds a spinning wheel back), with half as much again per m/s in wet soil.
+3. **Afloat, it gripped more.** The soil's stickiness didn't care how hard the tyre was pressed in, so a SUV half
+   carried by the water had more grip than on game grip. It now counts by the load on the tyre.
+
+Also: a tyre that hasn't sunk yet has 24 cm on the ground (was 16), or his SUV couldn't climb a puddle's far side on
+slick clay. (`ML_T` in `src/ml-soil.js`.)
+
+| The same table under each grip | Game grip | Soil science before | Soil science now |
+|---|---|---|---|
+| Easy puddles, stock SUV kept moving (18 drives) | through 15 | 0 | 13 |
+| Easy puddles, stock SUV stopped then floored (6) | bogged 6 | 6 | 6 |
+| Medium puddles, stock SUV kept moving (12) | through 12 | 1 | 10 |
+| Both fords, either SUV's test driver (4) | stopped 4 | 4 | 4 |
+| Hard pits, Rock & Mud with a run at it (16) | through 12 (14 on other dice) | 0 | 10 (9) |
+| Hard pits, Rock & Mud stopped then floored (4) | bogged 3 (4) | 4 | 3 (3) |
+| Hard pits, stock SUV (2) | through 0 | 0 | 0 |
+| The Bog, stock SUV | 75, 75, 100 ft | 40, 59, 40 | 101, 75, 103 |
+| The Bog, Rock & Mud | 200, 154, 173 ft (205, 136, 239) | 93, 89, 95 | 161, 130, 137 (133, 139, 139) |
+| Dry Clay Pan, stock SUV floored 3 s | 33.0 mph | 32.5 | 33.0 |
+| Stock SUV stopped in an easy puddle, backing out | out at 0.6 throttle and up | never moves | out at 0.45 and 0.7 |
+
+Still different on purpose: Soil science is slick on clay until the tyre bites in, so the Rock & Mud skimming the Bog
+at half throttle stops about 40 ft sooner than on game grip.
+
+### The Hill Climb
+
+A lane bulldozed up the Ridge's south face beside the Ridge Trail (the map's HILL CLIMB is at its foot): 10 m wide,
+142 ft of slope, 16 degrees at its foot to 28 at its top, 17 m of rise, a rounded crest and a level landing, the woods
+cleared off it. **Loose dry sand**, because sand is the one ground here with a real tyre's grip on it: on the firm dirt
+(double grip) a test SUV stood on 36 degrees and pulled away, and from a 14 m run-up was doing 26 mph at the foot and
+went over the top whatever it was.
+
+- **A standing start.** Stop with your front bumper at the line (the two tall posts): "AT THE LINE. THE HILL CLIMB:
+  142 FT, STEEPER ALL THE WAY. GO WHEN YOU LIKE". How far up your bumper gets is your mark; the run ends when you've
+  stood still two seconds, rolled back 8 ft, left the lane, or come over the top. Drive in without stopping: "STOP AT
+  THE LINE FIRST, THEN GO" and no mark (his SUV from 30 m back crossed the line at speed and got 105 ft up, against 49
+  from a stop).
+- A post every 25 ft up both sides, a stake at each SUV's best (remembered). HILL CLIMB is in THINGS TO DO with your
+  best beside it: Free play sets you down at the line, Real guides you there.
+- **Tyres aired down now help on dry sand**, under both grips (on a trial shape they did nothing: 20 ft against
+  21): the Rock & Mud 70 ft to 86 at 20 psi, his SUV on 33s 63 to 74 at 12 psi. On his SUV's standard tyres it makes
+  little odds (49, 52, 47).
+- The woods stand back from it: none within 35 m of the lane or for 110 m beyond its top (room to turn round, and
+  fewer trees to draw). The ground comes up to the level place at its foot over 60 m from the south, 12 degrees at
+  most (a first shape rose in 16 m: a 22 degree bank the Rock & Mud dug into from a standing start).
+
+| From a stop at the line, floored unless said | Mark, of 142 ft |
+|---|---|
+| Stock SUV: AWD / 4 HI / 4 LO | 39 / 49 / 23 |
+| Stock SUV, 4 HI: 20 psi / 12 psi | 52 / 47 |
+| Stock SUV on 33s, 4 HI: 35 psi / 12 psi | 63 / 74 |
+| Rock & Mud: open / locked / low | 72 / 70 / 73 (locked, nine more runs: 70 to 86) |
+| Rock & Mud, locked: 0.7 throttle / 20 psi / 12 psi | 85 / 86 / 82 |
+| Rock & Mud on 40s, locked: floored / 12 psi at 0.7 throttle | 75 / 101 |
+| Soil science: stock 4 HI, then at 12 psi; Rock & Mud locked, then 12 psi at 0.7 | 41, 54; 69, 105 |
+
+Nobody has topped it. After a run the e-brake holds either SUV where it stopped; in one test the Rock & Mud at 12 psi,
+held on the e-brake alone at 105 ft, slid back and rolled over (RESET).
+
+**Checked:**
+
+| | |
+|---|---|
+| Same seven drives, Build 13 against 14 (game grip) | all seven end where they did, to the last digit: place, speed, each wheel's spin, rut depth, soil dug, clods (the Heron's take-off 94.1773 mph in both). The test prints 6 of them as DIFFERENT for one number only, `here.mu`: the Soil science grip figure, which is worked out under game grip too but not used there, and which this build changes on purpose |
+| Triangles drawn at the Hill Climb's spot, phone size, the chase camera at its line / part way up / from the south | Build 13 (thick woods there): 264,994 / 281,470 / 267,056. Build 14, two passes: 238,558 to 262,542 / 255,330 / 245,472; at a mark with the run's dust and clods 253,464 (a count there moves about 15,000 with which trees are loaded) |
+| The list on the phone | nine rows, all in view (HILL CLIMB 78 FT) |
+| From the list twice running (Free play) | at the line both times; 80 ft, then "80 FT (BEST 80)" |
+| The drive up to the line from 24 m south, stock SUV at 0.4 throttle | 7 s, 5 degrees at the steepest, stopped, "AT THE LINE" |
+| Quick reverse | 0.11 s when going nowhere in the soft, 0.51 s otherwise |
+| Page errors | none |
+
+Not done: under game grip the soil is exactly as it was, so a SUV sunk to its belly still can't be rocked out.
+
+![The Hill Climb from the south](docs/shots/mud-lab-14-hill.jpg) ![At the line](docs/shots/mud-lab-14-line.jpg)
+![A mark](docs/shots/mud-lab-14-mark.jpg) ![In the list](docs/shots/mud-lab-14-todo.jpg)
 
 ## Mud Lab 13 (Nov 10 2026): the map's menu, a guide arrow, things to do, timed trails
 

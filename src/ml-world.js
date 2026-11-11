@@ -58,9 +58,21 @@ const ML_CLAY={u:-470,v:-300};
 /* the Heron Strip (Mud Lab 5): a mown grass strip in the south fields, 400 m long, a worn dirt track down its middle,
    its ground laid level end to end; the Heron waits at its west end, facing east along it */
 const ML_STRIP={u0:-60,u1:340,v:690,hw:12,h0:null,h1:null};
+/* the Hill Climb (Mud Lab 14): a lane bulldozed up the Ridge's south face beside the Ridge Trail, 10 m wide, loose dry
+   sand, that gets steeper all the way: a0 degrees at its foot to a1 at its top, X metres on, with a rounded crest and a
+   level landing; the woods cleared off it and off a place to line up at its foot. u, v: the middle of its foot; it
+   runs north. Sand because it is the one ground in this game with a real tyre's grip on it (the rest has double, and a
+   SUV would climb 50 degrees of it): on sand his SUV's all-seasons hold about 30 degrees and the Rock & Mud's
+   mud-terrains about 35, and a spinning tyre digs itself in. (ML_CLIMB_ENV: trial numbers from the build's command line) */
+const ML_CLIMB=Object.assign({u:40,v:-486,X:40,hw:5,a0:16,a1:28,top:12,h0:null,sand:.85},typeof ML_CLIMB_ENV==='object'&&ML_CLIMB_ENV||{});
+/* (its height over its foot, x metres up it on the level; and its length along the slope to there) */
+function mlClimbY(x){const C=ML_CLIMB,a=C.a0*Math.PI/180,b=C.a1*Math.PI/180;if(x<=0)return 0;
+  const yX=C.X/(b-a)*Math.log(Math.cos(a)/Math.cos(b));if(x<=C.X)return C.X/(b-a)*Math.log(Math.cos(a)/Math.cos(a+(b-a)*x/C.X));
+  const t=Math.min(4,x-C.X);return yX+4/b*Math.log(Math.cos(b*(1-t/4))/Math.cos(b));}
+function mlClimbS(x){const C=ML_CLIMB,a=C.a0*Math.PI/180,b=C.a1*Math.PI/180;x=Math.max(0,Math.min(C.X,x));let s=0;const n=Math.max(1,Math.ceil(x/.25)),dx=x/n;for(let i=0;i<n;i++)s+=dx/Math.cos(a+(b-a)*(i+.5)*dx/C.X);return s;}
 /* the places for the map: name, where, and what (for its mark) */
 const ML_PLACES=[['TRAILHEAD',0,650,'camp'],['MUD HOLE',-172,556,'hole'],['THE BOG',196,512,'hole'],['QUARRY',450,516,'sand'],['THE POND',232,104,'water'],['BIG CREEK',-340,300,'water'],
-  ['THE BOTTOMS',380,-110,'bog'],['CLAY PAN',-470,-300,'clay'],['THE RIDGE',220,-640,'hill'],['HILL CLIMB',62,-482,'hill'],['LOWER FORD',-24,150,'ford'],['UPPER FORD',282,-48,'ford'],
+  ['THE BOTTOMS',380,-110,'bog'],['CLAY PAN',-470,-300,'clay'],['THE RIDGE',220,-640,'hill'],['HILL CLIMB',ML_CLIMB.u+12,ML_CLIMB.v+14,'hill'],['LOWER FORD',-24,150,'ford'],['UPPER FORD',282,-48,'ford'],
   ['EASY: FIELD TRACK',120,600,'trail'],['MEDIUM: CREEK LOOP',80,410,'trail'],['HARD: GUMBO TRAIL',-110,22,'trail'],['RIDGE TRAIL',400,-560,'trail'],['DEER RUN',600,80,'trail'],['HERON STRIP',250,690,'strip']];
 /* ---------- quick nearest-line lookups: each line's segments in 32 m buckets ---------- */
 const ML_BK=32,ML_BN=Math.ceil(2*(ML_A.h+ML_A.m)/ML_BK)+2;
@@ -123,15 +135,33 @@ function mlZone(u,v,o){
     if(S.h0===null){S.h0=mlHills(S.u0,S.v);S.h1=mlHills(S.u1,S.v);}const fc=Math.max(0,Math.min(1,f)),hl=S.h0+(S.h1-S.h0)*fc,
     ends=sst(-.2,-.02,f)*sst(1.2,1.02,f),k=sst(S.hw+30,S.hw+4,dv)*ends;h=h+(hl-h)*k;
     strip=sst(S.hw+1.5,S.hw,dv)*sst(-.03,0,f)*sst(1.03,1,f);stripD=dv;clay*=1-k;silt*=1-k;peat*=1-k;sand*=1-k;moist=moist*(1-k)+.15*k;if(k>.5)wl=ML_NONE;}}
+  /* the Hill Climb: its lane laid to its own heights, dry and bare; the ground round it brought up or down to meet it */
+  let climbK=0,climbL=0,climbW=1;
+  {const C=ML_CLIMB,x=C.v-v,w=Math.abs(u-C.u);if(x>-74&&x<C.X+C.top+32&&w<C.hw+34){
+    if(C.h0===null)C.h0=mlHills(C.u,C.v);
+    /* (the ground comes up to the level place at its foot over 60 m from the south: over 16 m it made a 22 degree bank
+       that a SUV starting on it dug into) */
+    climbK=sst(-70,-8,x)*sst(C.X+C.top+30,C.X+C.top+4,x)*sst(C.hw+28,C.hw+1,w);
+    if(climbK>0){h=h+(C.h0+mlClimbY(x)-h)*climbK;clay*=1-climbK;silt*=1-climbK;peat*=1-climbK;moist=moist*(1-climbK)+.15*climbK;if(climbK>.5)wl=ML_NONE;}
+    climbL=sst(C.hw+3,C.hw+.5,w)*sst(-12,-8,x)*sst(C.X+C.top+4,C.X+C.top,x);
+    /* (the sand: on the lane from just short of its foot to the crest; the place to line up and the landing are dirt) */
+    {const ks=sst(C.hw+2.5,C.hw+.5,w)*sst(-4,-1,x)*sst(C.X+6,C.X+3,x);sand=sand*(1-ks)+C.sand*ks;}
+    /* (and the woods off the place to line up: from the Ridge Trail across to the lane's foot) */
+    if(x>-24&&x<3&&u-C.u>-10&&u-C.u<34)climbK=Math.max(climbK,.5);}
+    /* (the woods stand back from it: none within 35 m of its middle, thinning in to there from 60 m, and the same for
+       110 m beyond its top, where the hill hides them from the lane anyway. Room to turn round and come back down,
+       and fewer trees to draw: these are the thickest woods on the map, and the phone was drawing 265,000 to 280,000
+       triangles here before there was a hill) */
+    if(x>-74&&x<C.X+C.top+110&&w<C.hw+60)climbW=1-sst(-74,-50,x)*sst(C.X+C.top+110,C.X+C.top+85,x)*(1-sst(C.hw+30,C.hw+55,w));}
   /* the bank all round: rising 6 m, grass */
   const bank=sst(724,752,e+n2*10);h+=6*bank;if(bank>.2)wl=ML_NONE;
   moist=Math.max(0,Math.min(1,moist));
   /* the woods: most of the north and the east; open fields round the camp; thin in the Bottoms; none on the pan,
      the trails, the water or the bank */
   let wood=sst(.42,.56,fbm(u/300,v/300,3,844)+.22*sst(-100,-500,v)+.15*sst(150,500,u)-.35*sst(330,560,v))*(1-.7*bot)*(1-clay*.9)*(1-sand*.8)*(1-bank);
-  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;wood*=1-bogK;if(bankCut>.3)wood*=.35;
+  if(trail<4.5||wl>ML_NONE+1||dc<hw+3)wood=0;wood*=1-bogK;if(bankCut>.3)wood*=.35;wood*=(1-Math.min(1,climbK*2.2))*climbW;
   if(stripD<99){const f=(u-ML_STRIP.u0)/(ML_STRIP.u1-ML_STRIP.u0);wood*=Math.min(1,sst(ML_STRIP.hw+18,ML_STRIP.hw+60,stripD)+1-sst(-.2,-.05,f)*sst(1.2,1.05,f));}
-  const grass=(1-wood)*(1-sst(.3,.7,clay+sand+peat+silt))*(trail<99?sst(1.4,2.6,trail):1)*(wl>ML_NONE+1?0:1)*(.6+.4*sst(.15,.5,moist));
+  const grass=(1-wood)*(1-sst(.3,.7,clay+sand+peat+silt))*(trail<99?sst(1.4,2.6,trail):1)*(wl>ML_NONE+1?0:1)*(.6+.4*sst(.15,.5,moist))*(1-climbL);
   /* (the strip: mown grass, the dirt track down its middle 3 m each side) */
   const gS=grass*(1-strip)+strip*(stripD<2.2?.1:stripD<3.2?.1+.8*(stripD-2.2):.9);
   o.h=h;o.clay=clay;o.silt=silt;o.peat=peat;o.sand=sand;o.moist=moist;o.wl=wl;o.grass=Math.max(0,Math.min(1,gS));o.wood=wood;o.trail=trail;o.dc=dc;o.strip=strip;o.stripD=stripD;return o;}

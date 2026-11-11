@@ -5,7 +5,8 @@
    on an upright phone); it drops down a list:
      GET IN the other SUV / BRING IT HERE (Free play) or A TOW HOME (Real, bogged) / TYRE SIZE / TYRE AIR / GRIP /
      THINGS TO DO.
-   THINGS TO DO lists what there is here: the Bog, the pull test, the three trails, the pond's bank, a rescue. Pick
+   THINGS TO DO lists what there is here: the Bog, the pull test, the three trails, the Hill Climb (Mud Lab 14), the
+   pond's bank, a rescue. Pick
    one: in Free play you're set down there, facing the right way; in Real an arrow by the HUD points the way and counts
    the feet down, and says what to do when you arrive. In Real a tap on any place's name on the map guides you there
    the same way; in Free play the tap offers JUMP as before, and OR GUIDE ME THERE over it.
@@ -26,25 +27,27 @@ function mlmBank(){if(MLM.bank)return MLM.bank;const P=ML_POND_AT,A=WG.mlA,cs=Ma
   let room=-1,off=0;for(const s of [0,3,-3,6,-6,9,-9,12,-12]){let c=9;for(let d=-8;d<=l;d+=1.5){const x=A.x+q1[0]+tg[0]*s+dn[0]*d,z=A.z+q1[1]+tg[1]*s+dn[1]*d;for(let k=0;k<L.length;k+=2)c=Math.min(c,Math.hypot(L[k]-x,L[k+1]-z));}
     if(c>room+.4){room=c;off=s;}}
   return MLM.bank={u:q1[0]+tg[0]*off-dn[0]*5,v:q1[1]+tg[1]*off-dn[1]*5,yaw:Math.atan2(-dn[1],dn[0]),exact:true,room,off};}
-function mlmDo(){const B=WG.mlBog,P=MLB_POST(),A=WG.mlA,T=WG.mlTrails,
+function mlmDo(){const B=WG.mlBog,P=MLB_POST(),A=WG.mlA,T=WG.mlTrails,C=WG.mlClimb,
   tr=(n,i,name,brief)=>{const p=T[n].pts,a=p[i],b=p[i+3];return {name,brief,u:a[0],v:a[1],yaw:Math.atan2(-(b[1]-a[1]),b[0]-a[0]),run:{n,i}};};
   return [{name:'THE BOG',u:B.u0-14,v:B.v,yaw:0,brief:'THE BOG: DRIVE IN FROM THIS END. WHERE YOU STOP IS YOUR MARK'},
     {name:'THE PULL TEST',u:P.x-A.x+7,v:P.z-A.z,yaw:0,brief:'PULL TEST: STOP WITH YOUR TAIL TO THE POST, THEN TAP PULL TEST'},
     tr(4,48,'EASY TRAIL','EASY: THE FIELD TRACK, EAST TO THE QUARRY. KEEP MOVING THROUGH THE PUDDLES'),
     tr(0,4,'MEDIUM TRAIL','MEDIUM: THE CREEK LOOP, NORTH. THE FORDS STOP THE STOCK SUV'),
     tr(2,4,'HARD TRAIL','HARD: THE GUMBO TRAIL. A STEADY THROTTLE THROUGH THE PITS, AND DON\'T STOP'),
+    {name:'HILL CLIMB',u:C.u,v:C.v+4.5,yaw:Math.PI/2,exact:true,quiet:true,brief:'THE HILL CLIMB: STOP AT THE LINE BY THE TWO TALL POSTS, THEN GO'},
     Object.assign({name:'THE POND\'S BANK',brief:'THE BANK: EASE DOWN IT INTO THE POND, THEN WINCH BACK UP TREE BY TREE'},mlmBank()),
     {name:'A RESCUE',rescue:1}];}
 /* (beside each name in the list: this SUV's best there) */
 function mlmMark(E){const t=GAME.car,k=t&&!t.rt?mlSuvKind(t):MLSV.pick;
   if(E.run){const b=MLM.best[E.run.n+':'+k];return b?'  '+mlmClock(b):'';}
-  if(E.name==='THE BOG'){const b=MLB.best[k];return b?'  '+b+' FT':'';}return '';}
+  if(E.name==='THE BOG'){const b=MLB.best[k];return b?'  '+b+' FT':'';}
+  if(E.name==='HILL CLIMB'){const b=MLHC.best[k];return b?'  '+b+' FT':'';}return '';}
 /* ---------- the guide ---------- */
 function mlmGuide(name,x,z,brief,run){MLM.run=null;MLM.guide={name,x,z,brief:brief||'',run:run||null};say('GUIDING YOU TO '+name+': FOLLOW THE ARROW',2.6);}
 function mlmGo(E){const A=WG.mlA;
   if(E.rescue){mlmRescue();mlmClose();return;}
   if(MLR.mode==='real'){mlmGuide(E.name,A.x+E.u,A.z+E.v,E.brief,E.run&&Object.assign({name:E.name},E.run));mlmClose();return;}
-  mlvJump({name:E.name,u:E.u,v:E.v,yaw:E.yaw,exact:E.exact,kind:'do'});MLM.guide=null;MLM.run=null;mlmClose();if(E.brief)say(E.brief,5);
+  mlvJump({name:E.name,u:E.u,v:E.v,yaw:E.yaw,exact:E.exact,kind:'do'});MLM.guide=null;MLM.run=null;mlmClose();if(E.brief&&!E.quiet)say(E.brief,5);
   if(E.run)mlmRun(E.name,E.run.n,E.run.i);}
 /* ---------- a trail, timed: the arrow leads down it; the clock runs from pulling away to the trail's end ---------- */
 function mlmRun(name,n,i){const P=WG.mlTrails[n].pts,cum=new Float32Array(P.length);for(let k=P.length-2;k>=0;k--)cum[k]=cum[k+1]+Math.hypot(P[k+1][0]-P[k][0],P[k+1][1]-P[k][1]);

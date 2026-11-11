@@ -162,11 +162,27 @@ function mlrTick(){const t=GAME.car;if(!t||GAME.state!=='drive'||!WG.mlStrip||ML
   if(t.mlAirI===undefined)mlrAirSet(t,mlrAirGet(mlSuvKind(t)));if(o&&o.mlAirI===undefined)mlrAirSet(o,mlrAirGet(mlSuvKind(o)));
   /* the tread packed with clay (the soil's own clogging, as it always was: now it says so, once each time) */
   {let c=0;for(const w of t.wheels)c+=w.mlClog||0;c/=4;if(c>.45&&!MLR.clogSaid){MLR.clogSaid=true;say('TREAD PACKED WITH CLAY: SPIN IT CLEAN',2.8);}else if(c<.2)MLR.clogSaid=false;}
-  mlbTick(t,dt);
+  mlbTick(t,dt);mlhcTick(t,dt);
   /* bogged: the throttle down (either way) on soil and going nowhere for a couple of seconds; out: moving again */
   const soil=t.wheels.some(w=>w.mlOn);
-  /* (not while it's held by the pull test's line: standing still at full throttle is the test) */
-  if(soil&&!MLR.pull&&(t.thrIn||0)>.5&&t.speed<.45)MLR.stuckT+=dt;else MLR.stuckT=Math.max(0,MLR.stuckT-dt*1.5);
+  /* (not while it's held by the pull test's line: standing still at full throttle is the test; nor stalled on the
+     Hill Climb, which is dry: that's a mark, not a bog) */
+  if(soil&&!MLR.pull&&!MLHC.run&&!MLHC.staged&&!mlhcOn(t)&&(t.thrIn||0)>.5&&t.speed<.45)MLR.stuckT+=dt;else MLR.stuckT=Math.max(0,MLR.stuckT-dt*1.5);
+  /* rocking (Mud Lab 14). While the throttle is down and the SUV is going nowhere, and for a second
+     and a half after, the brake pedal is reverse almost at once (src/build.py: a tenth of a second, not half), so
+     it can be rocked: gas until it stops gaining, brake (reverse) until it stops gaining, and again. And once each
+     time it's spinning its wheels to no purpose, what to do about it (unless the tread is packed with clay, when
+     spinning it clean is the thing to do, and that is said instead) */
+  /* (going nowhere: under power and all but stopped for six tenths of a second. A start from rest on firm ground is
+     past that speed sooner, so stopping at a line, or parking, is as it was) */
+  /* (and in the soft: a tyre sunk 6 cm or more, or in water. Stalled on a dry slope, or on the Hill Climb, the brake is
+     the brake for its usual half second) */
+  const soft=soil&&!mlhcOn(t)&&((MLS.wd||0)>.05||t.wheels.some(w=>w.mlOn&&(w.mlZ||0)>.06));
+  t.mlStall=soft&&(t.thrIn||0)>.25&&t.speed<.6?Math.min(1,(t.mlStall||0)+dt):Math.max(0,(t.mlStall||0)-dt*2);
+  if(t.mlStall>.6)t.mlRock=1.5;else if(t.mlRock>0)t.mlRock-=dt;
+  {let sl=0,cl=0;for(const w of t.wheels){if(w.contact)sl=Math.max(sl,Math.abs(w.w*w.R-w.vl));cl+=(w.mlClog||0)/4;}
+    if(MLR.stuckT>1&&!MLR.stuck&&sl>1.5&&cl<.45&&!MLR.digSaid&&GAME.time-(MLR.digT||-99)>45){MLR.digSaid=true;MLR.digT=GAME.time;say('WHEELSPIN DIGS YOU IN. BACK OUT ON YOUR OWN RUTS AND TAKE A RUN, OR ROCK IT',3.6);}
+    if(MLR.stuckT<=0)MLR.digSaid=false;}
   if(!MLR.stuck&&MLR.stuckT>2.2){MLR.stuck=true;MLR.freeT=0;MLR.treeT=-9;
     say(MLR.mode==='real'?'BOGGED. ROCK IT, WINCH TO A TREE, OR GET THE OTHER SUV (MAP)':'BOGGED. ROCK IT, WINCH, STRAP, OR RESET',3.6);}
   if(MLR.stuck){if(t.speed>2.2){MLR.freeT+=dt;if(MLR.freeT>1.2){MLR.stuck=false;MLR.stuckT=0;}}else MLR.freeT=0;}
@@ -282,7 +298,7 @@ mlvDraw=function(eye){MLF.on=false;if(MLR.off)return MLR_VD(eye);let n=0;const P
   if(P&&mlrSeen(P.p,P.rt?10:5)){const far=mlfFar(P,eye[0],eye[2]);MLF.on=far;n=MLR_VD(eye);MLF.on=false;if(far&&n>MLF.full-MLF.far)n-=MLF.full-MLF.far;}
   if(GAME.state!=='drive')return n;
   if(o&&mlrSeen(o.p,5)){const d=Math.hypot(o.p[0]-eye[0],o.p[2]-eye[2]);if(d<450)n+=drawWorldCar(o,null,o.mlDirt||0,d>30,false)||0;}
-  return n+mlrLines()+mlbDraw(eye);};
+  return n+mlrLines()+mlbDraw(eye)+mlhcDraw(eye);};
 const mlrShadow=()=>{MLF.on=false;const o=MLR.other,t=GAME.car;return o&&t&&!MLR.off&&GAME.state==='drive'&&Math.hypot(o.p[0]-t.p[0],o.p[2]-t.p[2])<60?o:null;};
 /* (for the tests: no other SUV, nothing hooked) */
 window.__mlr={MLR,MLF,mlrSeat,mlrBring,mlrHome,mlrHookUp,mlrUnhook,mlrTree,mlrTrees,mlrReach,mlrMake,mlrFirm,mlrAirSet,mlrAirNext,ML_AIRS,testClear(){MLR.other=null;MLR.made=true;MLR.winch=null;MLR.strap=null;MLR.pull=null;MLR.stuck=false;MLR.stuckT=0;MLR.rescue=-1;}};

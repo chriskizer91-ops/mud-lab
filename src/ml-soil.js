@@ -52,6 +52,20 @@ const ML_SOIL={
 const ML_KEYS=['D','max','berm','dig','roost','fling','dust','grip','slump','spring','size','c','phi'],ML_TYPES=['loam','clay','silt','peat','sand'];
 const ML_SOUP={D:.22,max:.7};                 /* broken-through peat */
 const ML_PREF=50000,ML_TAU=.06,ML_RHO=1000;
+/* soil science's own numbers (regraded in Mud Lab 14, so the trails and the Bog grade as they do on game grip):
+   mu, the soil's strength into grip, and cap, the most it can give: both times the grip this game's ground gives that
+     surface (double on everything but sand: before, soil science's grip left that out, and had half the game's);
+   rr, the work of pushing through soil the tyre has sunk into, as rolling drag on the wheel (the engine's own kind, so
+     it holds a spinning wheel back as the game's mud does: before, it pulled on the body only, the wheels spun free
+     and dug themselves in, and it was three times as strong);
+   rv, how much of that again per m/s in wet soil (it is thick: it drags more the faster it's pushed);
+   lf, the soil's stickiness counts only as far as the tyre is pressed into it (a tyre the water is half carrying has
+     that much less hold): before, a SUV afloat in a deep pit had more grip on soil science than on game grip;
+   L0, the length of tyre on the ground before it has sunk at all, m (it was .16: on slick wet clay a tyre that hadn't
+     sunk yet had too little hold to climb out of a puddle's far side) */
+const ML_T={mu:1.05,cap:1.1,rr:.12,rv:.5,lf:1,L0:.24};
+const ML_SURFS=['grass','dirt','strip','trail','rock','mud','concrete','water','gravel','asphalt','ruts','sand'];
+function mlWheelDrag(w,kr,kd){const a=w.__mlRR,b=w.__mlDG;if(!a||a.k===kr&&b.k===kd)return;a.k=kr;b.k=kd;for(const q of ML_SURFS){a[q]=kr;b[q]=kd;}}
 const MLS={ready:false,prep:0,C:.08,WS:1536,N:19200,T:64,NT:300,NW:1536,NM:600,CM:2.56,BC:.64,BN:64,NB:38,x0:0,z0:0,h0:0,terra:false,
   tiles:null,ntile:0,blocks:new Map(),cB:null,cW:null,cMo:null,cM:null,cG:null,cWd:null,cTr:null,map:null,s0:null,s1:null,w0:null,w1:null,wc:[NaN,NaN],up:new Set(),act:new Map(),
   clock:0,lut:null,hb:null,db:null,col:{},stat:{dug:0,clods:0,landed:0,up:0,splash:0}};
@@ -311,7 +325,6 @@ function mlWater(dt,t){
         s:.04+Math.random()*.06,s0:.05,life:1.3,max:1.3,r:MLS.col.water[0],g:MLS.col.water[1],b:MLS.col.water[2],yaw:0});MLS.stat.splash++;}}
 }
 /* ---------- each frame, after the physics ---------- */
-const ML_RR0={},ML_DG0={};for(const s of ['grass','dirt','strip','trail','rock','mud','concrete','water','gravel','asphalt','ruts','sand'])ML_RR0[s]=.015;
 const ML_LUG={};
 function mlLug(tr){if(ML_LUG[tr]===undefined){const T=TREAD_MU[tr],M=TREAD_MU.mud;ML_LUG[tr]=T&&M?Math.max(.5,Math.min(1.1,T.mud/M.mud)):1;}return ML_LUG[tr];}
 function mlStep(dt,t){
@@ -330,10 +343,10 @@ function mlStepCar(dt,t){
   mlWater(dt,t);let res=0,zS=0,nZ=0;const m=t.c.mass||2500;
   for(const w of t.wheels){
     /* (soil science does its own rolling resistance: the engine's per-surface drag stood down while it's on) */
-    if(MLS.terra){if(!w.__rr0){w.__rr0=w.surfRR;w.__dg0=w.surfDrag;}w.surfRR=ML_RR0;w.surfDrag=ML_DG0;}else if(w.__rr0){w.surfRR=w.__rr0;w.surfDrag=w.__dg0;w.__rr0=null;}
+    if(MLS.terra){if(!w.__rr0){w.__rr0=w.surfRR;w.__dg0=w.surfDrag;w.__mlRR={};w.__mlDG={};mlWheelDrag(w,.015,0);}w.surfRR=w.__mlRR;w.surfDrag=w.__mlDG;}else if(w.__rr0){w.surfRR=w.__rr0;w.surfDrag=w.__dg0;w.__rr0=null;}
     w.mlOn=false;if(w.mlClog===undefined){w.mlClog=0;w.mlWet=0;}
     if(!w.contact){w.mlFz=0;continue;}
-    const fi=(w.cp[0]-MLS.x0)/MLS.C,fj=(w.cp[2]-MLS.z0)/MLS.C;if(fi<8||fj<8||fi>MLS.N-8||fj>MLS.N-8){w.mlGrip=1;continue;}
+    const fi=(w.cp[0]-MLS.x0)/MLS.C,fj=(w.cp[2]-MLS.z0)/MLS.C;if(fi<8||fj<8||fi>MLS.N-8||fj>MLS.N-8){w.mlGrip=1;if(MLS.terra)mlWheelDrag(w,.015,0);continue;}
     const W=mlWeights(w.cp[0],w.cp[2],MLW),wd=W.wl-(w.cp[1]-MLS.h0),S=mlParams(W,wd>0?.6:0),wR=Math.abs(w.w*w.R),clayWet=W.clay*sst(.35,.7,W.moist);w.mlOn=true;
     /* (the tread (Mud Lab 6): how well its lugs bite into soft soil against a mud-terrain's, from the engine's own grip in
        mud: 1 for the Rock & Mud's mud-terrains, .69 for his SUV's all-seasons; a fine tread packs with clay sooner and
@@ -344,12 +357,12 @@ function mlStepCar(dt,t){
     w.mlGrip=S.grip*(1-.5*w.mlClog)*(wd>.05?.92:1);
     /* (Mud Lab 10) tyres aired down (src/ml-recover.js; nothing at road pressure): a longer footprint grips soft and
        slick ground better, and costs a little on firm ground */
-    const A=t.mlAir,soft=A?Math.max(sst(.03,.12,S.D),sst(1,.6,S.grip)):0;if(A)w.mlGrip*=1+A.g*soft;
+    const A=t.mlAir,soft=A?Math.max(sst(.03,.12,S.D),sst(1,.6,S.grip),W.sand*.9*(1-S.m)):0;if(A)w.mlGrip*=1+A.g*soft;
     /* soil science: the soil's strength over the contact patch (which grows as the tyre sinks), the tread's lugs biting
        into it; the work of pushing through it, more the deeper the tyre is in */
-    const z=Math.max(0,-mlRut(fi|0,fj|0))+.01,L=(.16+Math.sqrt(2*w.R*z))*(A?A.kL:1),Ar=(w.front?t.c.tyreW:t.c.tyreWR)*L,Fz=Math.max(800,w.Fz);zS+=z;nZ++;
-    w.mlMuT=Math.max(.08,Math.min(1.3,1.2*(1-.4*w.mlClog)*(S.c*1000*Ar/Fz*lug+Math.tan(S.phi*Math.PI/180)*(.85+.15*lug))*(wd>.05?.9:1)));
-    if(MLS.terra){const Rr=w.Fz*.45*Math.sqrt(z/w.R),fx=w.f[0],fz=w.f[2],fl=Math.hypot(fx,fz)||1,dv=Math.min(Math.abs(w.vl),Rr/m*dt)*Math.sign(w.vl);t.v[0]-=fx/fl*dv;t.v[2]-=fz/fl*dv;res+=Rr;}
+    const z=Math.max(0,-mlRut(fi|0,fj|0))+.01,L=((MLS.terra?ML_T.L0:.16)+Math.sqrt(2*w.R*z))*(A?A.kL:1),Ar=(w.front?t.c.tyreW:t.c.tyreWR)*L,Fz=Math.max(800,w.Fz);zS+=z;nZ++;w.mlZ=z;
+    {const gW=t.world&&t.world.grip?(t.world.grip[w.surf]??1):1;w.mlMuT=Math.max(.08,Math.min(ML_T.cap*gW,ML_T.mu*gW*(1-.4*w.mlClog)*(S.c*1000*Ar/Fz*lug*(ML_T.lf?Math.min(1,w.Fz/(m*9.81/4*.8)):1)+Math.tan(S.phi*Math.PI/180)*(.85+.15*lug))*(wd>.05?.9:1)*(A?1+A.g*W.sand*.9*(1-S.m):1)));}
+    if(MLS.terra){const kz=ML_T.rr*Math.sqrt(z/w.R);mlWheelDrag(w,.015+kz,kz*ML_T.rv*S.m);res+=w.Fz*kz*(1+ML_T.rv*S.m*Math.abs(w.vl));}
     if(A&&A.rr){const dv=Math.min(Math.abs(w.vl),A.rr*2.45*(1-soft)*dt)*Math.sign(w.vl),fx=w.f[0],fz=w.f[2],fl=Math.hypot(fx,fz)||1;t.v[0]-=fx/fl*dv;t.v[2]-=fz/fl*dv;}
     /* tyres come out of water or wet mud wet, and dry as they roll on */
     const wetSoil=W.moist*Math.max(W.silt+W.peat+W.clay*.6,.4);if(wd>.01||wetSoil>.55)w.mlWet=1;else w.mlWet=Math.max(0,w.mlWet-dt*(.04+.025*Math.abs(w.vl)));
@@ -504,6 +517,6 @@ function mlSoilPromote(){const G=R&&R.G;if(!G||!P_LANDML||P_LANDML===P_LAND||MLS
 /* (at Start, if the full ground isn't built yet (a Windows laptop the first time): say so, so plain ground isn't a surprise) */
 function mlSoilNote(){setTimeout(()=>{if(P_LANDML&&P_LAND!==P_LANDML&&!MLS.noSoilFS&&GAME.state==='drive'){MLS.soilWait=true;
   say('THE GROUND\'S DETAIL IS STILL BEING BUILT BY THE GRAPHICS DRIVER: PLAIN GROUND UNTIL IT\'S READY (SLOW THE FIRST TIME ON A LAPTOP)',6);}},1500);}
-window.__ml={MLS,MLP,mlStats,mlRake,mlGround,ML_SOIL,mlWeights,mlParams,mlGripToggle,mlBase,mlWL,land:()=>({cur:P_LAND&&P_LAND.name,soil:P_LANDML&&P_LANDML.ready,at:MLS.soilFS,no:MLS.noSoilFS})};
+window.__ml={MLS,MLP,ML_T,mlStats,mlRake,mlGround,ML_SOIL,mlWeights,mlParams,mlGripToggle,mlBase,mlWL,land:()=>({cur:P_LAND&&P_LAND.name,soil:P_LANDML&&P_LANDML.ready,at:MLS.soilFS,no:MLS.noSoilFS})};
 /* the world's ground every 2.56 m made a slice at a time while the title is up */
 {let mlPrepE=0;const mlPrepT=setInterval(()=>{try{if(WG&&WG.mlA&&mlPrepStep(GAME.hold?20:10))clearInterval(mlPrepT);}catch(e){if(++mlPrepE>3){console.warn('soil prep: '+(e&&e.message||e));clearInterval(mlPrepT);}}},25);}
