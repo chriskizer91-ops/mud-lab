@@ -104,6 +104,23 @@ async def main():
             # the pull test: tail to the post, the line on, held at 0.7 throttle, lifted off
             await ev("(P=>{const A=__dyb.WG.mlA;T9.put('crawler',P.x-A.x+6.5,P.z-A.z,0);})(__mlb.MLB_POST())"); n = {'can': (await ev("T9.go({},1)"))['can']}
             await ev("__mlr.mlrHookUp()"); await ev("T9.go({thr:.7},4)"); await ev("MLVW.look(3,2.6,7,-3,.5,0,.9)"); n['after'] = (await ev("T9.go({},1)"))['msgs']; n['pulled'] = await ev('__mlb.MLB.pulled'); await shot('pull'); await ev("(__mlr.mlrUnhook(),MLVW.free())"); num['pull'] = n
+        if 'climb' in want:
+            # (Mud Lab 14) the Hill Climb: from the south, set down at its line from the list, a run up it to a mark, and the list
+            await ev("(__mlr.MLR.mode='free',__game.APP.bigMap=false,T9.put('crawler',40,-446,1.571),T9.go({hb:1},.3),MLVW.free(),1)"); await pg.evaluate('([n])=>MLVW.settle(n,100)', [8]); n = {}
+            await ev("(__dyb.GAME.msgs.length=0,__mlm.mlmGo(__mlm.mlmDo().find(e=>e.name==='HILL CLIMB')),T9.go({hb:1},.4),MLVW.free(),1)"); await shot('climb-line', 4)
+            n['line'] = await ev("__dyb.GAME.msgs.map(m=>m.t)"); n['tris'] = await ev('R9.tris()')
+            await ev("(__dyb.GAME.msgs.length=0,(()=>{let q=0;while(q<200&&!__mlhc.MLHC.last){T9.inp({thr:1});T9.steps(12);q++;}T9.go({hb:1},.25);})(),MLVW.free(),1)"); await shot('climb-mark', 4)
+            n['mark'] = [await ev("__mlhc.MLHC.last"), await ev("__dyb.GAME.msgs.map(m=>m.t)"), await ev("__mlhc.MLHC.best"), await ev("T9.f(__dyb.GAME.car.speed*2.237)")]; n['trisMark'] = await ev('R9.tris()')
+            await ev("(MLVW.free(),__game.APP.bigMap=true,__game.APP.photo=false,T9.go({hb:1},.3),__mlm.MLM.btn.click(),T9.go({hb:1},.2),__mlm.mlmPick('todo'),T9.go({hb:1},.2),1)"); await shot('climb-todo', 3)
+            n['todo'] = await ev("__mlm.mlmRows().map(r=>r[1])"); await ev("(__mlm.MLM.open=false,__game.APP.bigMap=false,1)")
+            # (and the whole of it from the south, the trees round it drawn by now)
+            await ev("(T9.put('crawler',40,-440,1.571),__dyb.GAME.msgs.length=0,T9.go({hb:1},.3),MLVW.look(-9,4.5,0,30,7,0,.95),1)"); await shot('climb-far', 8); n['trisFar'] = await ev('R9.tris()'); num['climb'] = n
+        if 'climbtris' in want:
+            # (triangles drawn where the Hill Climb is: at its line and part way up, looking north; runs on builds without it too)
+            n = {}
+            for nm, v in (('line', -481.5), ('up', -505), ('south', -446)):
+                await ev("(T9.put('crawler',40,%s,1.571),T9.go({hb:1},.3),MLVW.free(),1)" % v); await pg.evaluate('([n])=>MLVW.settle(n,100)', [8]); n[nm] = await ev('R9.tris()')
+            num['climbtris'] = n
         if 'menu' in want:
             # (Mud Lab 13) the map with its menu down, the list of things to do, and the guide arrow on the driving screen
             await ev("(__dyb.placeCar(__dyb.WG.mlA.x+30,__dyb.WG.mlA.z+610,1.571),__game.APP.bigMap=true,__game.APP.photo=false,T9.go({hb:1},.3),__mlm.MLM.btn.click(),T9.go({hb:1},.2),1)"); await shot('menu', 4)

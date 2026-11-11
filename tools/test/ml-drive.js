@@ -5,7 +5,9 @@ window.T9=/* Mud Lab test drivers (tools/test/ml-pits.py, ml-rescue.py): put a S
  steps(n){for(let i=0;i<n;i++)__dyb.step(1/120);},
  yaw(t){return Math.atan2(-t.M[6],t.M[0]);},
  /* a vehicle made new at u,v (the world's own coordinates), facing yaw; mode: stock 'AWD'|'4 HI'|'4 LO', crawler 'open'|'lock'|'low' */
- put(kind,u,v,yaw,mode){const D=__dyb,A=D.WG.mlA;__game.FX.length=0;this.inp({hb:1});
+ /* (the game's dice are set the same at the start of every drive, so a drive doesn't depend on the ones before it: the
+    clods a tyre throws are rolled for, and where they land changes the ground; T9.seedN picks another set) */
+ put(kind,u,v,yaw,mode){const D=__dyb,A=D.WG.mlA;__game.FX.length=0;this.inp({hb:1});if(window.__seed)__seed((this.seedN||1)*7919+13);
    if(window.__mlr&&__mlr.testClear)__mlr.testClear();
    __mlsv.mlSuvIdx('stock');__mlsv.mlSuvIdx('crawler');__game.spawnCar(this.bigOn&&__mlsv.MLSV.big?(__mlsv.MLSV.big[kind]=true,__mlsv.mlSuvIdx(kind)):(__mlsv.MLSV.big&&(__mlsv.MLSV.big[kind]=false),__mlsv.MLSV.bi[kind]),A.x+u,A.z+v,yaw);__mlsv.MLSV.pick=kind;__game.FX.length=0;this.steps(240);
    const t=D.GAME.car;
@@ -137,4 +139,130 @@ Object.assign(T9,{bigOn:false,
    for(let q=0;q<60&&t.speed>.4;q++)this.go({brk:1,hb:1},.5);const M=this.R(),y1=t.p[1];out.push('stopped in '+this.f((__ml.MLS.wd||0)*100)+' cm of water, '+this.f(y0-t.p[1])+' m below the top');M.stuck=true;M.treeT=-9;this.go({hb:1,brk:1},.4);M.stuck=true;M.treeT=-9;this.go({hb:1,brk:1},.1);out.push(this.st().can+' at '+this.st().mph+' mph, trees '+JSON.stringify(this.trees()));__mlr.mlrHookUp();const W=this.st().winch;out.push(W?'line '+W.len+' m '+(W.end>0?'ahead':'behind'):'no line');
    let i=0;for(;i<90;i++){M.stuck=true;const s=this.go({},1);if(!s.winch){out.push('line off after '+(i+1)+' s: '+s.msgs.slice(-1)[0]);break;}}
    out.push('winched up '+this.f(t.p[1]-y1)+' m, upright '+(t.M[4]>.5));return out;}
+});
+/* ---------- Mud Lab 14: getting out of a hole you've stopped in ---------- */
+Object.assign(window.T9,{
+ /* stop in the middle of hole k (as run() does), then try to get out one way:
+      'floor'  full throttle and hold it
+      'ease'   a third of the throttle and hold it
+      'rock'   rock it: forward on o.thr (default .7) until it stops gaining, back until it stops gaining, and again
+      'dug'    floor it for o.dig seconds first (dig in), then rock
+    Out = past either end of the hole. Returns how far it got, how deep the tyres are, and how long it took */
+ unstick(kind,k,how,o){o=o||{};this.sign();const H=this.hole(k),dir=o.dir||1,run=o.run||25,cs=Math.cos(H.r),sn=Math.sin(H.r),s0=-(H.L+run)*dir;
+   __ml.mlRake();const t=this.put(kind,H.u+cs*s0,H.v+sn*s0,dir>0?-H.r:-H.r+Math.PI,o.mode);if(o.air)this.air(o.air);
+   const prog=()=>this.at(t,H).s*dir,end=H.L+5,out={kind,k,how};let tt=0;
+   while(tt<20&&prog()<(o.stopAt===undefined?-H.L*.1:o.stopAt)){this.inp({thr:o.thrIn||.45,steer:this.steer(t,H,dir)});this.steps(12);tt+=.1;}
+   for(let i=0;i<40&&t.speed>.15;i++){this.inp({brk:1});this.steps(12);}
+   this.inp({hb:1});this.steps(120);const p0=prog();out.stopAt=this.f(p0);
+   const G={n:[0,0,0]},deep=()=>{let z=0,n=0;for(const w of t.wheels){if(!__ml.mlGround(w.cp[0],w.cp[2],G))continue;z+=Math.max(0,__ml.mlBase(w.cp[0],w.cp[2])-(G.y-__ml.MLS.h0));n++;}return n?z/n:0;};
+   const done=()=>prog()>end||prog()<-end,secs=o.secs||40;let t2=0,cyc=0,pmax=p0,pmin=p0;
+   const hold=(inp,T)=>{let q=0;while(q<T&&!done()){this.inp(Object.assign({steer:this.steer(t,H,dir)},inp));this.steps(12);q+=.1;t2+=.1;pmax=Math.max(pmax,prog());pmin=Math.min(pmin,prog());}};
+   if(how==='floor')hold({thr:1},secs);
+   else if(how==='ease')hold({thr:o.thr||.33},secs);
+   else{if(how==='dug'||how==='dugf')hold({thr:1},o.dig||6);
+     /* (a rocking driver: on the gas while it gains ground, off and into reverse the moment it stops gaining) */
+     /* (the game's reverse: the brake held half a second at a standstill, then the pedals swap; gas brings it back to
+        forward at once. So a leg back is: brake until it stops, hold on, and it goes back) */
+     const thr=o.thr||.7,ends=[],feather=how==='feather'||how==='dugf';let fwd=o.first==='back'?false:true;
+     while(t2<secs&&!done()){let best=prog()*(fwd?1:-1),still=0,q=0;const min=fwd?.4:1.1;
+       /* ('feather': the pedal eased whenever a tyre spins faster than 0.3 m/s over the ground, pressed again when none does:
+          the soil is only dug by a tyre slipping more than 0.35 m/s) */
+       let ped=feather?(o.ped0||.3):thr;
+       while((q<min||still<(o.wait||.4))&&q<(o.leg||5)&&!done()){
+         for(let u=0;u<3;u++){if(feather){let sl=0;for(const w of t.wheels)if(w.contact)sl=Math.max(sl,Math.abs(w.w*w.R-w.vl));ped=Math.max(.1,Math.min(thr,ped+(sl>.3?-.1:.04)));}
+           this.inp(fwd?{thr:ped,steer:this.steer(t,H,dir)}:{brk:t.rev?ped:.6,steer:0});this.steps(4);}
+         q+=.1;t2+=.1;const p=prog()*(fwd?1:-1);if(p>best+.015){best=p;still=0;}else still+=.1;pmax=Math.max(pmax,prog());pmin=Math.min(pmin,prog());}
+       ends.push(this.f(prog()-p0));fwd=!fwd;cyc++;}
+     out.legs=cyc;out.ends=ends.slice(0,24).join(' ');}
+   out.out=done()?(prog()>0?'ahead':'back'):'no';out.secs=this.f(t2);out.reach=this.f(pmin-p0)+' to +'+this.f(pmax-p0);out.deepCm=Math.round(deep()*100);out.waterCm=Math.round((__ml.MLS.wd||0)*100);
+   this.inp({hb:1});return out;},
+ /* a table of the above: every way for each [kind,hole,mode] */
+ unstickAll(L,hows,o){const R=[];if(o&&o.terra!==undefined)__ml.MLS.terra=!!o.terra;for(const q of L)for(const h of hows){const r=this.unstick(q[0],q[1],h,Object.assign({mode:q[2]},o||{}));R.push(q[0]+' '+(q[2]||'')+' hole '+q[1]+' '+h+': '+(r.out==='no'?'STUCK':'out '+r.out)+' in '+r.secs+' s, reach '+r.reach+' m, tyres '+r.deepCm+' cm down'+(r.legs?', '+r.legs+' legs: '+r.ends:''));}return R;}
+});
+/* ---------- Mud Lab 14: the grading, one table, under either grip (terra true = Soil science) ----------
+   part 'easy': the Field Track's six puddles, the stock SUV kept moving at 16 mph (AWD, 4 HI) and stopped then floored
+   part 'medium': the Creek Loop's four puddles, the stock SUV kept moving; both fords, each SUV
+   part 'hard': the Gumbo Trail's four pits, the Rock & Mud kept moving (locked at 11 mph, low at 7) and stopped then floored
+   part 'bog': the Bog's marks */
+Object.assign(window.T9,{
+ grade(part,terra,seed){this.seedN=seed||1;__ml.MLS.terra=!!terra;const R=[],n=(L,f)=>L.filter(f).length,g=terra?'Soil science':'Game';
+   const thru=(kind,ks,o)=>ks.map(k=>this.run(kind,k,'cruise',o)),stop=(kind,ks,o)=>ks.map(k=>this.run(kind,k,'stop',o));
+   if(part==='easy'){const K=[13,14,15,16,17,18];
+     {let r=[];for(const q of [['AWD',5],['AWD',7],['4 HI',9]])r=r.concat(thru('stock',K,{mode:q[0],v:q[1],run:30}));R.push(g+', easy, stock kept moving (11 and 16 mph in AWD, 20 in 4 HI): through '+n(r,x=>x.through)+' of 18 (slowest '+r.map(x=>Math.round(x.minMph)).join(' ')+' mph)');}
+     {const r=stop('stock',K,{mode:'AWD'});R.push(g+', easy, stock AWD stopped then floored: bogged '+n(r,x=>!x.through)+' of 6 (moved '+r.map(x=>x.moved).join(' ')+' m)');}
+     {const r=thru('crawler',[14,17],{mode:'lock',v:7});R.push(g+', easy, Rock & Mud kept moving: through '+n(r,x=>x.through)+' of 2');}}
+   if(part==='medium'){const K=[0,1,2,3];
+     {let r=[];for(const q of [['AWD',5],['AWD',7],['4 HI',9]])r=r.concat(thru('stock',K,{mode:q[0],v:q[1],run:30}));R.push(g+', medium puddles, stock kept moving: through '+n(r,x=>x.through)+' of 12 (slowest '+r.map(x=>Math.round(x.minMph)).join(' ')+' mph)');}
+     /* the fords: along the Creek Loop from 12 points before the point nearest each ford to 12 after */
+     const P=__dyb.WG.mlTrails[0].pts;for(const F of [['Lower Ford',-24,150],['Upper Ford',282,-48]]){let bi=0,bd=1e9;for(let i=0;i<P.length;i++){const d=Math.hypot(P[i][0]-F[1],P[i][1]-F[2]);if(d<bd){bd=d;bi=i;}}
+       for(const q of [['stock','4 LO'],['crawler','lock']]){const r=this.trail(q[0],0,bi-12,bi+12,{mode:q[1],v:5,secs:60,wait:5});R.push(g+', '+F[0]+', '+q[0]+' '+q[1]+': '+(r.done?'across':'stopped'+(r.bogged?' at '+r.bogged:''))+' in '+r.secs+' s, slowest '+r.minMph+' mph, water '+r.water+' cm');}}}
+   if(part==='hard'){const K=[7,8,9,10];
+     {let r=[];for(const q of [[25,1],[25,.5],[14,.65],[10,.5]])r=r.concat(K.map(k=>this.run('crawler',k,'mom',{run:q[0],thr:q[1]})));R.push(g+', hard, Rock & Mud kept moving (a run at it, half to full throttle): through '+n(r,x=>x.through)+' of 16 (slowest '+r.map(x=>Math.round(x.minMph)).join(' ')+' mph)');}
+     {const r=stop('crawler',K,{mode:'lock'});R.push(g+', hard, Rock & Mud stopped then floored: bogged '+n(r,x=>!x.through)+' of 4 (moved '+r.map(x=>x.moved).join(' ')+' m)');}
+     {const r=thru('stock',[7,9],{mode:'4 LO',v:5});R.push(g+', hard, stock 4 LO kept moving: through '+n(r,x=>x.through)+' of 2');}}
+   if(part==='bog'){for(const q of [['stock','AWD',.6],['stock','AWD',1],['stock','4 LO',.6],['crawler','lock',.6],['crawler','lock',1],['crawler','low',.6]])R.push(g+', the Bog, '+q[1]+': '+this.bogRun(q[0],0,q[2],q[1]));}
+   return R;}
+});
+/* a short version of the grading for trying soil-science numbers (T: {mu,cap,rr,rv}, put into the game as it runs) */
+Object.assign(window.T9,{
+ gq(terra,T,seed){this.seedN=seed||1;__ml.MLS.terra=!!terra;if(T)Object.assign(__ml.ML_T,T);const R=[],y=r=>r.through?'through ('+Math.round(r.minMph)+')':'stops at '+r.at;
+   R.push((terra?'SS '+JSON.stringify(__ml.ML_T):'Game')+' dice '+this.seedN);
+   R.push('easy stock: '+[[14,'AWD',7],[17,'AWD',7],[14,'4 HI',9],[17,'AWD',5]].map(q=>y(this.run('stock',q[0],'cruise',{mode:q[1],v:q[2],run:30}))).join(', ')+'; stopped+floored moved '+this.run('stock',14,'stop',{mode:'AWD'}).moved+' m');
+   R.push('hard R&M: '+[[8,25,1],[9,25,1],[8,10,.5],[9,14,.65]].map(q=>y(this.run('crawler',q[0],'mom',{run:q[1],thr:q[2]}))).join(', ')+'; stopped+floored moved '+this.run('crawler',8,'stop').moved+' m');
+   R.push('bog: '+this.bogRun('stock',0,.6,'AWD')+'; '+this.bogRun('crawler',0,.6,'lock')+'; '+this.bogRun('crawler',0,1,'lock'));
+   {const t=this.put('stock',-451,-300,0,'4 HI');this.go({thr:1},3);const a=this.f(t.speed*2.237);const c=this.put('crawler',455,516,0,'lock');this.go({thr:1},6);R.push('dry clay pan, stock floored 3 s: '+a+' mph; dry quarry sand, R&M floored 6 s: '+this.f(c.speed*2.237)+' mph');}
+   return R;}
+});
+/* a trace: floored (or thr) from a standstill at u,v for secs; each second: speed, the wheels' speed, how deep the tyres are, the
+   grip the tyres are given, the weight on them (share of the SUV's), soil science's drag and the belly's (share of weight) */
+Object.assign(window.T9,{
+ trace(kind,u,v,yaw,mode,thr,secs,terra,T){__ml.MLS.terra=!!terra;if(T)Object.assign(__ml.ML_T,T);__ml.mlRake();const t=this.put(kind,u,v,yaw,mode),W=t.m*9.81,G={n:[0,0,0]},out=[];
+   for(let s=1;s<=secs;s++){this.inp({thr});let mu=0,fz=0,z=0,ws=0,res=0,pl=0,n=0;for(let q=0;q<120;q++){__dyb.step(1/120);if(q%12)continue;n++;
+       for(const w of t.wheels){mu+=(terra?w.mlMuT:t._smu(w,w.surf))/4;fz+=w.Fz/W;ws+=Math.abs(w.w*w.R)/4;if(w.contact&&__ml.mlGround(w.cp[0],w.cp[2],G))z+=Math.max(0,__ml.mlBase(w.cp[0],w.cp[2])-(G.y-__ml.MLS.h0))/4;}
+       res+=(__ml.MLS.res||0)/W;pl+=(__ml.MLS.plough||0)/W;}
+     out.push(s+'s: '+this.f(t.speed*2.237)+' mph, wheels '+this.f(ws/n*2.237)+', tyres '+Math.round(z/n*100)+' cm down, grip '+this.f(mu/n)+', weight on tyres '+this.f(fz/n)+', drag '+this.f(res/n)+' (belly '+this.f(pl/n)+'), on '+t.wheels[0].surf);}
+   return out;}
+});
+/* ---------- Mud Lab 14: the Hill Climb ---------- */
+Object.assign(window.T9,{
+ /* the Hill Climb from a standing start at its line: the throttle held at thr; o.feather: eased whenever a tyre slips more
+    than o.feather m/s; o.roll: no stop at the line, a run at it from o.roll metres back (which the game doesn't count) */
+ climb(kind,mode,thr,o){o=o||{};this.sign();const C=__dyb.WG.mlClimb,A=__dyb.WG.mlA,M=__mlhc.MLHC;if(o.terra!==undefined)__ml.MLS.terra=!!o.terra;__ml.mlRake();M.cool=false;M.run=null;M.last=null;M.staged=false;
+   const t=this.put(kind,C.u,C.v+(o.roll||4),Math.PI/2,mode);if(o.air)this.air(o.air);if(!o.roll)this.go({hb:1},1.2);const staged=M.staged;let tt=0,vmax=0,ped=thr,xm=-9,flip=false;
+   while(tt<(o.secs||40)&&!M.last){let e=Math.PI/2-this.yaw(t);while(e>Math.PI)e-=2*Math.PI;while(e<-Math.PI)e+=2*Math.PI;const lat=t.p[0]-A.x-C.u;
+     for(let u=0;u<3;u++){if(o.feather){let sl=0;for(const w of t.wheels)if(w.contact)sl=Math.max(sl,Math.abs(w.w*w.R-w.vl));ped=Math.max(.12,Math.min(thr,ped+(sl>o.feather?-.08:.04)));}
+       this.inp({thr:ped,steer:Math.max(-1,Math.min(1,this.sgn*(e*1.6+lat*.12)))});this.steps(4);}
+     tt+=.1;vmax=Math.max(vmax,t.speed);xm=Math.max(xm,(A.z+C.v)-t.p[2]);if(t.M[4]<.3)flip=true;if(!M.run&&!o.roll&&tt>6)break;if(o.roll&&tt>8&&!M.run)break;}
+   const L=M.last,deg=Math.asin(Math.max(-1,Math.min(1,t.M[3])))*57.3;this.go({hb:1,brk:0},2.5);const back=xm-((A.z+C.v)-t.p[2]);
+   return kind.slice(0,5)+' '+(mode||'')+(o.air?' '+__mlr.ML_AIRS[o.air].psi+'psi':'')+' thr '+thr+(o.feather?' feathered':'')+(o.roll?' ROLLING from '+o.roll+' m':'')+': '+(L?L.ft+' FT':'no mark (staged '+staged+', got '+this.f(xm)+' m up)')+' of '+Math.round(__mlhc.mlhcLen()*3.281)+', fastest '+this.f(vmax*2.237)+' mph, nose up '+Math.round(deg)+' deg, '+this.f(tt)+' s; then on the e-brake: slid back '+this.f(back)+' m, '+(flip||t.M[4]<.3?'ROLLED OVER':'upright');},
+ /* standing on the lane x metres up it, then the throttle: does it pull away? */
+ climbHold(kind,mode,x,thr,o){o=o||{};this.sign();const C=__dyb.WG.mlClimb,A=__dyb.WG.mlA;if(o.terra!==undefined)__ml.MLS.terra=!!o.terra;__ml.mlRake();const t=this.put(kind,C.u,C.v-x,Math.PI/2,mode);this.go({hb:1,brk:0},1);
+   const z0=t.p[2],deg=Math.asin(Math.max(-1,Math.min(1,t.M[3])))*57.3;let ws=0;for(let i=0;i<40;i++){this.inp({thr});this.steps(12);ws=Math.max(ws,Math.abs(t.wheels[0].w*t.wheels[0].R));}
+   const up=z0-t.p[2];this.inp({hb:1});return kind.slice(0,5)+' '+(mode||'')+' standing '+x+' m up ('+Math.round(deg)+' deg), thr '+thr+' for 4 s: '+(up>.5?'climbs '+this.f(up)+' m':up<-.5?'slides back '+this.f(-up)+' m':'holds')+', wheels to '+this.f(ws*2.237)+' mph';},
+ /* the lane's shape: along its middle, and across it part way up */
+ climbShape(){const C=__dyb.WG.mlClimb,Z={},out=[],W=__dyb.RANCH.W,A=__dyb.WG.mlA;
+   for(let x=-28;x<=C.X+C.top+30;x+=4){const z=__dyb.WG.mlZone(C.u,C.v-x,Z),z2=__dyb.WG.mlZone(C.u+40,C.v-x,{});out.push('x '+x+': lane '+this.f(z.h)+' m (over its foot '+this.f(z.h-C.h0)+'), 40 m east '+this.f(z2.h)+'; wood '+this.f(z.wood)+', grass '+this.f(z.grass)+', sand '+this.f(z.sand)+', moist '+this.f(z.moist)+', world '+this.f(W.heightAt(A.x+C.u,A.z+C.v-x)-A.h0));}
+   for(const x of [10,30]){const r=[];for(let w=-24;w<=24;w+=4){const z=__dyb.WG.mlZone(C.u+w,C.v-x,Z);r.push(w+':'+this.f(z.h)+(z.wood>.2?'w':''));}out.push('across at x '+x+': '+r.join(' '));}
+   let n=0;try{__dyb.WG.mlTrees(A.x+C.u-C.hw-1,A.z+C.v-C.X-C.top,A.x+C.u+C.hw+1,A.z+C.v+10,()=>{n++;});}catch(e){n='?';}out.push('trees on the lane: '+n+'; slope length '+this.f(__mlhc.mlhcLen())+' m = '+Math.round(__mlhc.mlhcLen()*3.281)+' ft; rise '+this.f(__dyb.WG.mlClimbY(C.X+4))+' m');return out;}
+});
+Object.assign(window.T9,{
+ /* the Bog, second by second: how far, how fast, the wheels, how deep, the grip given, the weight on the tyres, the drag */
+ bogTrace(kind,thr,mode,terra,secs){__ml.MLS.terra=!!terra;this.sign();const B=__dyb.WG.mlBog,A=__dyb.WG.mlA;__ml.mlRake();__mlb.MLB.cool=false;__mlb.MLB.run=null;__mlb.MLB.last=null;const t=this.put(kind,B.u0-30,B.v,0,mode),W=t.m*9.81,G={n:[0,0,0]},out=[];
+   for(let s=1;s<=(secs||30)&&!__mlb.MLB.last;s++){let mu=0,fz=0,z=0,ws=0,res=0,pl=0,cl=0,n=0;for(let q=0;q<10;q++){let e=0-this.yaw(t);const lat=(t.p[2]-A.z-B.v);this.inp({thr,steer:Math.max(-1,Math.min(1,this.sgn*(e*1.6+lat*.12)))});this.steps(12);n++;
+       for(const w of t.wheels){mu+=(terra?w.mlMuT:t._smu(w,w.surf))/4;fz+=w.Fz/W;ws+=Math.abs(w.w*w.R)/4;cl+=(w.mlClog||0)/4;if(w.contact&&__ml.mlGround(w.cp[0],w.cp[2],G))z+=Math.max(0,__ml.mlBase(w.cp[0],w.cp[2])-(G.y-__ml.MLS.h0))/4;}
+       res+=(__ml.MLS.res||0)/W;pl+=(__ml.MLS.plough||0)/W;}
+     if(s>3)out.push(s+'s: '+Math.round((t.p[0]-A.x-B.u0+2.4)*3.281)+' ft, '+this.f(t.speed*2.237)+' mph, wheels '+this.f(ws/n*2.237)+', tyres '+Math.round(z/n*100)+' cm down, water '+Math.round((__ml.MLS.wd||0)*100)+' cm, grip '+this.f(mu/n)+', clog '+this.f(cl/n)+', weight on tyres '+this.f(fz/n)+', drag '+this.f(res/n)+' (belly '+this.f(pl/n)+'), on '+t.wheels[0].surf);}
+   out.push(__mlb.MLB.last?'mark '+__mlb.MLB.last.ft+' ft':'no mark');return out;}
+});
+Object.assign(window.T9,{
+ /* stopped in hole k, then straight back out at a held throttle: how far it gets, and what holds it */
+ backOut(kind,k,mode,thr,o){o=o||{};this.sign();if(o.terra!==undefined)__ml.MLS.terra=!!o.terra;const H=this.hole(k),cs=Math.cos(H.r),sn=Math.sin(H.r),s0=-(H.L+25);
+   __ml.mlRake();const t=this.put(kind,H.u+cs*s0,H.v+sn*s0,-H.r,mode),W=t.m*9.81,G={n:[0,0,0]},prog=()=>this.at(t,H).s;let tt=0;
+   while(tt<20&&prog()<(o.stopAt===undefined?-H.L*.1:o.stopAt)){this.inp({thr:o.thrIn||.45,steer:this.steer(t,H,1)});this.steps(12);tt+=.1;}
+   for(let i=0;i<40&&t.speed>.15;i++){this.inp({brk:1});this.steps(12);}this.inp({hb:1});this.steps(120);const p0=prog();
+   if(o.dig){this.go({thr:1},o.dig);}
+   const log=[];let t2=0,pmin=p0,vmax=0,wsm=0;while(t2<(o.secs||14)&&prog()>-(H.L+5)){this.inp({brk:t.rev?thr:Math.max(.6,thr),steer:0});this.steps(12);t2+=.1;pmin=Math.min(pmin,prog());vmax=Math.max(vmax,t.speed);
+     let z=0,fz=0,ws=0;for(const w of t.wheels){fz+=w.Fz/W;ws=Math.max(ws,Math.abs(w.w*w.R));if(w.contact&&__ml.mlGround(w.cp[0],w.cp[2],G))z+=Math.max(0,__ml.mlBase(w.cp[0],w.cp[2])-(G.y-__ml.MLS.h0))/4;}wsm=Math.max(wsm,ws);
+     if(o.log&&Math.round(t2*10)%10===0)log.push(this.f(t2)+'s '+this.f(prog()-p0)+'m '+this.f(t.speed*2.237)+'mph wheels '+this.f(ws*2.237)+' tyres '+Math.round(z*100)+'cm weight '+this.f(fz)+' belly '+this.f((__ml.MLS.plough||0)/W)+' rev '+t.rev);}
+   const out=prog()<=-(H.L+5);return kind.slice(0,5)+' '+(mode||'')+' hole '+k+(o.dig?' after flooring it '+o.dig+' s':'')+', back out at '+thr+' throttle: '+(out?'OUT in '+this.f(t2)+' s':'stuck after '+this.f(p0-pmin)+' m back')+', fastest '+this.f(vmax*2.237)+' mph, wheels to '+this.f(wsm*2.237)+(o.log?' | '+log.join(' | '):'');}
 });
