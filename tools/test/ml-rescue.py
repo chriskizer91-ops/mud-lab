@@ -104,6 +104,25 @@ async def main():
             # the pull test: tail to the post, the line on, held at 0.7 throttle, lifted off
             await ev("(P=>{const A=__dyb.WG.mlA;T9.put('crawler',P.x-A.x+6.5,P.z-A.z,0);})(__mlb.MLB_POST())"); n = {'can': (await ev("T9.go({},1)"))['can']}
             await ev("__mlr.mlrHookUp()"); await ev("T9.go({thr:.7},4)"); await ev("MLVW.look(3,2.6,7,-3,.5,0,.9)"); n['after'] = (await ev("T9.go({},1)"))['msgs']; n['pulled'] = await ev('__mlb.MLB.pulled'); await shot('pull'); await ev("(__mlr.mlrUnhook(),MLVW.free())"); num['pull'] = n
+        if 'menu' in want:
+            # (Mud Lab 13) the map with its menu down, the list of things to do, and the guide arrow on the driving screen
+            await ev("(__dyb.placeCar(__dyb.WG.mlA.x+30,__dyb.WG.mlA.z+610,1.571),__game.APP.bigMap=true,__game.APP.photo=false,T9.go({hb:1},.3),__mlm.MLM.btn.click(),T9.go({hb:1},.2),1)"); await shot('menu', 4)
+            await ev("(__mlm.mlmPick('todo'),T9.go({hb:1},.2),1)"); await shot('menu-todo', 2)
+            await ev("(__mlr.MLR.mode='real',__mlm.mlmGo(__mlm.mlmDo()[0]),T9.go({hb:1},.3),MLVW.free(),1)"); await shot('guide', 4); num['menu'] = await ev("__mlm.MLM.nav.textContent")
+            # (a trail picked in Free play: set down at its start, the arrow leading down it, the clock)
+            await ev("(__mlr.MLR.mode='free',__mlm.MLM.guide=null,__dyb.GAME.msgs.length=0,__mlm.mlmGo(__mlm.mlmDo()[2]),T9.go({thr:.25},5),T9.go({hb:1},.2),MLVW.free(),1)"); await shot('run', 4)
+            num['run'] = await ev("__mlm.MLM.nav.textContent"); num['rows'] = await ev("__mlm.mlmRows().map(r=>r[1])")
+            await ev("(__mlm.mlmPick('stop'),1)")
+            # (Free play: a place tapped on the map: JUMP, and GUIDE ME THERE over it)
+            await ev("(__dyb.placeCar(__dyb.WG.mlA.x+30,__dyb.WG.mlA.z+610,1.571),__game.APP.bigMap=true,T9.go({hb:1},.3),1)"); await pg.evaluate('([n])=>MLVW.settle(n,100)', [3])
+            num['tap'] = await ev("__mlv.mlvTapName('THE RIDGE')"); await ev("T9.go({hb:1},.2)"); await shot('map-pick', 3)
+            num['pick'] = await ev("[...document.querySelectorAll('#mlJump,#mlGuideB,#mlMenu')].filter(b=>!b.hidden).map(b=>b.textContent)")
+            await ev("(__mlm.MLM.gb.click(),T9.go({hb:1},.3),1)"); num['guided'] = await ev("[__game.APP.bigMap,__mlm.MLM.guide&&__mlm.MLM.guide.name,__mlm.MLM.nav.textContent]")
+            await ev("(__mlm.mlmPick('stop'),1)")
+            # (a run, then a JUMP somewhere else from the map: the run is over)
+            await ev("(__mlm.mlmGo(__mlm.mlmDo()[2]),T9.go({thr:.3},2),__game.APP.bigMap=true,T9.go({hb:1},.3),1)"); await pg.evaluate('([n])=>MLVW.settle(n,100)', [3])
+            r0 = await ev("!!__mlm.MLM.run"); await ev("__mlv.mlvTapName('THE RIDGE')"); await ev("(document.getElementById('mlJump').click(),T9.go({hb:1},.5),1)")
+            num['jumpEndsRun'] = [r0, await ev("!!__mlm.MLM.run"), await ev("!!__mlm.MLM.guide"), await ev("__dyb.GAME.place")]
         if 'map' in want:
             await ev("(__dyb.placeCar(__dyb.WG.mlA.x+30,__dyb.WG.mlA.z+610,1.571),__mlr.MLR.stuck=false,__game.APP.bigMap=true,__game.APP.photo=false,T9.go({hb:1},.3),1)"); await shot('map', 4); num['map'] = await ev("[...document.querySelectorAll('button')].filter(b=>!b.hidden&&/GET IN|BRING|TOW|JUMP|Grip|GRIP|TYRES/.test(b.textContent)).map(b=>b.textContent)")
             await ev("(__game.APP.bigMap=false,1)")

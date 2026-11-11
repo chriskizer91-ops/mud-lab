@@ -120,8 +120,8 @@ addEventListener('pointerdown',e=>{
   for(const h of MLV.hits){const inBox=hx>=h.a-3&&hx<=h.a+h.w&&hy>=h.b-9&&hy<=h.b+(h.p.kind==='heron'?9:3),d=Math.hypot(hx-h.a,hy-h.b);
     const s=inBox?d*.2:d;if((inBox||d<7)&&s<bd){bd=s;best=h.p;}}
   if(!best)return;e.stopPropagation();e.preventDefault();
-  /* (Mud Lab 9) Real: no jumps: you drive there, or fly */
-  if(MLR.mode==='real'&&!MLR.off){say('REAL: NO JUMPS. DRIVE THERE, OR FLY',2);return;}
+  /* (Mud Lab 9) Real: no jumps: you drive there, or fly. (Mud Lab 13) A tap on a name guides you there: src/ml-menu.js */
+  if(MLR.mode==='real'&&!MLR.off){const A9=WG.mlA;mlmGuide(best.name,A9.x+best.u,A9.z+best.v);APP.bigMap=false;return;}
   MLV.sel=best;mlvJumpBtn();},true);
 function mlvJumpBtn(){let b=MLV.jb;if(!b){b=MLV.jb=document.createElement('button');b.type='button';b.id='mlJump';
     b.style.cssText='position:fixed;left:calc(env(safe-area-inset-left) + 12px);top:calc(50% - 30px);max-width:calc(50vw - 49vh - 24px);min-width:120px;white-space:normal;z-index:61;font:700 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 18px;border-radius:999px;border:0;background:#c98f4a;color:#1d140a;box-shadow:0 4px 16px rgba(0,0,0,.4);cursor:pointer';
@@ -132,14 +132,16 @@ function mlvJump(p){
   const A=WG.mlA,t=GAME.car;let x=A.x+p.u,z=A.z+p.v,spot;
   if(p.kind==='heron'){const P=mlvParked();spot=mlvBeside(P.p[0],P.p[2],mlvYaw(P));}
   else if(p.kind==='suv'){spot=mlvSpot(x+9,z,x,z,7);spot.yaw=Math.atan2(-(z-spot.z),x-spot.x);}
-  else{spot=mlvSpot(x,z);const dx=x-spot.x,dz=z-spot.z;spot.yaw=Math.hypot(dx,dz)>2?Math.atan2(-dz,dx):(t?mlvYaw(t):0);
-    if(p.kind==='strip'){spot=mlvSpot(A.x+WG.mlStrip.u0+22,A.z+WG.mlStrip.v-34);spot.yaw=-Math.PI/2;}}
+  else{spot=p.exact?{x,z}:mlvSpot(x,z);const dx=x-spot.x,dz=z-spot.z;spot.yaw=Math.hypot(dx,dz)>2?Math.atan2(-dz,dx):(t?mlvYaw(t):0);
+    if(p.kind==='strip'){spot=mlvSpot(A.x+WG.mlStrip.u0+22,A.z+WG.mlStrip.v-34);spot.yaw=-Math.PI/2;}
+    /* (Mud Lab 13: a thing to do is faced the way it's done) */
+    if(p.yaw!==undefined)spot.yaw=p.yaw;}
   if(t&&t.rt){const h=t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]),sp=Math.hypot(t.v[0],t.v[1],t.v[2]);
     /* (landed: the Heron stays where it is; in the air: back to its strip) */
     if(h<3&&sp<3&&!t.air){MLV.plane={x:t.p[0],z:t.p[2],yaw:mlvYaw(t)};MLV.parked=t;}else{MLV.plane=null;MLV.parked=null;}
     rtFly(false);}
   MLV.quiet=APP.t+4;placeCar(spot.x,spot.z,spot.yaw);MLV.truck=null;MLV.sel=null;APP.bigMap=false;if(MLV.jb)MLV.jb.hidden=true;
-  say(p.name,1.8);return true;}
+  if(p.kind!=='do')say(p.name,1.8);return true;}
 /* (for the tests: a tap on the map at a place's name, as a finger would) */
 function mlvTapName(name){const h=MLV.hits.find(x=>x.p.name===name);if(!h)return false;const x=RECT.x+(h.a+8)/W*RECT.w,y=RECT.y+(h.b-3)/H*RECT.h;
   cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:x,clientY:y,bubbles:true,pointerId:1}));return {x,y,sel:MLV.sel&&MLV.sel.name,btn:MLV.jb&&!MLV.jb.hidden?MLV.jb.textContent:null,map:APP.bigMap};}

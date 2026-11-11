@@ -3,10 +3,10 @@ the Road Not Found engine, as it was on Nov 7 2026), the Rock & Mud's play model
 ground pictures (base/texpack.js), with this game's own code (src/). Nothing here is shared with Ground Truth: if the
 soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
-usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-12: give the
+usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-13: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-12'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-13'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -204,7 +204,7 @@ swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&
 swap("let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);", "let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);mlvUI();tris+=mlvDraw(c.eye);")
 swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvShadow())one(mlvParked(),true);if(kind!=='hl'){const o9=mlrShadow();if(o9)one(o9,true);}")
 swap("/* =====================================================================================\n   THE BOOT: the dots",
-     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + '\n' + rd('src/ml-look.js') + '\n' + rd('src/ml-recover.js') + '\n' + rd('src/ml-bog.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + '\n' + rd('src/ml-look.js') + '\n' + rd('src/ml-recover.js') + '\n' + rd('src/ml-bog.js') + '\n' + rd('src/ml-menu.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
 # ---------- MUD LAB 8: THE LAND'S SHADER CLEANED OUT, AND THE LOOK (src/ml-look.glsl, src/ml-look.js) ----------
 # The land's fragment shader is the engine's whole county: the drag strip, the park's tracks, the dry lake, the gravel and
 # the public roads, the town's facades and traffic signals, concrete, sheet metal, hay, boulders, the salt flats and
