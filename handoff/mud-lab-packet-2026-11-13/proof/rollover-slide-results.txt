@@ -1,0 +1,111 @@
+SLIDING SIDEWAYS ON THE CLAY PAN (test-tools/ml-tip.py), 13 Nov 2026, the test browser.
+level | truck | sideways mph | rolled over in all, degrees | fastest, degrees a second | rose, m | ends
+
+=== Mud Lab 15 ===
+real | crawler | 11 | 1 | 16 | 0.01 | on its wheels
+real | crawler | 13 | 1 | 17 | 0.02 | on its wheels
+real | crawler | 18 | 2 | 18 | 0.04 | on its wheels
+real | crawler | 22 | 0 | 19 | 0.09 | on its wheels
+real | crawler | 27 | 4 | 20 | 0.09 | on its wheels
+real | crawler | 31 | 2 | 27 | 0.13 | on its wheels
+real | crawler | 40 | 0 | 29 | 0.14 | on its wheels
+real | stock | 11 | 0 | 12 | 0.03 | on its wheels
+real | stock | 13 | 1 | 11 | 0.03 | on its wheels
+real | stock | 18 | 0 | 13 | 0.06 | on its wheels
+real | stock | 22 | 0 | 14 | 0.09 | on its wheels
+real | stock | 27 | 3 | 23 | 0.1 | on its wheels
+real | stock | 31 | 8 | 23 | 0.1 | on its wheels
+real | stock | 40 | 0 | 36 | 0.11 | on its wheels
+sim | crawler | 11 | 0 | 22 | 0.04 | on its wheels
+sim | crawler | 13 | 0 | 30 | 0.11 | on its wheels
+sim | crawler | 18 | 360 | 368 | 3.77 | on its wheels
+sim | crawler | 22 | 178 | 193 | 0.41 | on its roof
+sim | crawler | 27 | 720 | 432 | 2.49 | on its wheels
+sim | crawler | 31 | 539 | 363 | 0.97 | on its roof
+sim | crawler | 40 | 1087 | 608 | 1.22 | on its wheels
+sim | stock | 11 | 0 | 17 | 0.06 | on its wheels
+sim | stock | 13 | 0 | 18 | 0.07 | on its wheels
+sim | stock | 18 | 0 | 43 | 0.21 | on its wheels
+sim | stock | 22 | 181 | 186 | 0.61 | on its roof
+sim | stock | 27 | 180 | 285 | 0.55 | on its roof
+sim | stock | 31 | 180 | 220 | 0.6 | on its roof
+sim | stock | 40 | 721 | 365 | 0.9 | on its wheels
+
+=== with rollover_for_mud_lab_patch.py ===
+real | crawler | 11 | 1 | 21 | 0.01 | on its wheels
+real | crawler | 13 | 0 | 16 | 0.02 | on its wheels
+real | crawler | 18 | 2 | 20 | 0.04 | on its wheels
+real | crawler | 22 | 0 | 18 | 0.09 | on its wheels
+real | crawler | 27 | 3 | 24 | 0.11 | on its wheels
+real | crawler | 31 | 2 | 27 | 0.11 | on its wheels
+real | crawler | 40 | 0 | 33 | 0.14 | on its wheels
+real | stock | 11 | 0 | 10 | 0.03 | on its wheels
+real | stock | 13 | 1 | 10 | 0.04 | on its wheels
+real | stock | 18 | 0 | 10 | 0.07 | on its wheels
+real | stock | 22 | 0 | 12 | 0.08 | on its wheels
+real | stock | 27 | 8 | 14 | 0.09 | on its wheels
+real | stock | 31 | 4 | 26 | 0.11 | on its wheels
+real | stock | 40 | 0 | 38 | 0.11 | on its wheels
+sim | crawler | 11 | 1 | 24 | 0.06 | on its wheels
+sim | crawler | 13 | 82 | 119 | 0.26 | on its side
+sim | crawler | 18 | 190 | 259 | 0.98 | on its roof
+sim | crawler | 22 | 178 | 195 | 0.37 | on its roof
+sim | crawler | 27 | 360 | 253 | 0.46 | on its wheels
+sim | crawler | 31 | 722 | 341 | 0.65 | on its wheels
+sim | crawler | 40 | 1081 | 474 | 0.73 | on its wheels
+sim | stock | 11 | 0 | 17 | 0.07 | on its wheels
+sim | stock | 13 | 0 | 18 | 0.07 | on its wheels
+sim | stock | 18 | 0 | 47 | 0.22 | on its wheels
+sim | stock | 22 | 180 | 169 | 0.47 | on its roof
+sim | stock | 27 | 180 | 191 | 0.57 | on its roof
+sim | stock | 31 | 180 | 215 | 0.59 | on its roof
+sim | stock | 40 | 900 | 375 | 0.91 | on its roof
+
+=== with Ground Truth's four swaps as written (reference) ===
+real | crawler | 11 | 0 | 17 | 0.01 | on its wheels
+real | crawler | 13 | 0 | 15 | 0 | on its wheels
+real | crawler | 18 | 2 | 17 | 0.04 | on its wheels
+real | crawler | 22 | 1 | 21 | 0.08 | on its wheels
+real | crawler | 27 | 0 | 21 | 0.11 | on its wheels
+real | crawler | 31 | 3 | 28 | 0.12 | on its wheels
+real | crawler | 40 | 0 | 29 | 0.14 | on its wheels
+real | stock | 11 | 0 | 10 | 0.03 | on its wheels
+real | stock | 13 | 1 | 11 | 0.04 | on its wheels
+real | stock | 18 | 0 | 15 | 0.06 | on its wheels
+real | stock | 22 | 0 | 11 | 0.08 | on its wheels
+real | stock | 27 | 3 | 12 | 0.09 | on its wheels
+real | stock | 31 | 0 | 31 | 0.1 | on its wheels
+real | stock | 40 | 0 | 36 | 0.11 | on its wheels
+sim | crawler | 11 | 1 | 22 | 0.04 | on its wheels
+sim | crawler | 13 | 0 | 50 | 0.14 | on its wheels
+sim | crawler | 18 | 98 | 218 | 0.64 | on its side
+sim | crawler | 22 | 178 | 192 | 0.4 | on its roof
+sim | crawler | 27 | 361 | 254 | 0.47 | on its wheels
+sim | crawler | 31 | 719 | 312 | 0.56 | on its wheels
+sim | crawler | 40 | 820 | 484 | 0.7 | on its side
+sim | stock | 11 | 0 | 20 | 0.07 | on its wheels
+sim | stock | 13 | 0 | 17 | 0.06 | on its wheels
+sim | stock | 18 | 0 | 44 | 0.21 | on its wheels
+sim | stock | 22 | 180 | 166 | 0.47 | on its roof
+sim | stock | 27 | 180 | 193 | 0.49 | on its roof
+sim | stock | 31 | 361 | 214 | 0.6 | on its wheels
+sim | stock | 40 | 721 | 358 | 0.91 | on its wheels
+
+KICKED INTO A ROLL (KICK=90,150,210,300 degrees a second), Mud Lab 15: nothing went over on either level.
+
+real | crawler | 90 | 3 | 84 | 0.01 | on its wheels
+real | crawler | 150 | 0 | 143 | 0.03 | on its wheels
+real | crawler | 210 | 0 | 203 | 0.1 | on its wheels
+real | crawler | 300 | 3 | 287 | 0.26 | on its wheels
+real | stock | 90 | 0 | 86 | 0.01 | on its wheels
+real | stock | 150 | 0 | 145 | 0.08 | on its wheels
+real | stock | 210 | 0 | 203 | 0.17 | on its wheels
+real | stock | 300 | 1 | 292 | 0.33 | on its wheels
+sim | crawler | 90 | 1 | 86 | 0 | on its wheels
+sim | crawler | 150 | 0 | 145 | 0.06 | on its wheels
+sim | crawler | 210 | 0 | 203 | 0.17 | on its wheels
+sim | crawler | 300 | 0 | 291 | 0.31 | on its wheels
+sim | stock | 90 | 1 | 85 | 0 | on its wheels
+sim | stock | 150 | 0 | 144 | 0.08 | on its wheels
+sim | stock | 210 | 0 | 203 | 0.17 | on its wheels
+sim | stock | 300 | 0 | 293 | 0.3 | on its wheels

@@ -1,0 +1,214 @@
+SAME-DRIVE RESULTS, Mud Lab's own test (tools/test/ml-same.py: seven drives, counted dice, a fresh page per drive),
+each page against Mud Lab 15 (the file from his laptop, 19,487,369 bytes, md5 f0ab04240003ceb582cb82fddc0c3181).
+Run in the test browser (headless Chrome, SwiftShader), 13 Nov 2026. Left of the slash is Mud Lab 15.
+
+=== 1. Film camera + softer fly-past + graphics-card + plane-hud (the three pieces that only draw or sound) ===
+SAME   Rock & Mud, the dry field: 34.0155 mph at [26.2471, 17.3977, 503.4393], ruts 4.9 cm, dug 22 l, 595 clods
+SAME   Rock & Mud, the Mud Hole: 0.2074 mph at [-165.9311, 13.9374, 559.7691], ruts 30.3 cm, dug 842.2 l, 3742 clods
+SAME   Rock & Mud, the pond's bottoms: 5.1906 mph at [196.3736, 1.7088, 123.9557], ruts 55.1 cm, dug 1128.8 l, 3740 clods
+SAME   Rock & Mud, the quarry's sand: 22.3923 mph at [455.7421, 7.8126, 516.0055], ruts 24.6 cm, dug 728.2 l, 2570 clods
+SAME   stock SUV, the Mud Hole: 5.0453 mph at [-161.9864, 14.006, 561.0253], ruts 13.9 cm, dug 82.6 l, 1662 clods
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+7 of 7 drives the same.  page errors: none / none
+
+=== 2. Those three + the rollover fix re-pointed for Mud Lab (all four pieces) ===
+DIFFERENT   Rock & Mud, the dry field
+     churnedM2 : 54  /  53.8
+     clods : 595  /  593
+     here : {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.48,1.37,1.41,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}  /  {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.5,1.37,1.9,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}
+     mph : 34.0155  /  34.3695
+     p : [26.2471, 17.3977, 503.4393]  /  [26.1111, 17.3541, 503.5948]
+     pressedM2 : 49.7  /  49.3
+     squares : 43  /  44
+     v : [5.9653, 0.2074, -13.9724]  /  [5.996, -0.274, -14.1353]
+SAME   Rock & Mud, the Mud Hole: 0.2074 mph at [-165.9311, 13.9374, 559.7691], ruts 30.3 cm, dug 842.2 l, 3742 clods
+SAME   Rock & Mud, the pond's bottoms: 5.1906 mph at [196.3736, 1.7088, 123.9557], ruts 55.1 cm, dug 1128.8 l, 3740 clods
+SAME   Rock & Mud, the quarry's sand: 22.3923 mph at [455.7421, 7.8126, 516.0055], ruts 24.6 cm, dug 728.2 l, 2570 clods
+SAME   stock SUV, the Mud Hole: 5.0453 mph at [-161.9864, 14.006, 561.0253], ruts 13.9 cm, dug 82.6 l, 1662 clods
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+6 of 7 drives the same.  page errors: none / none
+
+=== 3. The re-pointed rollover fix alone ===
+DIFFERENT   Rock & Mud, the dry field
+     churnedM2 : 54  /  53.8
+     clods : 595  /  593
+     here : {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.48,1.37,1.41,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}  /  {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.5,1.37,1.9,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}
+     mph : 34.0155  /  34.3695
+     p : [26.2471, 17.3977, 503.4393]  /  [26.1111, 17.3541, 503.5948]
+     pressedM2 : 49.7  /  49.3
+     squares : 43  /  44
+     v : [5.9653, 0.2074, -13.9724]  /  [5.996, -0.274, -14.1353]
+SAME   Rock & Mud, the Mud Hole: 0.2074 mph at [-165.9311, 13.9374, 559.7691], ruts 30.3 cm, dug 842.2 l, 3742 clods
+SAME   Rock & Mud, the pond's bottoms: 5.1906 mph at [196.3736, 1.7088, 123.9557], ruts 55.1 cm, dug 1128.8 l, 3740 clods
+SAME   Rock & Mud, the quarry's sand: 22.3923 mph at [455.7421, 7.8126, 516.0055], ruts 24.6 cm, dug 728.2 l, 2570 clods
+SAME   stock SUV, the Mud Hole: 5.0453 mph at [-161.9864, 14.006, 561.0253], ruts 13.9 cm, dug 82.6 l, 1662 clods
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+6 of 7 drives the same.  page errors: none / none
+
+=== 3b. Page 3 against page 2 (so the other three pieces add nothing to it) ===
+7 of 7 drives the same.  page errors: none / none
+
+=== 4. Ground Truth's rollover fix as written: its guard alone (first two swaps) ===
+DIFFERENT   Rock & Mud, the dry field
+     churnedM2 : 54  /  53.8
+     clods : 595  /  593
+     here : {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.48,1.37,1.41,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}  /  {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.5,1.37,1.9,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}
+     mph : 34.0155  /  34.1216
+     p : [26.2471, 17.3977, 503.4393]  /  [26.1097, 17.3695, 503.6035]
+     pressedM2 : 49.7  /  49.3
+     squares : 43  /  44
+     v : [5.9653, 0.2074, -13.9724]  /  [5.9518, -0.0839, -14.0351]
+DIFFERENT   Rock & Mud, the Mud Hole
+     bermCm : 21.4  /  22.2
+     churnedM2 : 33.4  /  32.5
+     clods : 3742  /  3886
+     deepestCm : 30.3  /  30.6
+     dugLitres : 842.2  /  863.2
+     here : {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.71,0.65,0.82,0.81", "waterCm": 74, "clog": "0.01,0.01,0.01,0.01", "grip": "0.58,0.58,0.58,0.58"}  /  {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.66,0.64,0.68,0.69", "waterCm": 74, "clog": "0.01,0.01,0.01,0.01", "grip": "0.58,0.58,0.58,0.58"}
+     mph : 0.2074  /  0.2867
+     p : [-165.9311, 13.9374, 559.7691]  /  [-166.0125, 13.9287, 559.8307]
+     pressedM2 : 18.5  /  18
+     splash : 1004  /  1006
+     sunk : [0.1759, 0.198, 0.0545, 0.0793]  /  [0.1979, 0.2092, 0.0638, 0.0715]
+     v : [0.0856, 0.0146, 0.0341]  /  [0.1109, 0.067, 0.0326]
+DIFFERENT   Rock & Mud, the pond's bottoms
+     bermCm : 19.3  /  13.6
+     churnedM2 : 28.9  /  29.8
+     clods : 3740  /  1586
+     deepestCm : 55.1  /  53.2
+     dugLitres : 1128.8  /  932.4
+     here : {"main": "silt", "moist": 1, "place": "The Pond", "mu": "0.39,0.55,0.55,0.49", "waterCm": 57, "clog": "0,0,0,0", "grip": "0.74,0.74,0.74,0.74"}  /  {"main": "silt", "moist": 1, "place": "The Pond", "mu": "0.38,0.5,0.43,0.43", "waterCm": 52, "clog": "0,0,0,0", "grip": "0.74,0.74,0.74,0.74"}
+     mph : 5.1906  /  5.9321
+     p : [196.3736, 1.7088, 123.9557]  /  [199.5634, 1.7118, 124.8874]
+     pressedM2 : 20.1  /  20
+     spin : [140.1031, 142.2587, 189.3699, 189.2812]  /  [121.9833, 138.0613, 149.3131, 160.1689]
+     splash : 4092  /  1576
+     squares : 6  /  8
+     sunk : [0.1161, 0.0885, 0.0279, 0.0187]  /  [0.2048, 0, 0.134, 0.0299]
+     v : [1.8112, -0.3261, -1.4046]  /  [2.0777, -0.5519, -1.5366]
+DIFFERENT   Rock & Mud, the quarry's sand
+     bermCm : 10.7  /  8.6
+     churnedM2 : 37.9  /  38.5
+     clods : 2570  /  2591
+     deepestCm : 24.6  /  24.4
+     dugLitres : 728.2  /  705
+     here : {"main": "sand", "moist": 0.23, "place": "The Quarry", "mu": "0.66,0.67,0.67,0.67", "waterCm": 0, "clog": "0,0,0,0", "grip": "1,1,1,1"}  /  {"main": "sand", "moist": 0.23, "place": "The Quarry", "mu": "0.68,0.67,0.68,0.67", "waterCm": 0, "clog": "0,0,0,0", "grip": "1,1,1,1"}
+     mph : 22.3923  /  22.2658
+     p : [455.7421, 7.8126, 516.0055]  /  [455.6837, 7.8435, 515.8534]
+     pressedM2 : 14.3  /  17.1
+     spin : [136.2738, 136.5576, 150.8698, 150.4061]  /  [142.4009, 142.0333, 158.9802, 152.7828]
+     squares : 12  /  11
+     sunk : [0.0501, 0.0586, 0.0544, 0.0656]  /  [0.0349, 0.0208, 0.0338, 0.0338]
+     v : [10.0305, -0.094, -0.2289]  /  [9.9641, -0.1127, -0.5403]
+DIFFERENT   stock SUV, the Mud Hole
+     clods : 1662  /  1676
+     dugLitres : 82.6  /  82.4
+     here : {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.4,0.43,0.46,0.46", "waterCm": 66, "clog": "0.1,0.09,0.09,0.09", "grip": "0.55,0.55,0.55,0.55"}  /  {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.48,0.41,0.46,0.38", "waterCm": 66, "clog": "0.1,0.1,0.09,0.09", "grip": "0.55,0.55,0.55,0.55"}
+     mph : 5.0453  /  5.0418
+     p : [-161.9864, 14.006, 561.0253]  /  [-161.9925, 14.0095, 561.0263]
+     spin : [45.8376, 45.8557, 49.4052, 49.3819]  /  [46.8144, 46.7573, 48.1366, 48.089]
+     splash : 1256  /  1260
+     sunk : [0.0721, 0.0712, 0.0511, 0.0595]  /  [0.0674, 0.0683, 0.0571, 0.0614]
+     v : [-2.2171, -0.0697, -0.369]  /  [-2.2145, -0.0797, -0.3594]
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+2 of 7 drives the same.  page errors: none / none
+
+=== 5. Ground Truth's rollover fix as written: its bump stop alone (last two swaps) ===
+SAME   Rock & Mud, the dry field: 34.0155 mph at [26.2471, 17.3977, 503.4393], ruts 4.9 cm, dug 22 l, 595 clods
+SAME   Rock & Mud, the Mud Hole: 0.2074 mph at [-165.9311, 13.9374, 559.7691], ruts 30.3 cm, dug 842.2 l, 3742 clods
+SAME   Rock & Mud, the pond's bottoms: 5.1906 mph at [196.3736, 1.7088, 123.9557], ruts 55.1 cm, dug 1128.8 l, 3740 clods
+SAME   Rock & Mud, the quarry's sand: 22.3923 mph at [455.7421, 7.8126, 516.0055], ruts 24.6 cm, dug 728.2 l, 2570 clods
+SAME   stock SUV, the Mud Hole: 5.0453 mph at [-161.9864, 14.006, 561.0253], ruts 13.9 cm, dug 82.6 l, 1662 clods
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+7 of 7 drives the same.  page errors: none / none
+
+=== 6. The probe (reads the guard's two tests, does nothing) ===
+SAME   Rock & Mud, the dry field: 34.0155 mph at [26.2471, 17.3977, 503.4393], ruts 4.9 cm, dug 22 l, 595 clods
+SAME   Rock & Mud, the Mud Hole: 0.2074 mph at [-165.9311, 13.9374, 559.7691], ruts 30.3 cm, dug 842.2 l, 3742 clods
+SAME   Rock & Mud, the pond's bottoms: 5.1906 mph at [196.3736, 1.7088, 123.9557], ruts 55.1 cm, dug 1128.8 l, 3740 clods
+SAME   Rock & Mud, the quarry's sand: 22.3923 mph at [455.7421, 7.8126, 516.0055], ruts 24.6 cm, dug 728.2 l, 2570 clods
+SAME   stock SUV, the Mud Hole: 5.0453 mph at [-161.9864, 14.006, 561.0253], ruts 13.9 cm, dug 82.6 l, 1662 clods
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+7 of 7 drives the same.  page errors: none / none
+
+    what the probe counted, per drive (n wheel touches looked at; lo read past about 52 degrees; cut past about 70;
+    min the smallest reading, 1 = truck square to the ground; bp touches that began past the bump stop):
+Rock & Mud, the dry field | 34.0155 mph [26.2471, 17.3977, 503.4393] ruts 4.9 dug 22 clods 595 {'n': 9481, 'lo': 88, 'cut': 30, 'min': 0.1010053269895497, 'bp': 0}
+Rock & Mud, the Mud Hole | 0.2074 mph [-165.9311, 13.9374, 559.7691] ruts 30.3 dug 842.2 clods 3742 {'n': 11040, 'lo': 185, 'cut': 10, 'min': 0.32166956397183083, 'bp': 0}
+Rock & Mud, the pond's bottoms | 5.1906 mph [196.3736, 1.7088, 123.9557] ruts 55.1 dug 1128.8 clods 3740 {'n': 9120, 'lo': 474, 'cut': 215, 'min': 0.11587599389184104, 'bp': 0}
+Rock & Mud, the quarry's sand | 22.3923 mph [455.7421, 7.8126, 516.0055] ruts 24.6 dug 728.2 clods 2570 {'n': 8160, 'lo': 20, 'cut': 0, 'min': 0.49702435540738976, 'bp': 0}
+stock SUV, the Mud Hole | 5.0453 mph [-161.9864, 14.006, 561.0253] ruts 13.9 dug 82.6 clods 1662 {'n': 10080, 'lo': 1, 'cut': 0, 'min': 0.586424287363173, 'bp': 0}
+stock SUV, 4 LO on the clay pan | 20.3567 mph [-451.7107, 7.1722, -300.4532] ruts 8.5 dug 1.7 clods 64 {'n': 9216, 'lo': 0, 'cut': 0, 'min': 0.8043455960088632, 'bp': 0}
+the Heron, its take-off run | 94.1773 mph [177.0027, 19.0512, 690] ruts 4.6 dug 0 clods 0 {'n': 13950, 'lo': 0, 'cut': 0, 'min': 0.9966164326821199, 'bp': 0}
+page errors: none
+
+=== 7. Ground Truth's four swaps as written, with the Film camera (the first run, 06:26) ===
+DIFFERENT   Rock & Mud, the dry field
+     churnedM2 : 54  /  53.8
+     clods : 595  /  593
+     here : {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.48,1.37,1.41,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}  /  {"main": "loam", "moist": 0.15, "place": "The fields", "mu": "1.5,1.37,1.9,1.37", "waterCm": 0, "clog": "0,0,0,0", "grip": "1.04,1.04,1.04,1.04"}
+     mph : 34.0155  /  34.1216
+     p : [26.2471, 17.3977, 503.4393]  /  [26.1097, 17.3695, 503.6035]
+     pressedM2 : 49.7  /  49.3
+     squares : 43  /  44
+     v : [5.9653, 0.2074, -13.9724]  /  [5.9518, -0.0839, -14.0351]
+DIFFERENT   Rock & Mud, the Mud Hole
+     bermCm : 21.4  /  22.2
+     churnedM2 : 33.4  /  32.5
+     clods : 3742  /  3886
+     deepestCm : 30.3  /  30.6
+     dugLitres : 842.2  /  863.2
+     here : {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.71,0.65,0.82,0.81", "waterCm": 74, "clog": "0.01,0.01,0.01,0.01", "grip": "0.58,0.58,0.58,0.58"}  /  {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.66,0.64,0.68,0.69", "waterCm": 74, "clog": "0.01,0.01,0.01,0.01", "grip": "0.58,0.58,0.58,0.58"}
+     mph : 0.2074  /  0.2867
+     p : [-165.9311, 13.9374, 559.7691]  /  [-166.0125, 13.9287, 559.8307]
+     pressedM2 : 18.5  /  18
+     splash : 1004  /  1006
+     sunk : [0.1759, 0.198, 0.0545, 0.0793]  /  [0.1979, 0.2092, 0.0638, 0.0715]
+     v : [0.0856, 0.0146, 0.0341]  /  [0.1109, 0.067, 0.0326]
+DIFFERENT   Rock & Mud, the pond's bottoms
+     bermCm : 19.3  /  11.9
+     churnedM2 : 28.9  /  24.1
+     clods : 3740  /  1960
+     deepestCm : 55.1  /  55
+     dugLitres : 1128.8  /  1278.1
+     here : {"main": "silt", "moist": 1, "place": "The Pond", "mu": "0.39,0.55,0.55,0.49", "waterCm": 57, "clog": "0,0,0,0", "grip": "0.74,0.74,0.74,0.74"}  /  {"main": "silt", "moist": 1, "place": "The Pond", "mu": "0.33,0.34,0.41,0.4", "waterCm": 45, "clog": "0,0,0,0", "grip": "0.74,0.74,0.74,0.74"}
+     mph : 5.1906  /  4.6941
+     p : [196.3736, 1.7088, 123.9557]  /  [196.9215, 1.7071, 124.636]
+     pressedM2 : 20.1  /  16.1
+     spin : [140.1031, 142.2587, 189.3699, 189.2812]  /  [177.7487, 169.0914, 201.2193, 193.7123]
+     splash : 4092  /  1704
+     sunk : [0.1161, 0.0885, 0.0279, 0.0187]  /  [0.0308, 0.4283, 0.0505, 0.2623]
+     v : [1.8112, -0.3261, -1.4046]  /  [1.5471, -0.5616, -1.1708]
+DIFFERENT   Rock & Mud, the quarry's sand
+     bermCm : 10.7  /  8.6
+     churnedM2 : 37.9  /  38.5
+     clods : 2570  /  2591
+     deepestCm : 24.6  /  24.4
+     dugLitres : 728.2  /  705
+     here : {"main": "sand", "moist": 0.23, "place": "The Quarry", "mu": "0.66,0.67,0.67,0.67", "waterCm": 0, "clog": "0,0,0,0", "grip": "1,1,1,1"}  /  {"main": "sand", "moist": 0.23, "place": "The Quarry", "mu": "0.68,0.67,0.68,0.67", "waterCm": 0, "clog": "0,0,0,0", "grip": "1,1,1,1"}
+     mph : 22.3923  /  22.2658
+     p : [455.7421, 7.8126, 516.0055]  /  [455.6837, 7.8435, 515.8534]
+     pressedM2 : 14.3  /  17.1
+     spin : [136.2738, 136.5576, 150.8698, 150.4061]  /  [142.4009, 142.0333, 158.9802, 152.7828]
+     squares : 12  /  11
+     sunk : [0.0501, 0.0586, 0.0544, 0.0656]  /  [0.0349, 0.0208, 0.0338, 0.0338]
+     v : [10.0305, -0.094, -0.2289]  /  [9.9641, -0.1127, -0.5403]
+DIFFERENT   stock SUV, the Mud Hole
+     clods : 1662  /  1676
+     dugLitres : 82.6  /  82.4
+     here : {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.4,0.43,0.46,0.46", "waterCm": 66, "clog": "0.1,0.09,0.09,0.09", "grip": "0.55,0.55,0.55,0.55"}  /  {"main": "clay", "moist": 1, "place": "The Mud Hole", "mu": "0.48,0.41,0.46,0.38", "waterCm": 66, "clog": "0.1,0.1,0.09,0.09", "grip": "0.55,0.55,0.55,0.55"}
+     mph : 5.0453  /  5.0418
+     p : [-161.9864, 14.006, 561.0253]  /  [-161.9925, 14.0095, 561.0263]
+     spin : [45.8376, 45.8557, 49.4052, 49.3819]  /  [46.8144, 46.7573, 48.1366, 48.089]
+     splash : 1256  /  1260
+     sunk : [0.0721, 0.0712, 0.0511, 0.0595]  /  [0.0674, 0.0683, 0.0571, 0.0614]
+     v : [-2.2171, -0.0697, -0.369]  /  [-2.2145, -0.0797, -0.3594]
+SAME   stock SUV, 4 LO on the clay pan: 20.3567 mph at [-451.7107, 7.1722, -300.4532], ruts 8.5 cm, dug 1.7 l, 64 clods
+SAME   the Heron, its take-off run: 94.1773 mph at [177.0027, 19.0512, 690], ruts 4.6 cm, dug 0 l, 0 clods
+2 of 7 drives the same.  page errors: none / none

@@ -1,0 +1,18 @@
+A HARD TURN AT SPEED ON THE DRY FIELD (test-tools/ml-turn.py: ml-same.py's first drive, then 6 s hands off), Realistic, 13 Nov 2026.
+The Rock & Mud turns in at 56 mph and is going 59 mph when it goes over (measured in a separate run of the first line).
+truck | steering | went over at, s | rolled over in all, degrees | fastest, degrees a second | rose, m | furthest lean, degrees | ends
+
+=== Mud Lab 15 ===
+crawler | 0.3 | 4.58 | 1644 | 849 | 1.28 | 170 | on its roof
+crawler | 0.6 | 4.65 | 2285 | 1006 | 1.54 | 177 | leaning
+crawler | 1 | None | 4 | 42 | 0.11 | 11 | on its wheels
+stock | 0.3 | None | 0 | 15 | 0.03 | 2 | on its wheels
+stock | 1 | None | 0 | 24 | 0.03 | 3 | on its wheels
+
+=== with rollover_for_mud_lab_patch.py ===
+crawler | 0.3 | 4.58 | 818 | 483 | 0.71 | 170 | on its side
+crawler | 0.6 | 4.65 | 819 | 461 | 0.68 | 153 | on its side
+crawler | 1 | None | 4 | 42 | 0.11 | 11 | on its wheels
+stock | 0.3 | None | 0 | 15 | 0.03 | 2 | on its wheels
+stock | 1 | None | 0 | 24 | 0.03 | 3 | on its wheels
+
