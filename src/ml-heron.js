@@ -34,7 +34,7 @@ function mlPlaneChase(t,dt){
   return {eye:MLC.e.slice(),fwd:norm2(sub2(MLC.l,MLC.e)),up:[0,1,0],fov:1.0};}
 const MLC_CA=camAuto;
 camAuto=function(t,dt){
-  if(t&&t.rt&&CAMS[APP.cam]==='Chase'&&GAME.state==='drive'&&!APP.orbit&&!CAM.rear&&!JUMP.on&&!CAM.over){const r=MLC_CA(t,dt);if(r)return r;return mlPlaneChase(t,dt);}
+  if(t&&t.rt&&(CAMS[APP.cam]==='Chase'||CAMS[APP.cam]==='Film')&&GAME.state==='drive'&&!APP.orbit&&!CAM.rear&&!JUMP.on&&!CAM.over){const r=MLC_CA(t,dt);if(r)return r;return mlPlaneChase(t,dt);}
   MLC.on=false;return MLC_CA(t,dt);};
 
 /* up in it, the haze thins (half as thick 250 m up), so the whole map shows from the air; on the ground as it was */
@@ -57,11 +57,45 @@ function mlvStandIn(plane,pose){if((MLV.fail||0)>=3)return null;const w=RT.want;
 function mlvStand(o,pose){const y=RANCH.W.heightAt(pose.x,pose.z);o.place([pose.x,y+.05,pose.z],pose.yaw);for(const w of o.wheels){w.comp=.35*(w.travel||.12);w.ang=0;w.w=0;}}
 /* somewhere a truck can stand: no water over it, out of the trees, inside the bank */
 const MLVZ={};
-function mlvDry(x,z){const A=WG.mlA,u=x-A.x,v=z-A.z;if(Math.max(Math.abs(u),Math.abs(v))>A.h-30)return false;WG.mlZone(u,v,MLVZ);return !(MLVZ.wl>MLVZ.h-.02)&&MLVZ.wood<.25;}
+function mlvDry(x,z){const A=WG.mlA,u=x-A.x,v=z-A.z;if(WG.mlE(u,v)>A.old-30)return false;WG.mlZone(u,v,MLVZ);return !(MLVZ.wl>MLVZ.h-.02)&&MLVZ.wood<.25;}
 /* the nearest such spot to x, z (rings 4 m apart, out to 200 m), not within keep m of (kx, kz) */
 function mlvSpot(x,z,kx,kz,keep){for(let r=0;r<200;r+=4){const n=r?Math.max(8,Math.round(r*TAU/5)):1;
     for(let k=0;k<n;k++){const a=k/n*TAU,px=x+Math.cos(a)*r,pz=z+Math.sin(a)*r;if(keep&&Math.hypot(px-kx,pz-kz)<keep)continue;if(mlvDry(px,pz))return {x:px,z:pz};}}
   return {x,z};}
+/* (Mud Lab 20) WHERE A NAME ON THE MAP SETS YOU DOWN, AND WHERE ITS ARROW LEADS: at its edge, not in it. His words, 13 Nov
+   2026: "If you use the map to jump to the lake, you jump to the middle of the lake. So you should jump to the edge
+   of the lake." The Lake's name stands in the Lake's middle, 235 m from any shore: the search above gave up at 200 m
+   and set the SUV down where the name was, in 3 m of water (and in Real the guide arrow led there). Now:
+   - the Lake has its own landing: the beach, where the Lake Road comes to it (MLV_LAND);
+   - anything else on the new ground: the search goes on to 640 m, takes the dry spot nearest the Trailhead of those
+     the same distance out (the bank you would drive to, not the far one), and stands 8 m back from the edge;
+   - a water's or a ford's name that itself stands on dry ground faces you at the water.
+   The first map's places are found exactly as they always were */
+const MLV_LAND={'THE LAKE':[846,1900,0]};
+/* (Mud Lab 21) JUMP: THE LAKE IS THE LAKE'S MIDDLE AGAIN. His words, 14 Nov 2026: "jump to the lake should still jump to
+   the middle of the lake as is being requested by one of the play testers, my son." MLV_IN: the names whose JUMP sets
+   you down where the name stands, water or not. The guide arrow (Real, and OR GUIDE ME THERE) still leads to the
+   beach: an arrow into the middle of a lake is no guide. THINGS TO DO's THE LAKE is the beach, as it was; and the
+   beach has its own name on the map, LAKE BEACH, for a dry landing */
+const MLV_IN={'THE LAKE':1};
+function mlvSpotFar(x,z){const A=WG.mlA,hx=A.x,hz=A.z+650;for(let r=0;r<640;r+=4){const n=r?Math.max(8,Math.round(r*TAU/5)):1;let b=null,bd=1e9;
+    for(let k=0;k<n;k++){const a=k/n*TAU,cx=Math.cos(a),cz=Math.sin(a);if(!mlvDry(x+cx*r,z+cz*r))continue;const px=x+cx*(r?r+8:0),pz=z+cz*(r?r+8:0);if(r&&!mlvDry(px,pz))continue;
+      const d=Math.hypot(px-hx,pz-hz);if(d<bd){bd=d;b={x:px,z:pz};}}
+    if(b)return b;}
+  return {x,z};}
+function mlvWet(x,z){const A=WG.mlA;for(let r=6;r<150;r+=6){const n=Math.max(12,Math.round(r*TAU/8));for(let k=0;k<n;k++){const a=k/n*TAU,px=x+Math.cos(a)*r,pz=z+Math.sin(a)*r;
+      WG.mlZone(px-A.x,pz-A.z,MLVZ);if(MLVZ.wl>MLVZ.h+.05)return {x:px,z:pz};}}return null;}
+/* (where the arrow leads for a name on the map: the Heron and the other SUV are where they are; a place is its landing) */
+function mlvGuideTo(p){const A=WG.mlA;return p.kind==='heron'||p.kind==='suv'?{x:A.x+p.u,z:A.z+p.v}:mlvArrive(p,true);}
+/* (a place of the map's, p: where the SUV stands for it and which way it faces) */
+function mlvArrive(p,guide){const A=WG.mlA,t=GAME.car,x=A.x+p.u,z=A.z+p.v,L=MLV_LAND[p.name],fresh=p.u>700||p.v>700;let s;
+  if(MLV_IN[p.name]&&!guide&&p.kind!=='do')return {x,z,yaw:t?mlvYaw(t):0};
+  /* (a jump's name stands at the start of its run-up: there, facing its ramp) */
+  if(p.kind==='jump'){const J=WG.mlX.jumps.find(j=>j.name===p.name);return {x,z,yaw:J?-J.deg*Math.PI/180:0};}
+  if(L){s=mlvSpot(A.x+L[0],A.z+L[1]);s.yaw=L[2];return s;}
+  s=p.exact?{x,z}:fresh?mlvSpotFar(x,z):mlvSpot(x,z);const dx=x-s.x,dz=z-s.z;s.yaw=Math.hypot(dx,dz)>2?Math.atan2(-dz,dx):(t?mlvYaw(t):0);
+  if(fresh&&!p.exact&&Math.hypot(dx,dz)<=2&&(p.kind==='water'||p.kind==='ford')){const w=mlvWet(x,z);if(w)s.yaw=Math.atan2(-(w.z-s.z),w.x-s.x);}
+  return s;}
 /* beside the Heron: off its left wing, 14 m out, facing the way it faces */
 function mlvBeside(x,z,yaw){const f=[Math.cos(yaw),-Math.sin(yaw)],r=[Math.sin(yaw),Math.cos(yaw)];const s=mlvSpot(x-r[0]*14-f[0]*2,z-r[1]*14-f[1]*2,x,z,10);s.yaw=yaw;return s;}
 const mlvParked=()=>GAME.state==='drive'&&MLV.parked?MLV.parked:null;
@@ -74,7 +108,7 @@ function mlvTick(){
   if(t.rt){const h=t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]);if(sp<3&&h<3&&!t.air)can='TRUCK';}
   else{const P=MLV.parked;if(P&&P.rt&&sp<3&&Math.hypot(P.p[0]-t.p[0],P.p[2]-t.p[2])<45)can='HERON';}
   MLV.can=can;if(MLV.btn){MLV.btn.hidden=!can;if(can&&MLV.btn.textContent!==can)MLV.btn.textContent=can;}
-  if(can&&can!==MLV.canSaid&&!GAME.touch&&APP.t>(MLV.quiet||0))say('ENTER: '+(can==='HERON'?'INTO THE HERON':'INTO THE TRUCK'),1.8);MLV.canSaid=can;
+  if(can&&can!==MLV.canSaid&&!GAME.touch&&APP.t>(MLV.quiet||0))say(mlkName('swap')+': '+(can==='HERON'?'INTO THE HERON':'INTO THE TRUCK'),1.8);MLV.canSaid=can;
   if(!APP.bigMap&&(MLV.sel||MLV.jb&&!MLV.jb.hidden)){MLV.sel=null;if(MLV.jb)MLV.jb.hidden=true;}
   /* (the map's own buttons only while it's open; the plane's height line not over the map) */
   if(!APP.bigMap&&MLS.gripBtn&&!MLS.gripBtn.hidden)MLS.gripBtn.hidden=true;
@@ -98,16 +132,16 @@ function mlvUI(){if(MLV.btn)return;const col=document.querySelector('#touch .tsi
   const b=document.createElement('button');b.className='tb';b.id='mlSwap';b.type='button';b.hidden=true;b.textContent='HERON';
   b.addEventListener('click',e=>{e.preventDefault();b.blur();mlvSwap();});col.insertBefore(b,col.firstChild);MLV.btn=b;}
 /* (Enter on a keyboard (Mud Lab 6: E is the engine's gear-up key)) */
-addEventListener('keydown',e=>{if((e.code==='Enter'||e.code==='NumpadEnter')&&!e.repeat&&GAME.state==='drive'&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||''))mlvSwap();});
+addEventListener('keydown',e=>{if(mlkIs('swap',e)&&!e.repeat&&GAME.state==='drive'&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||''))mlvSwap();});
 
 /* ---------- THE MAP: the strip and the Heron on it; tap a name to pick it, JUMP to go there in the truck ---------- */
-function mlvPlaces(){const A=WG.mlA,o=WG.mlPlaces.map(([name,u,v,kind])=>({name,u,v,kind}));
+function mlvPlaces(){const A=WG.mlA,o=WG.mlPlaces.map(([name,u,v,kind,big])=>({name,u,v,kind,big}));
   const t=GAME.car,P=t&&!t.rt?mlvParked():null;if(P&&P.rt)o.push({name:'THE HERON',u:P.p[0]-A.x,v:P.p[2]-A.z,kind:'heron'});
   /* (Mud Lab 9) the SUV you're not in, where it stands */
   if(t&&!t.rt&&MLR.other&&!MLR.off)o.push({name:ML_SUV_NAME[mlSuvKind(MLR.other)],u:MLR.other.p[0]-A.x,v:MLR.other.p[2]-A.z,kind:'suv'});return o;}
 function mlvMap(toM){
-  const S=WG.mlStrip,[a0,b0]=toM(S.u0,S.v),[a1]=toM(S.u1,S.v);hLine(a0,b0,a1,b0,pack(236,232,214,200));
-  MLV.hits=[];for(const p of mlvPlaces()){const [a,b]=toM(p.u,p.v);MLV.hits.push({p,a,b,w:p.name.length*4+6});
+  const S=WG.mlStrip,[a0,b0]=toM(S.u0,S.v),[a1]=toM(S.u1,S.v);if(mlMapHas(1,S.u0,S.v)&&mlMapHas(1,S.u1,S.v))hLine(a0,b0,a1,b0,pack(236,232,214,200));
+  MLV.hits=[];for(const p of mlvPlaces()){if(!mlMapHas(p.big||p.kind==='heron'||p.kind==='suv',p.u,p.v))continue;const [a,b]=toM(p.u,p.v);MLV.hits.push({p,a,b,w:p.name.length*4+6});
     if(p.kind==='heron'){hDisc(a,b,1.6,PAL.gold);otxt3('THE HERON',a+3,b+2,PAL.gold);}
     if(p.kind==='suv'){hDisc(a,b,1.4,PAL.white);otxt3(p.name,a+3,b+2,PAL.white);}}
   if(MLV.sel){const [a,b]=toM(MLV.sel.u,MLV.sel.v);hRing(a,b,3.2,(APP.t*4|0)%2?PAL.white:PAL.gold);}}
@@ -121,7 +155,7 @@ addEventListener('pointerdown',e=>{
     const s=inBox?d*.2:d;if((inBox||d<7)&&s<bd){bd=s;best=h.p;}}
   if(!best)return;e.stopPropagation();e.preventDefault();
   /* (Mud Lab 9) Real: no jumps: you drive there, or fly. (Mud Lab 13) A tap on a name guides you there: src/ml-menu.js */
-  if(MLR.mode==='real'&&!MLR.off){const A9=WG.mlA;mlmGuide(best.name,A9.x+best.u,A9.z+best.v);APP.bigMap=false;return;}
+  if(MLR.mode==='real'&&!MLR.off){const G9=mlvGuideTo(best);mlmGuide(best.name,G9.x,G9.z);APP.bigMap=false;return;}
   MLV.sel=best;mlvJumpBtn();},true);
 function mlvJumpBtn(){let b=MLV.jb;if(!b){b=MLV.jb=document.createElement('button');b.type='button';b.id='mlJump';
     b.style.cssText='position:fixed;left:calc(env(safe-area-inset-left) + 12px);top:calc(50% - 30px);max-width:calc(50vw - 49vh - 24px);min-width:120px;white-space:normal;z-index:61;font:700 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 18px;border-radius:999px;border:0;background:#c98f4a;color:#1d140a;box-shadow:0 4px 16px rgba(0,0,0,.4);cursor:pointer';
@@ -132,8 +166,10 @@ function mlvJump(p){
   const A=WG.mlA,t=GAME.car;let x=A.x+p.u,z=A.z+p.v,spot;
   if(p.kind==='heron'){const P=mlvParked();spot=mlvBeside(P.p[0],P.p[2],mlvYaw(P));}
   else if(p.kind==='suv'){spot=mlvSpot(x+9,z,x,z,7);spot.yaw=Math.atan2(-(z-spot.z),x-spot.x);}
-  else{spot=p.exact?{x,z}:mlvSpot(x,z);const dx=x-spot.x,dz=z-spot.z;spot.yaw=Math.hypot(dx,dz)>2?Math.atan2(-dz,dx):(t?mlvYaw(t):0);
+  else{spot=mlvArrive(p);
     if(p.kind==='strip'){spot=mlvSpot(A.x+WG.mlStrip.u0+22,A.z+WG.mlStrip.v-34);spot.yaw=-Math.PI/2;}
+    /* (Mud Lab 19: the Track: on its start line, facing along it) */
+    if(p.kind==='track'){spot={x:A.x-124,z:A.z+962,yaw:.016};}
     /* (Mud Lab 13: a thing to do is faced the way it's done) */
     if(p.yaw!==undefined)spot.yaw=p.yaw;}
   if(t&&t.rt){const h=t.p[1]-RANCH.W.heightAt(t.p[0],t.p[2]),sp=Math.hypot(t.v[0],t.v[1],t.v[2]);
@@ -145,4 +181,4 @@ function mlvJump(p){
 /* (for the tests: a tap on the map at a place's name, as a finger would) */
 function mlvTapName(name){const h=MLV.hits.find(x=>x.p.name===name);if(!h)return false;const x=RECT.x+(h.a+8)/W*RECT.w,y=RECT.y+(h.b-3)/H*RECT.h;
   cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:x,clientY:y,bubbles:true,pointerId:1}));return {x,y,sel:MLV.sel&&MLV.sel.name,btn:MLV.jb&&!MLV.jb.hidden?MLV.jb.textContent:null,map:APP.bigMap};}
-window.__mlv={MLV,mlvSwap,mlvJump,mlvTick,mlvSpot,mlvPlaces,mlvHome,mlvTapName,RTF,RT};
+window.__mlv={MLV,mlvSwap,mlvJump,mlvTick,mlvSpot,mlvPlaces,mlvHome,mlvTapName,mlvArrive,mlvGuideTo,mlvSpotFar,RTF,RT};

@@ -36,12 +36,19 @@ function mlmDo(){const B=WG.mlBog,P=MLB_POST(),A=WG.mlA,T=WG.mlTrails,C=WG.mlCli
     tr(2,4,'HARD TRAIL','HARD: THE GUMBO TRAIL. A STEADY THROTTLE THROUGH THE PITS, AND DON\'T STOP'),
     {name:'HILL CLIMB',u:C.u,v:C.v+4.5,yaw:Math.PI/2,exact:true,quiet:true,brief:'THE HILL CLIMB: STOP AT THE LINE BY THE TWO TALL POSTS, THEN GO'},
     Object.assign({name:'THE POND\'S BANK',brief:'THE BANK: EASE DOWN IT INTO THE POND, THEN WINCH BACK UP TREE BY TREE'},mlmBank()),
+    /* (Mud Lab 19) the new ground: a timed lap of the Track; the River at the Shallows; the Lake from its beach */
+    tr(T.length-1,0,'THE TRACK','THE TRACK: ONE LAP, 1.8 MILES. THE CLOCK STARTS WHEN YOU DO'),
+    {name:'THE RIVER',u:1262,v:455,yaw:0,brief:'THE SHALLOWS: CROSS ANYWHERE. EACH FORD UP OR DOWN THE RIVER IS DEEPER'},
+    {name:'THE LAKE',u:846,v:1900,yaw:0,brief:'THE LAKE: FIRM SAND FOR 30 FT, THEN 10 FT OF WATER OVER MUCK'},
+    /* (Mud Lab 21) the jumps: each from the start of its run-up, facing its ramp */
+    ...WG.mlX.jumps.map(J=>{const s=J.g+J.A.far-14;return {name:J.name,u:J.u-J.dx*s,v:J.v-J.dz*s,yaw:-J.deg*Math.PI/180,exact:true,jump:1,brief:MLJ_BRIEF[J.name]||''};}),
     {name:'A RESCUE',rescue:1}];}
 /* (beside each name in the list: this SUV's best there) */
 function mlmMark(E){const t=GAME.car,k=t&&!t.rt?mlSuvKind(t):MLSV.pick;
   if(E.run){const b=MLM.best[E.run.n+':'+k];return b?'  '+mlmClock(b):'';}
   if(E.name==='THE BOG'){const b=MLB.best[k];return b?'  '+b+' FT':'';}
-  if(E.name==='HILL CLIMB'){const b=MLHC.best[k];return b?'  '+b+' FT':'';}return '';}
+  if(E.name==='HILL CLIMB'){const b=MLHC.best[k];return b?'  '+b+' FT':'';}
+  if(E.jump){const b=MLJ.best[E.name+':'+k];return b?'  '+b+' FT':'';}return '';}
 /* ---------- the guide ---------- */
 function mlmGuide(name,x,z,brief,run){MLM.run=null;MLM.guide={name,x,z,brief:brief||'',run:run||null};say('GUIDING YOU TO '+name+': FOLLOW THE ARROW',2.6);}
 function mlmGo(E){const A=WG.mlA;
@@ -75,6 +82,57 @@ function mlmSize(){const t=GAME.car;if(!t||t.rt)return;const k=mlSuvKind(t);
   if(i<0||i===t.bi)return;const d=GAME.dirt;spawnCar(i,t.p[0],t.p[2],mlvYaw(t));GAME.dirt=d;
   {const n=GAME.car.pt;if(n.st==='off'){n.st='run';n.we=n.e.idle*TAU/60;}}MLR.stuck=false;MLR.stuckT=0;MLV.quiet=APP.t+4;
   say('THE '+ML_SUV_NAME[k]+' ON '+ML_TYRE[k][MLSV.big[k]?1:0],2);}
+/* (Mud Lab 17) CLEAR ALL RUTS, his ask ("so that things like making new ruts can be done in free play and also ruts
+   impede your ability to do consecutive hill climbs and then bogs"): every rut, berm and track gone, the ground as it
+   was made. On the list and on the Backspace key (which raked the ground before, and left a SUV that was sunk in a
+   rut inside the ground: it was thrown 1.7 m into the air and landed on its side). Now a SUV whose tyres were more
+   than 8 cm down is set on the new ground where it stands, as RESET does, and the other SUV is stood on it too.
+   In Real, not while you are bogged: that is what the strap, the winch and the tow home are for */
+function mlmClear(){const t=GAME.car,o=MLR.other,sunk=v=>!!v&&!v.rt&&v.wheels.some(w=>(w.mlZ||0)>.08);
+  if(MLR.mode==='real'&&MLR.stuck){say('BOGGED: THE RUTS STAY. THE STRAP, THE WINCH OR A TOW HOME',3);return false;}
+  const up=sunk(t);mlRake();if(up)resetCar();if(o&&!o.rt)mlvStand(o,{x:o.p[0],z:o.p[2],yaw:mlvYaw(o)});
+  MLR.stuck=false;MLR.stuckT=0;say('ALL RUTS CLEARED: THE GROUND IS AS IT WAS MADE',2.6);return true;}
+/* (Mud Lab 17) a tune for the SUV you are in, on the spot (as the tyre size: stopped; in Real only on dry ground and
+   not bogged) */
+function mlmTune(id){const t=GAME.car;if(!t||t.rt)return;const k=mlSuvKind(t);
+  if(t.speed>1.5){mlmClose();say('STOP FIRST: YOU ARE STILL ROLLING',2.2);return;}
+  if(MLR.mode==='real'&&(MLR.stuck||(MLS.wd||0)>.05)){mlmClose();say('A TUNE: ON DRY GROUND ONLY',2.2);return;}
+  if(!ML_TUNE[k].some(q=>q.id===id))return;if(MLR.strap||MLR.winch||MLR.pull)mlrUnhook();
+  MLSV.tune[k]=id;const i=mlSuvIdx(k),q=mlTuneHp(k,mlTuneOf(k));try{localStorage.setItem('mudlab:tune:'+k,MLSV.tune[k]);}catch(e){}mlmClose();
+  if(i>=0&&i!==t.bi){const d=GAME.dirt;spawnCar(i,t.p[0],t.p[2],mlvYaw(t));GAME.dirt=d;
+    {const n=GAME.car.pt;if(n.st==='off'){n.st='run';n.we=n.e.idle*TAU/60;}}MLR.stuck=false;MLR.stuckT=0;MLV.quiet=APP.t+4;}
+  say('THE '+ML_SUV_NAME[k]+', '+q.name+': '+q.hp.toLocaleString('en-US')+' HP',2.6);}
+/* ---------- (Mud Lab 21) A JUMP, MEASURED ---------- */
+/* His words, 14 Nov 2026: "we're getting close to the point where I want to add the point system." Not points yet: the
+   measure they would be made of. Any time all four tyres are off the ground for 0.7 s or more, the SUV went 30 ft or
+   more in that time, and its tyres were a foot or more clear of the ground on the way (a SUV sliding on its roof has
+   no tyre on the ground either): one line as it touches down, how long and how far. And for a named jump, taken from
+   its own ramp and landed on its wheels (still upright and not drowned a second and a half later): the longest so
+   far for that SUV is kept, and shown beside the jump's name in THINGS TO DO. No dice rolled, nothing of the physics
+   touched */
+const MLJ_BRIEF={'CREEK GAP':'CREEK GAP: 55 MPH CLEARS BIG CREEK. EITHER WAY, EITHER SUV',
+  'RIVER JUMP':'RIVER JUMP: 83 MPH AT THE RAMP, 88 COMING BACK. THE STOCK SUV NEEDS THE WHOLE RUN-UP',
+  'LAKE JUMP':'LAKE JUMP: 70 MPH LANDS ON THE ISLAND. WADE BACK ALONG THE SAND BAR',
+  'BIG AIR':'BIG AIR: NO GAP. THE FASTER YOU GO, THE FURTHER YOU FLY'};
+const MLJ={a:null,land:null,on:null,last:null,Z:{},car:null,px:0,pz:0,downT:-9,best:(()=>{try{return JSON.parse(localStorage.getItem('mudlab:jumps')||'{}')||{};}catch(e){return {};}})()};
+function mljTick(t,dt){if(!t||t.rt||!WG.mlX||!WG.mlX.jumps){MLJ.a=null;MLJ.land=null;return;}
+  const A=WG.mlA,u=t.p[0]-A.x,v=t.p[2]-A.z,on=t.wheels.some(w=>w.contact);
+  /* (set down somewhere else: by the map, a reset, a tow, the other SUV. That is not a flight. The first try credited
+     the Rock & Mud, reset off its roof to the far end of the lane, with a 1,252 ft jump) */
+  if(MLJ.car!==t||Math.hypot(t.p[0]-MLJ.px,t.p[2]-MLJ.pz)>6+t.speed*dt*3){MLJ.a=null;MLJ.land=null;MLJ.on=null;}MLJ.car=t;MLJ.px=t.p[0];MLJ.pz=t.p[2];
+  if(on){
+    if(MLJ.a){const a=MLJ.a,d=Math.hypot(t.p[0]-a.x,t.p[2]-a.z);MLJ.a=null;
+      /* (it left on its wheels, and not as a bounce in the two seconds after the last touchdown) */
+      if(a.t>=.7&&d>=9&&a.clear>=.3&&a.up>.6&&a.t0-MLJ.downT>2){const ft=Math.round(d*3.281);let j=a.j;
+        /* (a jump with a gap counts only if it came down on the far side of it) */
+        if(j){const J=WG.mlX.jumps.find(q=>q.name===j),s=(u-J.u)*J.dx+(v-J.v)*J.dz;if(J.g>3&&!(s*a.sg<0&&Math.abs(s)>J.g-1.5))j=null;}
+        MLJ.downT=GAME.time;MLJ.last={ft,air:+a.t.toFixed(2),jump:j};MLJ.land={t:0,ft,j};say('IN THE AIR '+a.t.toFixed(1)+' S: '+ft+' FT',2.8,PAL.gold);}}
+    /* (the jump whose ramp it is on: anywhere from the ramp's foot to its lip; Big Air's lip from either side) */
+    WG.mlZone(u,v,MLJ.Z);MLJ.on=null;MLJ.sg=0;if(MLJ.Z.jmp){const J=WG.mlX.jumps[MLJ.Z.jmp-1],s=(u-J.u)*J.dx+(v-J.v)*J.dz,S=s<0?J.A:J.B,x=Math.abs(s)-J.g;if(x>-4&&x<Math.max(12,S.len+6)){MLJ.on=J.name;MLJ.sg=s<0?-1:1;}}
+    if(MLJ.land){const L=MLJ.land;L.t+=dt;if(t.M[4]<.5||t.mlDrowned)MLJ.land=null;
+      else if(L.t>1.5){MLJ.land=null;if(L.j){const k=L.j+':'+mlSuvKind(t),was=MLJ.best[k]||0;
+          if(L.ft>was){MLJ.best[k]=L.ft;try{localStorage.setItem('mudlab:jumps',JSON.stringify(MLJ.best));}catch(e){}say(L.j+': '+L.ft+' FT. '+(was?'YOUR LONGEST':'YOUR FIRST'),3.2,PAL.gold);}}}}}
+  else{if(!MLJ.a)MLJ.a={x:t.p[0],z:t.p[2],t:0,t0:GAME.time,clear:0,j:MLJ.on,sg:MLJ.sg||0,up:t.M[4]};const a=MLJ.a;a.t+=dt;a.clear=Math.max(a.clear,t.p[1]-(t.c.hcg||.8)-RANCH.W.heightAt(t.p[0],t.p[2]));}}
 /* (a run is over if you jump somewhere else, or are towed home) */
 function mlmEnd(){if(MLM.run){MLM.run=null;if(MLM.guide&&MLM.guide.leg)MLM.guide=null;}}
 const MLM_VJ=mlvJump;mlvJump=function(p){if(p.kind!=='do')mlmEnd();return MLM_VJ(p);};
@@ -86,6 +144,7 @@ function mlmUI(){if(MLM.btn)return;
 #mlMenuP{position:fixed;z-index:62;top:calc(env(safe-area-inset-top) + 48px);left:calc(50% + 48vh + 8px);width:196px;max-width:calc(50vw - 48vh - 14px);max-height:calc(100vh - 58px);overflow-y:auto;display:flex;flex-direction:column;gap:4px}
 #mlMenuP button{text-align:left;padding:9px 12px;border-radius:10px;border:1px solid rgba(242,230,210,.3);background:rgba(20,14,9,.86)}
 #mlMenuP button.h{background:rgba(201,143,74,.9);color:#1d140a;border-color:transparent}
+#mlMenuP.k{width:300px}#mlMenuP.k button{padding:7px 12px}
 @media (max-aspect-ratio:3/2){#mlMenu,#mlMenuP{left:calc(env(safe-area-inset-left) + 8px)}#mlMenuP{max-width:none}}
 @media (hover:hover) and (pointer:fine){#mlMenu{top:46px}#mlMenuP{top:86px;max-height:calc(100vh - 96px)}}
 #mlGuideB{position:fixed;z-index:61;left:calc(env(safe-area-inset-left) + 12px);top:calc(50% - 76px);font:600 12px system-ui,sans-serif;letter-spacing:.06em;padding:8px 14px;border-radius:999px;border:1px solid rgba(242,230,210,.4);background:rgba(20,14,9,.82);color:#f2e6d2;cursor:pointer}
@@ -98,27 +157,41 @@ function mlmUI(){if(MLM.btn)return;
   p.addEventListener('click',e=>{e.stopPropagation();const k=e.target&&e.target.dataset&&e.target.dataset.k;if(k)mlmPick(k);});
   const n=MLM.nav=document.createElement('div');n.id='mlNav';n.hidden=true;n.innerHTML='<b></b><span></span>';
   const g=MLM.gb=document.createElement('button');g.type='button';g.id='mlGuideB';g.hidden=true;g.textContent='OR GUIDE ME THERE';g.addEventListener('pointerdown',e=>e.stopPropagation());
-  g.addEventListener('click',e=>{e.stopPropagation();const q=MLV.sel,A=WG.mlA;if(!q)return;mlmGuide(q.name,A.x+q.u,A.z+q.v);MLV.sel=null;if(MLV.jb)MLV.jb.hidden=true;mlmClose();});
+  g.addEventListener('click',e=>{e.stopPropagation();const q=MLV.sel;if(!q)return;const G9=mlvGuideTo(q);mlmGuide(q.name,G9.x,G9.z);MLV.sel=null;if(MLV.jb)MLV.jb.hidden=true;mlmClose();});
   document.body.appendChild(b);document.body.appendChild(p);document.body.appendChild(n);document.body.appendChild(g);}
-function mlmClose(){MLM.open=false;MLM.page='main';APP.bigMap=false;}
+function mlmClose(){MLM.open=false;MLM.page='main';MLKB.cap=null;APP.bigMap=false;}
 function mlmRows(){const t=GAME.car,o=MLR.other,R=[];
   if(MLM.page==='do'){R.push(['back','◂ BACK','h']);mlmDo().forEach((E,i)=>R.push(['do'+i,E.name+mlmMark(E)]));return R;}
+  /* (Mud Lab 17, src/ml-suv.js) the tunes of the SUV you are in: what each comes to; the one it has is lit */
+  if(MLM.page==='tune'&&t&&!t.rt){const k=mlSuvKind(t);R.push(['back','◂ BACK','h']);
+    for(const q of ML_TUNE[k]){mlTuneHp(k,q);R.push(['tn:'+q.id,q.name+': '+q.hp.toLocaleString('en-US')+' HP, '+q.lbft.toLocaleString('en-US')+' LB-FT. '+q.note,q===mlTuneOf(k)?'h':'']);}return R;}
+  /* (Mud Lab 16, src/ml-keys.js) the keyboard's keys: click a row, press the key it should have */
+  if(MLM.page==='keys'){R.push(['back','◂ BACK','h']);R.push(['knote',MLKB.note||'CLICK A ROW, THEN PRESS ITS NEW KEY']);
+    for(const r of MLKB.rows)R.push(['key:'+r[0],MLKB.cap===r[0]?r[1]+': PRESS A KEY (ESC LEAVES IT)':r[1]+': '+mlkKeys(r[0]),MLKB.cap===r[0]?'h':'']);
+    R.push(['kreset','RESET ALL KEYS','h']);return R;}
   if(t&&!t.rt){const k=mlSuvKind(t),opp=k==='stock'?'crawler':'stock';R.push(o&&mlSuvKind(o)===opp?['seat','GET IN THE '+ML_SUV_SHORT[opp]]:['swap','SWITCH TO THE '+ML_SUV_SHORT[opp]]);
     if(o&&MLR.mode==='free')R.push(['bring','BRING THE '+ML_SUV_SHORT[mlSuvKind(o)]+' HERE']);else if(MLR.mode==='real'&&MLR.stuck)R.push(['home','A TOW HOME']);
-    R.push(['size','TYRE SIZE: '+ML_TYRE[k][MLSV.big[k]?1:0].replace('s',' IN')]);
+    R.push(['size','TYRE SIZE: '+ML_TYRE[k][MLSV.big[k]?1:0].replace('s',' IN')]);R.push(['tune','TUNE: '+mlTuneOf(k).name+' ▸']);
     const A=ML_AIRS[t.mlAirI||0];R.push(['air','TYRE AIR: '+A.psi+' PSI '+A.name]);}
-  R.push(['grip','GRIP: '+(MLS.terra?'SOIL SCIENCE':'GAME')]);R.push(['todo','THINGS TO DO ▸','h']);
+  R.push(['grip','GRIP: '+(MLS.terra?'SOIL SCIENCE':'GAME')]);R.push(['rake','CLEAR ALL RUTS']);R.push(['todo','THINGS TO DO ▸','h']);
+  /* (the keys' list only where there is a keyboard: a key has been pressed, or the pointer is a mouse) */
+  if(MLKB.seen||matchMedia('(hover:hover) and (pointer:fine)').matches)R.push(['keys','KEYS ▸','h']);
   if(MLM.guide)R.push(['stop',MLM.run?'END THE RUN':'STOP GUIDING']);return R;}
 function mlmPick(k){MLM.sig='';const t=GAME.car;
   /* (a refusal is said where it can be read: the game's messages are drawn under the open map, so it closes first) */
   if((k==='size'||k==='air'||k==='swap'||k==='seat')&&t&&!t.rt&&t.speed>1.5){mlmClose();say('STOP FIRST: YOU ARE STILL ROLLING',2.2);return;}
+  if(k==='tune'){MLM.page='tune';return;}if(k.slice(0,3)==='tn:'){mlmTune(k.slice(3));return;}
+  if(k==='rake'){mlmClose();mlmClear();return;}
+  if(k==='keys'){MLM.page='keys';MLKB.note='';MLKB.cap=null;return;}if(k==='knote')return;if(k==='kreset'){MLKB.cap=null;mlkReset();return;}
+  if(k.slice(0,4)==='key:'){const q=k.slice(4);MLKB.cap=MLKB.cap===q?null:q;return;}
   if(k==='swap'){mlSuvSet(mlSuvKind(t)==='stock'?'crawler':'stock');MLR.stuck=false;MLR.stuckT=0;mlmClose();return;}
   if(k==='seat'){mlrSeat();mlmClose();}else if(k==='bring'){mlrBring();mlmClose();}else if(k==='home'){mlrHome();mlmEnd();mlmClose();}
-  else if(k==='size')mlmSize();else if(k==='air')mlrAirNext();else if(k==='grip')mlGripToggle();else if(k==='todo')MLM.page='do';else if(k==='back')MLM.page='main';
+  else if(k==='size')mlmSize();else if(k==='air')mlrAirNext();else if(k==='grip')mlGripToggle();else if(k==='todo')MLM.page='do';else if(k==='back'){MLM.page='main';MLKB.cap=null;}
   else if(k==='stop'){MLM.guide=null;MLM.rescue=null;MLM.run=null;}else if(k.slice(0,2)==='do'){const E=mlmDo()[+k.slice(2)];if(E)mlmGo(E);}}
 /* ---------- each frame ---------- */
 function mlmTick(t){mlmUI();const map=APP.bigMap&&GAME.state==='drive';
   if(!map&&MLM.open){MLM.open=false;MLM.page='main';}
+  if(MLKB.cap&&!(map&&MLM.open&&MLM.page==='keys'))MLKB.cap=null;MLM.panel.classList.toggle('k',MLM.page==='keys'||MLM.page==='tune');
   {const g=MLM.gb,on=map&&!!MLV.jb&&!MLV.jb.hidden&&!!MLV.sel;if(g.hidden===on)g.hidden=!on;}
   if(MLM.btn.hidden===map)MLM.btn.hidden=!map;const showP=map&&MLM.open;if(MLM.panel.hidden===showP)MLM.panel.hidden=!showP;
   if(showP){const R=mlmRows(),sig=JSON.stringify(R);if(sig!==MLM.sig){MLM.sig=sig;MLM.panel.innerHTML=R.map(r=>'<button type="button" data-k="'+r[0]+'"'+(r[2]?' class="'+r[2]+'"':'')+'>'+r[1].replace(/&/g,'&amp;')+'</button>').join('');}}
@@ -131,4 +204,4 @@ function mlmTick(t){mlmUI();const map=APP.bigMap&&GAME.state==='drive';
   if(show){const dx=G.x-t.p[0],dz=G.z-t.p[2],d=Math.hypot(dx,dz),fx=t.M[0],fz=t.M[6],a=Math.atan2(-dx*fz+dz*fx,dx*fx+dz*fz),ft=m=>Math.round(m*3.281).toLocaleString('en-US')+' FT';
     n.firstChild.style.transform='rotate('+a.toFixed(2)+'rad)';const tx=G.leg?G.name+'  '+ft(G.togo)+'  '+mlmClock(G.clock):G.name+'  '+ft(d);if(n.lastChild.textContent!==tx)n.lastChild.textContent=tx;
     if(!G.leg&&d<16&&!(t.rt&&G.run)){MLM.guide=null;say(G.brief||('YOU ARE AT '+G.name),5);if(G.run)mlmRun(G.run.name,G.run.n,G.run.i);}}}
-window.__mlm={MLM,mlmGuide,mlmGo,mlmDo,mlmRescue,mlmPick,mlmRows,mlmSize,mlmRun};
+window.__mlm={MLM,mlmGuide,mlmGo,mlmDo,mlmRescue,mlmPick,mlmRows,mlmSize,mlmRun,mlmTune,mlmClear,MLJ,mljTick};

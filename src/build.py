@@ -3,10 +3,10 @@ the Road Not Found engine, as it was on Nov 7 2026), the Rock & Mud's play model
 ground pictures (base/texpack.js), with this game's own code (src/). Nothing here is shared with Ground Truth: if the
 soil proves itself, it goes back into Ground Truth by copying.
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
-usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-14: give the
+usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-19: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-14'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-21'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -100,13 +100,13 @@ swap("if(DUNES){let bb=[0,1e9,0,CH,-1e9,CH];", "if(DUNES&&!ML){let bb=[0,1e9,0,C
 swap("if(x1>-EDGE-40&&x0<EDGE+40&&z1>-EDGE-40&&z0<EDGE+40)townStatic(", "if(!ML&&x1>-EDGE-40&&x0<EDGE+40&&z1>-EDGE-40&&z0<EDGE+40)townStatic(")
 swap("if(x1>PARK.x0-80&&x0<PARK.x1+80&&z1>PARK.z0-80&&z0<PARK.z1+80||x1>PKW.ROADX-30&&x0<PKW.ROADX+30&&z1>-60&&z0<-20)parkStatic(", "if(!ML&&(x1>PARK.x0-80&&x0<PARK.x1+80&&z1>PARK.z0-80&&z0<PARK.z1+80||x1>PKW.ROADX-30&&x0<PKW.ROADX+30&&z1>-60&&z0<-20))parkStatic(")
 swap("if(x1>OL.bb[0]&&x0<OL.bb[2]&&z1>OL.bb[1]&&z0<OL.bb[3])loopStatic(", "if(!ML&&x1>OL.bb[0]&&x0<OL.bb[2]&&z1>OL.bb[1]&&z0<OL.bb[3])loopStatic(")
-swap("  townTrees(x0,z0,x1,z1,inC,addTree);\n  {const G=6.2,n=Math.floor(CH/G),cr={};", "  if(!ML)townTrees(x0,z0,x1,z1,inC,addTree);\n  if(!(ML&&Math.abs(x0+CH/2-ML_A.x)<ML_A.h+ML_A.m-CH/2&&Math.abs(z0+CH/2-ML_A.z)<ML_A.h+ML_A.m-CH/2)){const G=6.2,n=Math.floor(CH/G),cr={};")
-swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlStrip:ML_STRIP,mlHoles:ML_HOLES,mlTrees,mlBog:ML_BOG,mlClimb:ML_CLIMB,mlClimbY,mlClimbS,mlHills,L,HALF,CH,FT,ROAD_END,")
+swap("  townTrees(x0,z0,x1,z1,inC,addTree);\n  {const G=6.2,n=Math.floor(CH/G),cr={};", "  if(!ML)townTrees(x0,z0,x1,z1,inC,addTree);\n  if(!(ML&&Math.abs(x0+CH/2-ML_A.x-ML_A.cu)<ML_A.h+ML_A.m-CH/2&&Math.abs(z0+CH/2-ML_A.z-ML_A.cv)<ML_A.h+ML_A.m-CH/2)){const G=6.2,n=Math.floor(CH/G),cr={};")
+swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlE:ML_E,mlLayerRows,mlX:ML_X,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlStrip:ML_STRIP,mlHoles:ML_HOLES,mlTrees,mlBog:ML_BOG,mlClimb:ML_CLIMB,mlClimbY,mlClimbS,mlHills,L,HALF,CH,FT,ROAD_END,")
 swap("if(DYB.dunes)return Math.abs(z)<6?'Highway 40'", "if(WG.mlA)return WG.mlPlace(x-WG.mlA.x,z-WG.mlA.z);if(DYB.dunes)return Math.abs(z)<6?'Highway 40'")
 swap("const HOME=[0,1.9,0];", "const HOME=[WG.mlA.x,WG.mlA.z+630,1.571];")
 swap("  if(x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=", "  if(!ML&&x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=")
 swap("{const S=SLALOM;if(x1>S.x-40&&x0<S.x+S.n*S.sp+40", "{const S=SLALOM;if(!ML&&x1>S.x-40&&x0<S.x+S.n*S.sp+40")
-swap("function addTree(x,z,v,sc){const y=sample(x,z,CRo).h;", "function addTree(x,z,v,sc,raw){if(!raw&&ML&&Math.abs(x-ML_A.x)<ML_A.h+ML_A.m+4&&Math.abs(z-ML_A.z)<ML_A.h+ML_A.m+4)return;const y=sample(x,z,CRo).h;")
+swap("function addTree(x,z,v,sc){const y=sample(x,z,CRo).h;", "function addTree(x,z,v,sc,raw){if(!raw&&ML&&Math.abs(x-ML_A.x-ML_A.cu)<ML_A.h+ML_A.m+4&&Math.abs(z-ML_A.z-ML_A.cv)<ML_A.h+ML_A.m+4)return;const y=sample(x,z,CRo).h;")
 swap("    cols.push({t:'c',x,z,r:palm?.32*sc:.35*sc+.15,top:y+(palm?8:(pine?1.6:2.4)+(pine?2.2:3.4))*sc});}\n", "    cols.push({t:'c',x,z,r:palm?.32*sc:.35*sc+.15,top:y+(palm?8:(pine?1.6:2.4)+(pine?2.2:3.4))*sc});}\n  if(ML)mlTrees(x0,z0,x1,z1,addTree);\n")
 # ---------- THE SOIL (src/ml-soil.js) ----------
 # THE PHYSICS: inside the arena the ground is the soil's (src/ml-soil.js mlGround)
@@ -129,7 +129,7 @@ swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uP
      "    float mlx=textureLod(uMLs0,mlu+vec2(mld,0.),0.).r-textureLod(uMLs0,mlu-vec2(mld,0.),0.).r,mlz=textureLod(uMLs0,mlu+vec2(0.,mld),0.).r-textureLod(uMLs0,mlu-vec2(0.,mld),0.).r;\n"
      "    vN=normalize(vec3(-mlx,2.56,-mlz));vC=vec4(0.,0.,0.,1.);}\n"
      "  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;")
-swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "\nlayout(location=0) out vec4 oCol;")
+swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "uniform vec4 uMLk[16];uniform vec4 uMLb;uniform vec4 uMLc;\nlayout(location=0) out vec4 oCol;")
 swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;vec3 mlq1=dPx,mlq2=dPy;vec2 mlt1=dFdx(vUV),mlt2=dFdy(vUV);mlDx=dPx.xz;mlDy=dPy.xz;\n"
      "#ifndef PROBE\n  /* (Mud Lab) inside the world: the patch drawn only there; the chunks' ground not drawn under the patch */\n"
      "  vec2 mlUV=(vP.xz-uMLo.xy)*uMLo.z,mlW=fract((vP.xz-uMLo.xy)*uMLw.z);bool mlIn=(m==40||m==50)&&uMLo.w>.5&&mlUV.x>0.&&mlUV.y>0.&&mlUV.x<1.&&mlUV.y<1.;\n"
@@ -161,6 +161,10 @@ swap("fxEmit(dt,t);fxStep(dt);", "mlStep(dt,t);mlvTick();fxEmit(dt,t);fxStep(dt)
 swap("if(!w.contact)continue;const R=w.R,surf=w.surf", "if(!w.contact||w.mlOn)continue;const R=w.R,surf=w.surf")
 swap("if(p.y<gy){p.y=gy;p.vx=p.vy=p.vz=0;", "if(p.y<gy){if(p.vol&&mlLand(p)){p.life=0;p.y=gy;continue;}p.y=gy;p.vx=p.vy=p.vz=0;")
 swap("const FX_MAX=360,", "const FX_MAX=1200,")
+# (Mud Lab 15) the brake lamps' light on the ground: after dark a quarter of what the engine gives it (a little
+# over the tail lamps' own), by day a sixteenth. At full strength every wet lump of mud behind a braking SUV caught a red glint: ruts that looked like
+# cracks in lava, by day too
+swap("col:brake?[5,.12,.06]:[.9,.02,.01],", "col:brake?(SKY.lightsOn?[1.2,.029,.014]:[.3,.007,.004]):[.9,.02,.01],")
 swap("fx:220,carLod:1}", "fx:500,carLod:1}")
 swap("const FX_CAP={mobile:220,low:300};", "const FX_CAP={mobile:600,low:800};")
 # ---------- the code, just before the boot; the truck's data before the game's script ----------
@@ -210,7 +214,7 @@ swap("const carLabel=()=>carName({car:APP.car})", "const carLabel=()=>GAME.car&&
 swap("let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);", "let tris=drawWorldCar(GAME.car,GAME.voice,GAME.dirt,false,false);mlvUI();tris+=mlvDraw(c.eye);")
 swap("if(kind!=='hl')one(GAME.car,k>=1);", "if(kind!=='hl')one(GAME.car,k>=1);if(kind!=='hl'&&mlvShadow())one(mlvParked(),true);if(kind!=='hl'){const o9=mlrShadow();if(o9)one(o9,true);}")
 swap("/* =====================================================================================\n   THE BOOT: the dots",
-     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + '\n' + rd('src/ml-look.js') + '\n' + rd('src/ml-recover.js') + '\n' + rd('src/ml-bog.js') + '\n' + rd('src/ml-climb.js') + '\n' + rd('src/ml-menu.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
+     heron + '\n' + rd('src/ml-truck.js') + '\n' + rd('src/ml-ui.js') + '\n' + rd('src/ml-soil.js') + '\n' + rd('src/ml-suv.js') + '\n' + rd('src/ml-heron.js') + '\n' + rd('src/ml-audio.js') + '\n' + rd('src/ml-look.js') + '\n' + rd('src/ml-recover.js') + '\n' + rd('src/ml-bog.js') + '\n' + rd('src/ml-climb.js') + '\n' + rd('src/ml-keys.js') + '\n' + rd('src/ml-menu.js') + '\n' + rd('src/ml-gpu.js') + "\n/* =====================================================================================\n   THE BOOT: the dots")
 # ---------- MUD LAB 8: THE LAND'S SHADER CLEANED OUT, AND THE LOOK (src/ml-look.glsl, src/ml-look.js) ----------
 # The land's fragment shader is the engine's whole county: the drag strip, the park's tracks, the dry lake, the gravel and
 # the public roads, the town's facades and traffic signals, concrete, sheet metal, hay, boulders, the salt flats and
@@ -256,7 +260,95 @@ swap("const on=DEVW.hud==='perf'&&GAME.state==='drive';", "const on=DEVW.hud==='
 # the finished picture: sharpened (in place of the lens's colour fringe)
 swap("  vec2 cq=uv-.5;vec3 c;\n  if(uCA>0.0){vec2 sh=cq*dot(cq,cq)*uCA*.012;c=vec3(texture(uSrc,uv-sh).r,texture(uSrc,uv).g,texture(uSrc,uv+sh).b);}else c=texture(uSrc,uv).rgb;\n",
      "  vec2 cq=uv-.5;\n" + GL['sharpen'])
+# (Mud Lab 15) and out of the soil's own program (landSoil) only: the engine's sand and its mud in the ground it paints
+# for itself. In that program the engine's ground is only what lies outside the world (the bank and the grassland
+# beyond: grass and bare dirt), and for the moment at the start before the soil is laid out. The plain ground a laptop
+# shows while landSoil builds (the program "land") keeps both. This pays for the soil's relief (src/ml-look.glsl):
+# landSoil is no bigger than it was
+swap("      if(dw>.004){vec3 sd=vec3(", "#ifndef MLSOIL\n      if(dw>.004){vec3 sd=vec3(")
+swap("sd=photoG(sd,T_SAND,wp);alb=mix(alb,sd,dw);gw*=1.-dw;rw*=1.-dw;}\n", "sd=photoG(sd,T_SAND,wp);alb=mix(alb,sd,dw);gw*=1.-dw;rw*=1.-dw;}\n#endif\n")
+swap("      if(mw>0.){vec3 md=mix(vec3(.15,.1,.06),", "#ifndef MLSOIL\n      if(mw>0.){vec3 md=mix(vec3(.15,.1,.06),")
+swap("mudCracks(wp,alb,mw*(1.-smoothstep(.55,.85,mw))*.9,spec);}\n", "mudCracks(wp,alb,mw*(1.-smoothstep(.55,.85,mw))*.9,spec);}\n#endif\n")
+# (Mud Lab 16) and eight of the cars' own materials that no mesh in Mud Lab is made with, on the phone's tier or the
+# laptop's (tools/test/ml-mats.py: 9 the LED bar, 17 carbon, 18 louvres, 29 halo lamps, 30 and 31 City Limits' light
+# strip and underglow, 91 and 106 two of the Studio 2 car's surfaces). A mesh with a missing material would be drawn in
+# its plain colour, not broken. With the rings in the water (src/ml-look.glsl) landSoil is still no bigger than it was
+for _m in ["  else if(m==9){emc=vec3(.85,.92,1.)*(.7+uLamps*2.2);alb=vec3(.3);}\n",
+           "  else if(m==17){float w=step(.5,fract((vL.x+vL.z)*55.))*.5+step(.5,fract((vL.x-vL.z)*55.))*.5;alb=vec3(.03+.025*w);spec=.7;shin=90.;clear=.8;clearR=.05;}\n",
+           "  else if(m==18){alb=vec3(.01)*(1.+2.*step(.55,fract(vL.x*30.)));spec=.3;}\n",
+           "  else if(m==29){emc=vec3(.75,.88,1.)*(.15+uLamps*2.4);alb=vec3(.2);}\n",
+           "  else if(m==30){emc=uGlow*(.25+uLamps*1.8);alb=uGlow*.2;spec=.5;shin=60.;}\n",
+           "  else if(m==31){emc=uGlow*2.6;alb=uGlow*.3;}\n",
+           "    else if(m==91){alb=vec3(.01);spec=1.;shin=2000.;ssr=1.;}\n",
+           "    else if(m==106){spec=.4;shin=14.;clear=.8;clearR=.06;}\n"]:
+    swap(_m, ""); ML_CUT += len(_m)
 print('cut from the land\'s shader:', ML_CUT, 'characters')
+# ---------- MUD LAB 18: THE PACKET OF 13 NOV 2026 (four pieces from Salt & Sand, Ground Truth and the combined trial; its
+# patches were written against the built page, so they come last, after every swap above) ----------
+# 1. THE FILM CAMERA (src/ml-film.js: Salt & Sand's, a 16th camera that picks its own shots) and the softer fly-past
+swap("const CAMS=['Chase','Far','Hood','Cinematic','Drone lead','Drone tail','Drone left','Drone right','Drone orbit','Low drone','Drone follow','Cockpit','Wheel cam','Tracking car','Roadside'];",
+     "const CAMS=['Chase','Far','Hood','Cinematic','Drone lead','Drone tail','Drone left','Drone right','Drone orbit','Low drone','Drone follow','Cockpit','Wheel cam','Tracking car','Roadside','Film'];")
+swap("if(s.cam>=0&&s.cam<15)APP.cam=s.cam|0;", "if(s.cam>=0&&s.cam<16)APP.cam=s.cam|0;")
+swap("const CAM_ORDER=[0,1,2,11,12,13,14,3,9,10,8,4,5,6,7];", "const CAM_ORDER=[0,15,1,2,11,12,13,14,3,9,10,8,4,5,6,7];")
+swap("const CAM_DEF={on:[0,2,11,12,13,14,3,9,10,8],t:{0:10,1:10,2:8,11:12,12:8,13:13,14:8,3:14,9:20,10:10,8:16,4:8,5:8,6:8,7:8},dir:false,jump:true};",
+     "const CAM_DEF={on:[0,15,2,11,12,13,14,3,9,10,8],t:{0:10,15:30,1:10,2:8,11:12,12:8,13:13,14:8,3:14,9:20,10:10,8:16,4:8,5:8,6:8,7:8},dir:false,jump:true,film:1};")
+# (a list of cameras saved before the Film camera was there: it joins the cameras that are on, once)
+swap("    if(s.t)for(const k in s.t)if(CAM_TIMES.includes(+s.t[k]))o.t[k]=+s.t[k];o.dir=!!s.dir;o.jump=s.jump!==false;}",
+     "    if(s.t)for(const k in s.t)if(CAM_TIMES.includes(+s.t[k]))o.t[k]=+s.t[k];o.dir=!!s.dir;o.jump=s.jump!==false;\n    if(!s.film&&!o.on.includes(15))o.on.push(15);}")
+# (the Film camera picks its shot first, and everything that asks "which camera?" by name is told the shot it is on)
+swap("function camUpdate(dt){\n  const t=GAME.car,M=t.M,F=mcol(M,0),U=mcol(M,1),sp=t.speed,mode=CAMS[APP.cam],cut=CAM.cut,",
+     "function camUpdate(dt){\n  filmStep(GAME.car,dt);\n  const t=GAME.car,M=t.M,F=mcol(M,0),U=mcol(M,1),sp=t.speed,mode=camMode(),cut=CAM.cut,")
+swap("  {const J=camAuto(t,dt);if(J)return J;}\n",
+     "  {const J=camAuto(t,dt);if(J)return J;}\n  if(mode==='Heli'){CAM.yaw=null;CAM.off=null;CAM.fq=null;return heliStep(t,dt,cut);}\n  if(mode==='Park orbit'){CAM.yaw=null;CAM.off=null;CAM.fq=null;return filmParkStep(t,dt,cut);}\n")
+swap("const t=GAME.car,M=t.M,F=mcol(M,0),mode=CAMS[APP.cam],D=carD(t);", "const t=GAME.car,M=t.M,F=mcol(M,0),mode=camMode(),D=carD(t);")
+swap("  if(APP.orbit)return .3;if(JUMP.on)return .2;const m=CAMS[APP.cam];", "  if(APP.orbit)return .3;if(JUMP.on)return .2;const m=camMode();if(m==='Heli')return FHEL.near;")
+_film_at = "/* how close the picture's near edge can come, per camera (the cockpit's cabin is right round you) */"
+swap(_film_at, rd('src/ml-film.js') + _film_at)
+# (the fly-past: the drop in the engine's note as the truck passes a camera standing by, about half what it was. A
+# switch in Settings, Dev)
+swap("  return {geo:{dist:clamp(d*.6,2,60),pan:clamp(-dot2(u,right)*.9,-1,1),rear:clamp(.5-.5*dot2(u,F),0,1)*.6+.4},dop:clamp(343/(343-vr),.65,1.45)};}",
+     "  return {geo:{dist:clamp(d*.6,2,60),pan:clamp(-dot2(u,right)*.9,-1,1),rear:clamp(.5-.5*dot2(u,F),0,1)*.6+.4},dop:flyPitch(vr,d)};}")
+swap("const LOOK_DEF={sat:1,con:1,key:1,haze:1,detail:1,shadows:1,occ:1,", "const LOOK_DEF={sat:1,con:1,key:1,haze:1,detail:1,shadows:1,occ:1,softFly:1,")
+swap("['occ','Shade under the cars','The soft occlusion on the ground under each car.']];",
+     "['occ','Shade under the cars','The soft occlusion on the ground under each car.'],\n  ['softFly','Softer fly-past sound','The drop in the engine\\'s note as the truck passes a camera standing by (Cinematic, Roadside, Low drone, the jump cam): about half what it was, a little under what a real microphone hears. Off, as before.']];")
+swap("  window.__dyb={CAMS,", "  window.__dyb={FILM,FHEL,camMode,flyPitch,camUpdate,CAMS,")
+# 2. THE HERON'S HUD (Ground Truth's two swaps): flying, no TC / ABS / ESC lamps and no gear number: a plane has neither
+swap("for(const [s,v,col] of C){txt3(s,x,yc,v?col:pack(70,64,86));x+=tw3(s)+5;}", "for(const [s,v,col] of (t.rt?[]:C)){txt3(s,x,yc,v?col:pack(70,64,86));x+=tw3(s)+5;}")
+swap("const g=t.rev?'R':pt.shiftT>0?'-':String(pt.gear);otxt5(g,", "const g=t.rt?'':t.rev?'R':pt.shiftT>0?'-':String(pt.gear);otxt5(g,")
+# 3. THE GRAPHICS CARD (src/ml-gpu.js, with the other pieces above): the engine's line when the card is reset under the
+# page said "the phone" on a laptop too
+swap("L.textContent='The phone restarted its graphics. Starting again…';", "L.textContent=mlGpuLost();")
+# 4. ROLLOVERS THAT ROLL LIKE A TRUCK (Ground Truth build 26's fix, re-pointed for the soil: src/ml-soil.js mlBroadUp).
+# A truck rolled onto its side still had its wheels "touching": the springs and the tyres' side grip pushed along the
+# axles, which point straight up by then, and threw it back into the air spinning (his "flips really hard really fast",
+# 8 Nov). Past about 70 degrees between the truck's up and the land's (the land under the ruts, not a rut's wall) a
+# wheel lets go; between about 52 and 70 it takes the weight gradually
+swap("      if(got){wh.hint=hit.i;comp=s.rest-(hit.t-R);}", "      if(got){let gu=mlBroadUp(hit.p[0],hit.p[2],U);if(!(gu===gu)){const gq=this._gq||(this._gq={y:0,n:F3(),surf:''});this.world.ground(hit.p[0],hit.p[2],gq);gu=gq.n[0]*U[0]+gq.n[1]*U[1]+gq.n[2]*U[2];}if(gu<.34)got=false;wh.fade=gu>=.62?1:sstep(.34,.62,gu);}\n      if(got){wh.hint=hit.i;comp=s.rest-(hit.t-R);}")
+swap("      wh.Fz=Math.max(0,Fs);wh.cp.set(hit.p);", "      wh.Fz=Math.max(0,Fs)*(wh.fade??1);wh.cp.set(hit.p);")
+# (and a wheel that comes down onto the ground already past its bump stop, because the truck rolled it in there
+# sideways, doesn't spring that back out: only what it's pushed in further from there hits the bump stop)
+swap("      if(comp<=0){wh.contact=false;wh.Fz=0;wh.comp=0;", "      if(comp<=0){wh.bp0=-1;wh.contact=false;wh.Fz=0;wh.comp=0;")
+swap("      if(comp>s.travel)Fs+=(comp-s.travel)*wh.k*14+Math.max(0,rate)*wh.cb*2;", "      {const ex=comp-s.travel;wh.bp0=!(wh.bp0>=0)?Math.max(0,ex):Math.min(wh.bp0,Math.max(0,ex));const eb=ex-wh.bp0;if(eb>0)Fs+=eb*wh.k*14+Math.max(0,rate)*wh.cb*2;}")
+# ---------- MUD LAB 19 ----------
+# no camera under the water (src/ml-soil.js mlCamDry): the Lake is deep enough to follow a SUV under
+swap("  let cw=camUpdate(dt);\n", "  let cw=mlCamDry(camUpdate(dt));\n")
+# a drowned engine can't be started (src/ml-soil.js mlDeep holds it off): the engine's own blinking "TAP GAS TO START"
+# said it could
+swap("  if(!on){const msg=GAME.touch?'TAP GAS TO START':'PRESS W OR I TO START';", "  if(!on){const msg=GAME.car&&GAME.car.mlDrowned?'ENGINE DROWNED: PULL IT OUT':GAME.touch?'TAP GAS TO START':'PRESS W OR I TO START';")
+# WIDE WATER MIRRORED ITSELF. The engine's screen reflections march a ray from each mirror-like pixel and take a hit
+# where the ray passes just behind what the screen shows there. Looking low across level water, one row of pixels spans
+# metres of it, so from about 20 m out the first steps of every ray "hit" the water beside where they started: the
+# water there showed last frame's water in place of the sky, a dull sandy band with a line through it across the Lake
+# from about 20 to 140 m out (seen in the first pictures of it; the Pond on the first map has had the same band,
+# smaller). A level surface can't mirror a level surface at its own height: such a hit (level ground or water
+# at the hit, within what a row of pixels spans at that range of the mirror's own height) is no hit, and the pixel takes
+# the reflections' own picture (the probe at the car: the sky, the far shore), as water nearer the eye always did
+swap("    vec2 e=smoothstep(0.0,.08,puv)*smoothstep(1.0,.92,puv);float conf=e.x*e.y*(1.0-smoothstep(.35,.5,rough));\n",
+     "    vec2 e=smoothstep(0.0,.08,puv)*smoothstep(1.0,.92,puv);float conf=e.x*e.y*(1.0-smoothstep(.35,.5,rough));\n    if(N.y>.9&&abs(Xh.y-P.y)<.12+.012*length(P-uCam)&&octDec(texture(uNrm,huv).xy).y>.9)conf=0.;\n")
+# ---------- MUD LAB 20 ----------
+# under the water with a camera that is on the SUV (src/ml-soil.js mlCamDry, mlUnderEnv): the frame's environment, as
+# the engine has just worked it out, made muddy water when the eye is under a water's surface
+swap("  if(DEVW.off.post){E.fogDen=0;E.fogAmb=[0,0,0];}\n", "  if(DEVW.off.post){E.fogDen=0;E.fogAmb=[0,0,0];}\n  mlUnderEnv(E);\n")
 import base64
 i = s.index("<script>\n(()=>{\n'use strict';")
 # (the Heron's paint IS its picture (Mud Lab 6, from the review): his Heron paint goes in place of the original Redtail

@@ -4,21 +4,26 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-14.html`** (one self-contained page, 20 MB). On the title pick ROCK & MUD or STOCK SUV (tap
+**Open `builds/mud-lab-21.html`** (one self-contained page, 20 MB). The world is two miles square (Mud Lab 19): the first map is its north-west quarter; east of it the River, with the Shallows to cross anywhere and fords that get deeper up and down stream; south-east the Lake, deep enough to drown an engine; south of the Trailhead the Track, a banked dirt loop with table-tops and whoops. The big map opens on the mile round you; WHOLE MAP beside it shows it all. On the title pick ROCK & MUD or STOCK SUV (tap
 your pick again for a tyre size up: 33s on the stock SUV, 40s on the Rock & Mud), and FREE PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
 with every place named (Free play: tap a name, then JUMP and you're there, or GUIDE ME THERE and an arrow leads you;
 Real: tap a name and the arrow guides you), the
 three graded trails (EASY: Field Track, MEDIUM: Creek Loop, HARD: Gumbo Trail), and MENU beside it: the other SUV, the
-tyres, the grip, and THINGS TO DO; the Heron waits on its strip (drive up, stop,
-HERON); G (or GRIP in the map's MENU) switches the grip physics; in the MENU, TYRE AIR airs the tyres down (35, 20,
+tyres, a TUNE for the SUV you are in (engine and gears), the grip, CLEAR ALL RUTS, and THINGS TO DO; the Heron waits on its strip (drive up, stop,
+HERON); the semicolon key (or GRIP in the map's MENU) switches the grip physics; in the MENU, TYRE AIR airs the tyres down (35, 20,
 12 psi), TYRE SIZE changes their size, and THINGS TO DO sets you down at (Free play) or guides you to (Real) the Bog,
-the pull test, the three trails (each a timed run), the Hill Climb, the pond's bank and a rescue. THE BOG, north-east
+the pull test, the three trails (each a timed run), the Hill Climb, the pond's bank, the Track (a timed lap), the River, the Lake, the four jumps (Mud Lab 21: the Creek Gap, the River Jump, the Lake Jump onto its island, Big Air; a gold line on landing says how long and how far you flew) and a rescue. THE BOG, north-east
 of the Trailhead, measures how far you get; the post by its start is the PULL TEST; the HILL CLIMB, on the Ridge, how
 far up a sand slope you get from a stop at its line. Bogged, a button appears: WINCH (a tree in reach)
 or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/TRUCK (and, in a rescue, the other SUV),
-L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace rakes the ground smooth; a tap on the build's name in the corner of
+L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace clears all the ruts, C the next camera (the second is FILM, a
+camera that picks its own shots); MENU > KEYS on the map changes any key; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-13.html`: no Hill Climb, Soil science grip at half the game's grip, reverse half a second away when bogged;
+(`mud-lab-19.html`: the map's THE LAKE jumps into the Lake's middle, no WINCH for a drowned SUV, the engine stops dead with water over the doors' tops, no camera goes under water, a SUV kicked up in deep water hangs in the air; `mud-lab-18.html`: the first map only (a mile square), no engine drowning, a sandy band in the Pond's reflections; `mud-lab-17.html`: no Film camera, a rolled Rock & Mud is thrown back into the air spinning, the truck's lamps and gear
+number on the Heron's HUD; `mud-lab-16.html`: churned water drawn darker and lumpy behind the SUV, no bow wave, no
+tunes, no CLEAR ALL RUTS on the MENU (Backspace raked, and could throw a sunk SUV into the air); `mud-lab-15.html`: G both looks behind and switches the grip, no list of keys, no rings in the water and churned
+water stays churned; `mud-lab-14.html`: the soil's look before Mud Lab 15: smooth mounds, flat water in the ruts, pale clods, the brake
+lamps' red glints in wet mud; `mud-lab-13.html`: no Hill Climb, Soil science grip at half the game's grip, reverse half a second away when bogged;
 `mud-lab-12.html`: four buttons over the open map, no guide arrow, no list of things to do;
 `mud-lab-11.html`: the stock SUV as the game's plain built model, no look-back button, a title that didn't fit a phone;
 `mud-lab-10.html`: one tyre size each, a sheer 34 ft step at the pond's rim, the Heron always drawn in full;
@@ -36,19 +41,991 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The stock SUV's play model | `base/suv-stock-baked.js`, `tools/suv_pack.py`, `src/ml-truck.js` | Mud Lab 12: his own bake of the stock SUV (salt-mini-plus, branch `beyond-the-last-road`, `models/suv/suv_baked_data.js`: the Studio SUV baked onto the game's own stock SUV by that repo's `models/tools/bake.py`), repacked the way the Rock & Mud's is: 51,044 triangles and one 2048 x 3072 atlas (colour, normals, occlusion + roughness + metal). |
 | The truck | `base/truck-rock-mud-50k.js`, `src/ml-truck.js` | Ground Truth's Rock & Mud play model: 49,654 triangles, the Studio 2 baked onto it, Station Sand paint. Its numbers are the engine's own Rock & Mud (`crawler`): checked identical to Ground Truth's (mass 2,530 kg, tyre 0.47 m radius, 0.318 m wide, the same chassis and engine numbers). |
 | His ground pictures | `base/texpack.js` | The textures Ground Truth paints its ground with (red dirt, wet mud, sand, grass...). |
-| The world | `src/ml-world.js` | Mud Lab 4: 1,536 m (5,040 ft) square, every spot a soil and a moisture (below). |
+| The world | `src/ml-world.js` | Mud Lab 4: 1,536 m (5,040 ft) square, every spot a soil and a moisture (below). Mud Lab 19: 3,072 m square, the first map its north-west quarter; the River, the Lake, the Track, the Mounds. |
+| The world outside the game | `tools/world/` | Mud Lab 19: `src/ml-world.js` run in Node for pictures, the River's profile, "is the old ground the same?" and a syntax check of a built page (its own README). |
 | The soil | `src/ml-soil.js` | The ground every 8 cm, dug, packed, thrown, slumping and springing (below). |
 | The sound coming back | `src/ml-audio.js` | Out of sight, the sound stops; back, the engine's synth is made fresh and fades in (Mud Lab 7). |
-| The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. |
+| The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. Mud Lab 17: the tunes for both SUVs (`ML_TUNE`). |
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
-| The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. |
+| The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. Mud Lab 15: the soil's relief (lumps, wet glints), churned water. |
+| The keys | `src/ml-keys.js` | Mud Lab 16: Mud Lab's own keys in the engine's table, MENU > KEYS on the map to change any of them, the pause menu's legend. |
+| The Film camera | `src/ml-film.js` | Mud Lab 18: Salt & Sand's Film camera (a 16th camera that picks its own shots; its Helicopter and Park orbit) and the softer fly-past sound, from the packet of 13 Nov 2026. |
+| The graphics card | `src/ml-gpu.js` | Mud Lab 18: the card named on a laptop's title, the step down to Low when a card can't keep up, the card-reset line (from the same packet). |
 | Getting stuck | `src/ml-recover.js` | Mud Lab 9: Free play and Real, both SUVs in the world at once, the winch, the strap, what RESET does when you're bogged. |
 | The Bog and the pull test | `src/ml-bog.js` | Mud Lab 10: the measured lane's marks, stakes and bests; the pull post and its reading. |
 | The Hill Climb | `src/ml-climb.js`, `ML_CLIMB` in `src/ml-world.js` | Mud Lab 14: a sand lane up the Ridge that steepens from 16 to 28 degrees; a standing start, the mark in feet, posts, stakes. |
-| The map's menu | `src/ml-menu.js` | Mud Lab 13: MENU on the open map (the other SUV, bring it, tyre size and air, grip, things to do), the guide arrow, timed trail runs, the rescue. |
+| The map's menu | `src/ml-menu.js` | Mud Lab 13: MENU on the open map (the other SUV, bring it, tyre size and air, grip, things to do), the guide arrow, timed trail runs, the rescue. Mud Lab 16: KEYS. Mud Lab 17: TUNE, CLEAR ALL RUTS. |
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
-| Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. |
+| Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. `ml-keys.py BUILD OUTDIR` and `ml-tune.py BUILD OUTDIR`: the map's KEYS and TUNE pages in a laptop window with real presses and clicks. `ml-turn.py BUILD out.json`: a hard turn at 56 mph on the dry field: does the truck go over, and what happens once it has (the rollover test). `ml-hud.py BUILD OUTDIR TAG m`: the Heron's HUD as a picture. `ml-packet.py BUILD OUTDIR TAG`: the card's line on the title, the Film camera in the list, the fly-past's pitch. `ml-gpu.py BUILD OUTDIR`: the step down to Low, with the page told it is not a test browser. `ml-yank.py BUILD` (Mud Lab 19): the sky-yank is still there (fails if it isn't). `ml-title.py BUILD OUT.png [m|l]` (Mud Lab 20): the title as a picture, and whether START is on the screen. In `ml-drive.js` (Mud Lab 20): `T9.jumps` (every name on the map), `T9.drown` (into deep water, then winch, RESET or backing out), `T9.churn` (rocking in deep muck: does it pop up?), `T9.wet`. `ml-prep.py BUILD [noworker] [rush] [shots=DIR]` (Mud Lab 19): how long the world's layer takes to fill, and its fingerprint. In `ml-drive.js`: `T9.ford`, `T9.cross`, `T9.lakeOut`, `T9.lap`, `T9.yank`. |
+
+## Mud Lab 21 (Nov 14 2026): four jumps, the Lake's name back in the Lake, and a line that says how far you flew
+
+His words after Build 20 (Nov 14, 08:24): "Okay, so jump to the lake should still jump to the middle of the lake as is
+being requested by one of the play testers, my son. Also, I think that there should be interesting strategic literal
+jumps placed in certain places that you can clearly drive super fast on to get the appropriate speed to like hit a ramp
+and do something interesting. Because I think we're getting close to the point where I want to add the point system."
+
+Builds 15 to 20 are as they were. The first map's ground is the same to the last digit (all 147,456 points of
+`tools/world/dump.js`). Nothing in the ground's shader was touched. Nothing new is drawn: every jump is ground.
+
+### 1. JUMP: THE LAKE is the Lake's middle again (`src/ml-heron.js` MLV_IN)
+
+Build 20 moved it to the beach. Now the map's THE LAKE sets you down where the name stands, in 10 ft of water, as Build 19
+did. LAKE BEACH (its own name on the map) is the dry landing; THINGS TO DO > THE LAKE is the beach, as before; in Real
+the guide arrow for THE LAKE still leads to the beach (an arrow into the middle of a lake is no guide).
+
+### 2. Four jumps (`src/ml-world.js` ML_JUMPS; `tools/world/jumps.js` sizes them; `tools/test/ml-drive.js` T9.jump drives them)
+
+Each is a straight lane of bare packed dirt with its ramp at the end. All on the new ground. Each has its name on the map
+(JUMP sets you at the start of its run-up, facing the ramp) and a line in THINGS TO DO with the speed to hit.
+
+| | Where | What | The speed at the ramp |
+|---|---|---|---|
+| **CREEK GAP** | Big Creek's new reach, north-east of the first map | 59 ft lip to lip over 26 ft of creek. Two ramps 14 ft high, 300 ft of run-up each side: it goes both ways. The stock SUV's way over the creek | 55 mph |
+| **RIVER JUMP** | The River where it is narrow, just above the Narrows | 190 ft lip to lip over 151 ft of water 6 ft deep. Two ramps 27 ft high. Both ways: 1,130 ft of run-up from the west, 1,390 ft from the east (down off a knoll) | 83 mph going east, 88 coming back |
+| **LAKE JUMP** | The Lake's west shore, 280 ft south of the beach | Off a 17 ft ramp, over 138 ft of water, onto an island 680 ft long built for it. A sand bar 1 ft under the water leads from the island back to the shore | 70 mph |
+| **BIG AIR** | The flat on the River's west bank, below the Shallows | No gap. 985 ft of run-up, one ramp 5.5 ft high, then 1,380 ft of level strip with a pale mark every 50 ft | as fast as you dare |
+
+**How they were sized.** First the SUVs' real speeds, flat out from a stand on firm ground: the stock SUV 57 mph after
+330 ft, 70 after 660, 81 after 1,000; the Rock & Mud 99 mph after 330 ft and 127 after 660. Then every jump was driven,
+changed and driven again (eight trial builds). What that taught:
+
+- A SUV comes down softly only on a slope about as steep as its own fall. On the flat past a ramp, falling at 25 mph or
+  more, both SUVs roll. So each ramp has a long straight top to land on (the River's first ramps had 20 ft of it and
+  no speed landed the stock SUV on its wheels; with 80 ft it lands, both ways).
+- Even so the speeds that land well are few: on the River every 1 mph more carries a SUV about 25 ft further. **Each
+  run-up is as long as brings the stock SUV, flat out from its start, to the right speed.** The Rock & Mud gets to
+  99 mph in 330 ft: it has to hold the speed itself (the gas is a pedal, not a switch).
+- The gap jumps run exactly east-west or north-south: the ground is drawn as 6.5 ft squares, and a lip lying at an angle
+  across them was drawn as a row of saw teeth.
+
+**The table** (Build 21, the test SUVs; "flat out" is from the start of the lane, where JUMP sets you):
+
+| Jump | SUV | At the lip | In the air | Flew | Came down | On its wheels? |
+|---|---|---|---|---|---|---|
+| Creek Gap, north to south | stock, flat out | 56 mph | 1.4 s | 109 ft | 57 ft past the far lip | yes |
+| Creek Gap, south to north | stock, flat out | 56 mph | 1.4 s | 109 ft | 60 ft past | yes |
+| Creek Gap | stock, held to 46 | 44 mph | 0.8 s | 44 ft | 6 ft short: struck the far lip | yes, and stopped on the far ramp |
+| Creek Gap | Rock & Mud, held to 56 | 55 mph | 1.3 s | 99 ft | 45 ft past | yes |
+| Creek Gap | Rock & Mud, flat out | 97 mph | 2.2 s | 303 ft | 255 ft past, on the flat | yes (two bounces) |
+| River Jump, going east | stock, flat out | 83 mph | 2.2 s | 256 ft | 73 ft past | yes |
+| River Jump, coming back | stock, flat out | 89 mph | 2.3 s | 284 ft | 103 ft past | yes |
+| River Jump | stock, from 820 ft back | 70 mph | | 156 ft | 20 ft short: into the far ramp's face | rolled over, on the far bank |
+| River Jump | stock, from 660 ft back | 65 mph | | | in the River | no |
+| River Jump, going east | Rock & Mud, held to 83 | 82 mph | 2.1 s | 238 ft | 58 ft past | yes |
+| River Jump, going east | Rock & Mud, held to 86 | 85 mph | 2.3 s | 270 ft | 90 ft past | **no: it leaned 34 degrees in the air and rolled** |
+| River Jump, coming back | Rock & Mud, held to 90 | 88 mph | 2.2 s | 275 ft | 93 ft past | yes |
+| River Jump | Rock & Mud, flat out | 155 mph | 3.7 s | 771 ft, 36 ft up | 595 ft past | no |
+| Lake Jump | stock, flat out | 72 mph | 1.7 s | 172 ft | 40 ft down the island's hill | yes; stopped 280 ft along the island |
+| Lake Jump | stock, held to 55 | 50 mph | | 112 ft | 16 ft short | in the Lake, drowned |
+| Lake Jump | Rock & Mud, held to 74 | 73 mph | 1.9 s | 190 ft | 60 ft down the hill | yes |
+| Lake Jump | Rock & Mud, flat out | 127 mph | 3.1 s | 535 ft | 405 ft along the island, on the flat | no; rolled, and ended in the Lake, drowned |
+| Big Air | stock, flat out | 80 mph | 1.2 s | 133 ft | | yes (it wobbles: two bounces) |
+| Big Air | Rock & Mud, held to 100 | 99 mph | 1.3 s | 185 ft | | yes |
+| Big Air | Rock & Mud, held to 125 | 123 mph | 1.6 s | 274 ft | | yes |
+| Big Air | Rock & Mud, flat out | 147 mph | 1.9 s | 387 ft | | rolled over once and came back onto its wheels |
+
+The sand bar, island to shore, stock SUV: across, the water 12 in at its deepest, never slower than 7 mph.
+
+Where they are (the sketch sent before they were built; the River Jump and the Creek Gap were then turned square to the map):
+
+![Where the four jumps are](docs/shots/mud-lab-21-sketch.jpg)
+
+![The River Jump's run-up: the same spot in Build 20 and Build 21](docs/shots/mud-lab-21-river.jpg)
+
+![Over the River, and the same jump from the side](docs/shots/mud-lab-21-river-air.jpg)
+
+![The Lake Jump's run-up: Build 20 and Build 21](docs/shots/mud-lab-21-lake.jpg)
+
+![Over the Lake, and on the island looking back](docs/shots/mud-lab-21-lake-air.jpg)
+
+![The Creek Gap: Build 20 and Build 21](docs/shots/mud-lab-21-creek.jpg)
+
+![Big Air's run-up: Build 20 and Build 21](docs/shots/mud-lab-21-air.jpg)
+
+### 3. In the air over water is not in it (`src/ml-soil.js` mlWater)
+
+The first jump over the River: the Rock & Mud left the lip at 152 mph, rose 60 ft as it should, and came down 26 ft
+further on. The water's drag was worked out from how deep the water is over the ground under the SUV, whatever height
+the SUV was at; over 6 ft of river that is a wall. Nothing had ever been over water without being in it. Now, with all
+four tyres off the ground and the lowest of the SUV clear of the surface: no drag, no lift, no bow wave. Anything else
+is exactly as it was (the rule did not fire once in a drowned SUV's winch-out of the Lake).
+
+### 4. A line when you land (`src/ml-menu.js` mljTick)
+
+Not points yet: the measure they would be made of. Any time all four tyres are off the ground for 0.7 s or more and the
+SUV went 30 ft or more: one gold line as it touches down, "IN THE AIR 2.2 S: 256 FT". For a named jump, taken from its
+own ramp, landed on its wheels on the far side: the longest so far for that SUV is kept ("RIVER JUMP: 256 FT. YOUR
+FIRST" / "YOUR LONGEST") and shown beside the jump in THINGS TO DO. It also speaks on the Track's table-tops and after
+the sky-yank. No new button. A reset, a tow or the map setting you down somewhere is not a flight (the first try credited
+the Rock & Mud, reset off its roof to the far end of a lane, with a 1,252 ft jump).
+
+### 5. Checks
+
+| | |
+|---|---|
+| The first map's ground (`tools/world/dump.js`, every 13 ft) | identical: 147,456 of 147,456 points |
+| The same seven drives, Build 20 and Build 21 (`tools/test/ml-same.py`) | 7 of 7 the same, to the last digit (speed, place, ruts, soil dug, clods) |
+| The sky-yank (`tools/test/ml-yank.py`) | still there: 268 mph at its fastest, thrown 67 m, 5.2 s off the ground |
+| The ground's shader (`tools/test/ml-shaders.py`) | not touched: landSoil 487,142 (phone) and 500,740 (laptop) as Build 20, 16 samplers, no errors |
+| Triangles at the jumps, phone (`tools/test/ml-views.py`) | 163,500 to 183,200 at the nine views of the jumps (Build 20 at the same four run-ups: 168,000, 169,400, 178,300, 169,200; Build 21: 163,500, 168,200, 180,100, 176,000). The whole map open: 213,400. Laptop, over the River: 252,800 |
+| Laying out the ground at the title (`tools/test/ml-prep.py`) | the same: the layer full 8.2 s after the page opens (Build 20: 8.3 s). Its fingerprint is new, as it must be (the new ground changed) |
+| Every name on the map (T9.jumps) | all 34 land upright; THE LAKE in 10 ft 7 in of water at its name (as asked), every other name dry; each jump's name at the start of its run-up, facing its ramp; in Real THE LAKE's arrow leads to the beach |
+| Build 20's 17 water and first-map tests, same list, same order, both builds | 14 of 17 identical. Two differ as they should: RESET from the middle of the Lake now finds the island, and the Track lap (the same 181.7 s) now has landing lines. One differs and is not explained (see the limits) |
+
+### 6. Limits, and what is not known
+
+- Nothing has run on his phone or laptop. The jumps have only been seen as still pictures; the landing line has only
+  been read off the test's log.
+- **The speeds that land are narrow, and the Rock & Mud is the touchier of the two.** On the River it landed at 82 and
+  88 mph and rolled at 85 (it leaned in the air). The stock SUV, flat out from the start of a lane, landed every
+  jump in every run.
+- The stock SUV wobbles on Big Air's flat landing at 80 mph (it stayed on its wheels in both runs).
+- The landing line also speaks for small hops (anything over 0.7 s and 30 ft). Whether that is fun or noise is his call.
+- RESET for a SUV drowned in the middle of the Lake now sets it on the island (the nearest dry ground: 680 ft away,
+  where the shore was 815 ft).
+- One of the 17 water tests is not the same in both builds and I did not find out why: the Rock & Mud's winch-out of
+  the Lake, run straight after the stock SUV's from the same spot, takes a slightly different path half way up the
+  bank when the island exists (out of the water after 46 s either way). Run by itself it is identical. Traced step by
+  step: the ground, the soil, the particles, the SUV and the winch are the same to the last digit until the step where
+  they part, and none of this build's rule changes fire. (That test already gave a different trace by itself and after
+  another test in Build 20: drives in one page are not fully independent.)
+
+## Mud Lab 20 (Nov 13 2026): a polish pass: the Lake's edge, the winch under water, a choking engine, a camera that goes under, and a pop-up out of the water
+
+His words after driving Build 19 (Nov 13, 20:39): "This is really good. My first edit though is if you use the map to
+jump to the lake, you jump to the middle of the lake. So you should jump to the edge of the lake, not the middle of
+the lake. Also, the ability to winch yourself out isn't popping up once you've disappeared under the lake. So I think
+we need to do a polish pass, UI polish pass."
+
+(20:41) "Can you also make it to where when you do fully submerge under the water you can switch wheel cam and
+actually see the SUV underwater. And when it does submerge I think that it should like take a moment like vehicles do
+in real life, and so the stock SUV's tailpipe can go below the water but it's the intake that can't go below the
+water, and then the Rock and Mud SUV with its snorkel can go until the snorkel goes below water, and then once it does
+go below water it like chokes the way an engine would, not just dying immediately."
+
+(20:46) "Also, another thing to check. Similarly to when it used to roll over and like pop up and bounce erratically.
+When you're in I think very mucky stuff and you're moving the soil around beneath the SUV, sometimes the SUV can like
+pop up out of the water kind of intensely."
+
+Builds 15 to 19 are as they were. Nothing in the ground's shader was touched; the world's ground is the same to the
+last digit (the layer's fingerprint is Build 19's: `tools/test/ml-prep.py`).
+
+### 1. The map sets you down at the edge (`src/ml-heron.js` mlvArrive)
+
+The Lake's name stands in the Lake's middle, 235 m from the nearest shore. The search for a dry spot near a name gave up
+200 m out and set the SUV down where the name was: in 3.2 m of water. In Real the guide arrow led to the same spot.
+
+Now a name has a landing, and JUMP and the guide arrow both use it: the Lake's is the beach where the Lake Road comes
+to it; for any other name on the new ground the search goes on to 640 m, takes the dry spot nearest the Trailhead of
+those the same distance out (the bank you would drive to, not the far one) and stands 8 m back from the edge; a
+water's or a ford's name that stands on dry ground itself faces you at the water. The first map's names are found
+exactly as they always were.
+
+All 30 names, jumped to one after another (`tools/test/ml-drive.js` T9.jumps): every one on dry ground, upright, and
+its arrow leads to dry ground. THE LAKE: the beach, 413 m from its name.
+
+![JUMP: THE LAKE in Build 19 and in Build 20](docs/shots/mud-lab-20-jump.jpg)
+
+### 2. A drowned SUV can be got out (`src/ml-recover.js`)
+
+Why no WINCH came up: the button waits for "bogged", and bogged was only ever "two seconds on the gas, going nowhere".
+Nobody holds the gas on a dead engine. (Build 19's own test set "bogged" by hand before it looked for the button, so
+it never saw this.) And RESET, which in Free play sets a bogged SUV on firm ground, looked for that ground 60 m round,
+then 200 m, and then stood the SUV up where it lay: under the Lake.
+
+- **A drowned SUV is bogged from the moment its engine dies.** The button, RESET and the map's tow home all follow.
+- **Off the beach there is no tree. For a drowned SUV only, the winch also takes a ground anchor on the bank**
+  (`mlrShore`): as far up the bank as the 30 m line reaches from a hook, as nearly in line with the SUV as there is.
+  A tree in reach is still taken first. Nothing changes for a SUV that is merely bogged.
+- **RESET** (Free play) for a drowned SUV: firm ground within 60 m as before; failing that, the nearest shore, however
+  far.
+- In Real, out past the line's reach, there is the strap and the tow home, as before. His question from Build 18
+  (must a drowned truck in Real always be recoverable?) is still open.
+
+`T9.drown`: into the water under its own power at about 8 mph, then what the game offers, read as it stands:
+
+| Drowned where | Build 19 | Build 20 |
+|---|---|---|
+| Stock SUV, off the west beach (no trees) | drowned; not "bogged"; nothing offered | misses 2.4 s in (5 m out), dies at 5.4 s (10 m out, 2.7 m of water). WINCH: a ground anchor on the bank, 92 ft behind. Out of the water 40 s into the pull, the engine running again at 41 s, line off on dry sand at 56 s. Hardest pull 41 kN (the winch's most is 42) |
+| Rock & Mud, off the west beach | the same: nothing offered | misses 3.2 s in (8.5 m out, 2.2 m of water), dies at 6.2 s (12 m out, 3.1 m). WINCH: an anchor 93 ft behind. Engine again at 22 s, out of the water at 46 s, line off at 56 s; 28 kN |
+| Rock & Mud, off the wooded east shore | a tree in reach, and still nothing offered | WINCH: a tree 89 ft behind (a tree is taken first). Engine again at 19 s, out at 43 s, line off at 53 s; 32 kN |
+| Stock SUV set down in the Lake's middle (where JUMP: THE LAKE put it) | under 3.2 m of water, drowned | nothing in reach, no button. RESET: on the shore 248 m away, upright, dry, engine running |
+| Stock SUV through the Pond's middle (first map) | bogged, engine running | drowned 35 m in, in 1.1 m. WINCH: a tree 95 ft behind; engine again 33 s into the pull |
+
+The map's own tap, as a finger does it (WHOLE MAP, THE LAKE, JUMP): on the beach at (838, 1900), dry, "The lake
+shore". In Real the same tap sets the arrow to that spot, on dry ground.
+
+### 3. The engine chokes before it drowns (`src/ml-soil.js` mlDeep, mlCough)
+
+**Where the air goes in, measured on the two models** (their points, in Node): the stock SUV's hood is 1.07 to 1.17 m
+off the ground, and it breathes from under the hood's front edge: 1.05 m (3 ft 5 in). The Rock & Mud's snorkel mouth is
+on the windscreen pillar at 2.05 m (6 ft 9 in); its roof is 2.27 m. Where that point is against the water is worked
+out from the body as it lies, so a SUV nosing down a bank puts a front intake under sooner. Build 19 had both over the
+SUV's middle, the stock SUV's at 1.55 m (the top of its doors). A tailpipe under water is a running engine.
+
+**Choking:** the intake under for a third of a second and the engine starts to miss: the engine's own fuel cut, a miss
+at a time (so the sound is the engine's own misfire), longer and closer together as it swallows more, the revs
+sagging with each one. A line says WATER IN THE INTAKE: THE ENGINE IS CHOKING (IN THE SNORKEL, on the Rock & Mud).
+Three seconds of that and it dies. Get the intake clear first and it coughs for as long again and clears (IT COUGHED THE WATER OUT).
+Dead, it stays dead until the intake has been 30 cm clear of the water for two and a half seconds; then it starts by
+itself, and coughs once more.
+
+**The cab** fills in six seconds once the engine has drowned and drains in eight once it runs again. (Build 19 gave all
+the water's lift back at the instant the engine restarted: a jolt upward on the way out.)
+
+The River's fords again (`T9.ford`, straight across at a steady 9 mph), with how near the water came to the intake:
+
+| Ford (deepest water on the line) | Stock SUV, Build 19 | Stock SUV, Build 20 | Rock & Mud, both builds |
+|---|---|---|---|
+| the Shallows, three places (26 to 32 cm) | across | across; intake 61 to 67 cm clear | across |
+| first ford north (56 cm) | across | across; 48 cm clear | across |
+| second ford north (64 to 70 cm) | bogged 40 m out | bogged 40 m out; 7 cm clear, engine running | across |
+| third ford north (81 to 113 cm) | bogged 29 m out | bogged 29 m out, **and drowned** (intake 18 cm under) | bogged 54 m out; snorkel 59 cm clear |
+| first ford south (47 cm) | across | across; 54 cm clear | across |
+| second ford south (85 cm) | bogged 29 m out | bogged 29 m out, **and drowned** (21 cm under) | across, down to 4 mph; snorkel 84 cm clear |
+| third ford south (104 to 126 cm) | bogged 33 m out | bogged 32 m out, **and drowned** (43 cm under) | bogged 100 m out; snorkel 42 cm clear |
+
+Every ford either SUV crossed, it still crosses. Where the stock SUV bogs in water over its hood, it now drowns too.
+
+**What this changes on the first map.** The Rock & Mud: nothing (its snorkel is where Build 19 had it). The stock SUV's
+intake is half a metre lower than Build 19 had it:
+
+| On the first map, the stock SUV | Build 19 | Build 20 |
+|---|---|---|
+| The Bog at 0.6 throttle (`T9.bogRun`) | 105 ft in 18.2 s | 105 ft in 18.2 s; intake never nearer the water than 38 cm |
+| The Bog flat out in 4 LO | 102 ft in 13.9 s | 102 ft in 13.9 s; 39 cm clear |
+| The Mud Hole: stopped in its middle, then flat out | does not get through | does not get through; 21 cm clear at the nearest |
+| Lower Ford on Big Creek | bogs | bogs 49 m in; 29 cm clear |
+| **Straight through the Pond's middle (1.06 m)** | bogged 34 m in, engine running | **misses 32 m in, in 98 cm of water; drowned 3 s later.** A tree is in the winch's reach |
+
+The Rock & Mud through the Pond: across, as before; its snorkel 50 cm clear.
+
+### 4. Under the water with a camera that is on the SUV (`src/ml-soil.js` mlCamDry, mlUnderEnv)
+
+Build 19 held every camera 70 cm over the water. The Wheel cam, the Hood and the Cockpit now go under with the SUV
+once the water is deep over them: more than 55 cm over the camera's eye (and they stay under until it is less than
+35 cm). The Film camera does the same while it is on one of them; every other camera stays above, as it was. An eye
+under a water's surface looks through muddy water: the engine's own light-in-the-air pass with its haze made about a
+hundred times thicker and brown, the sun's beam cut to a tenth, the sky's light to a half and browner the deeper the
+eye is, the sky itself the same mud. The SUV 15 ft away is seen dimly; nothing is seen past about 30 ft. One swap in
+`src/build.py` (the frame's environment handed to `mlUnderEnv` after the engine has worked it out); nothing added to
+any shader.
+
+![The Rock & Mud drowned in the Lake: the chase camera, and the Wheel cam](docs/shots/mud-lab-20-under.jpg)
+
+![The same on High, in a laptop window](docs/shots/mud-lab-20-under-laptop.jpg)
+
+**In water shallower than that over the eye the camera is held over the surface, as Build 19 held it.** A first try
+let the eye under as soon as it was under at all: in the Mud Hole (75 cm of water, the Wheel cam's eye 72 cm up) the
+eye sat just under a surface that is not drawn from below, and the SUV stood in what looked like no water. The Wheel
+cam's eye is 72 cm off the ground, so it goes under in water over about 1.3 m: nowhere on the first map (its deepest
+is 1.15 m). On the first map every camera is where Build 19 had it.
+
+![The Wheel cam in a ford (over the water) and under the Lake](docs/shots/mud-lab-20-wheelcam.jpg)
+
+![The Wheel cam in the Mud Hole: Build 19, and Build 20 (the same)](docs/shots/mud-lab-20-wheel-mudhole.jpg)
+
+![The stock SUV drowned in the Lake, from its Wheel cam](docs/shots/mud-lab-20-under-stock.jpg)
+
+### 5. Popping up out of the water (`src/ml-soil.js` mlWater)
+
+Caught in the Bog's last pit (`T9.churn`: in, stop, then rocking flat out with the wheel swung from side to side),
+Build 19, the Rock & Mud in 1.2 m of water: the pit's wall kicked it up at 3.6 m/s, and it then hung in the air for
+3.4 s with its sills 2.2 m over the water, and rolled over up there.
+
+The water's lift on the body was worked out from how deep the water is over the ground under the SUV's middle,
+whatever height the SUV itself was at. In that pit it is two thirds of the Rock & Mud's weight; and it went on being
+two thirds of its weight all the way up and out of the water, so the SUV fell at a third of gravity. Deeper water is
+worse (85% of its weight from about 1.1 m for the stock SUV, 1.5 m for the Rock & Mud), and Build 19 added a river
+and a lake of it.
+
+**With a tyre on the ground the lift is exactly as it was** (the Bog's marks and every crossing depend on it). **With
+none on the ground it is for the water the body is really in.** A first try, the lift for the body's real depth at all
+times, was right on paper and changed the Bog: his SUV stopped 8 m sooner in it. Taken out again.
+
+| `T9.churn`, the same drive in both builds | Build 19 | Build 20 |
+|---|---|---|
+| **The Bog, Rock & Mud, 90 s of rocking flat out.** Highest its sills came over water 70 cm deep or deeper; longest with no tyre on the ground; most it leaned | 216 cm (over 1.2 m of water); 3.4 s; 124 degrees: over | 5 cm; 0.75 s; 37 degrees, on its wheels throughout |
+| The Bog, stock SUV, the same | went in 38.82 m; kicked at most 2.9 g; leaned 20 degrees at most | the same three numbers to the digit (it never left the ground) |
+| The muddy water above the Lake, Rock & Mud, 2 min | sills 20 cm over the water at most | the same numbers to the digit |
+
+(The last two rows are from the same list of drives run on Build 19 and on this build's page before the changes to
+the look and the anchor.)
+
+### 6. The rest of the pass
+
+- **Lines that pile up.** Going under, the screen showed BOGGED, WHEELSPIN DIGS YOU IN and UNDER WATER at once. Now
+  the bogged lines are not said over a choking engine and are cleared when it drowns: one line, in gold.
+- **A line too long for a phone.** The laptop's "the ground's detail is still being built by the graphics driver" line
+  is 128 letters; a phone's screen holds about 105. A phone gets a shorter one. The three longest THINGS TO DO lines
+  were shortened too.
+- **The corner's place name on the River's banks.** The Shallows is 130 m wide, and its own bank read "Open country".
+  The River's names now hold for 45 m back from the water's edge.
+- **Checked and left alone:** the title at a phone's size (START all on the screen: `tools/test/ml-title.py`); the
+  Track's lap clock (a lap at 36 mph ends with THE TRACK IN 3:01. YOUR FIRST TIME, and the time is kept); WHOLE MAP
+  beside the map's MENU and JUMP.
+
+### Checked
+
+| | |
+|---|---|
+| Same seven drives, Build 19 against 20 | 7 of 7 the same, no page errors. That was run on the page before the last two changes (the camera's rule for shallow water, and one line's wording); that page against the one sent: 7 of 7 the same, no page errors |
+| The world's ground (the layer's fingerprint, nine arrays) | Build 19's exactly |
+| landSoil (not touched) | 487,142 characters on the phone's tier, 500,740 on High, 16 samplers: Build 19's. No errors or warnings |
+| The sky-yank (`tools/test/ml-yank.py`) | still there: 268 mph, thrown 67 m, 5.2 s off the ground |
+| The stock SUV on the first map, the same list of drives on both builds | the Bog at 0.6 throttle 105 ft in 18.2 s on both; the Mud Hole the same to the digit on both |
+| The winch off the west beach, on the page as sent | the same numbers to the digit as on the tested page |
+| All 30 names on the map (`T9.jumps`) | every landing dry and upright; every arrow to dry ground |
+| Triangles at a phone's size, under the Lake | 147,000 to 181,000 (the cameras that go under draw nothing more) |
+| Under the Lake on High (a laptop window) | the Wheel cam: `docs/shots/mud-lab-20-under-laptop.jpg`; 254,286 triangles |
+| Page errors | none in any run |
+
+### Not done, and limits
+
+- **Nothing here has been run on his phone or laptop.** The under-water look most of all: it has only been seen in
+  software graphics, as still pictures.
+- The choke is heard through the engine's own misfire; I have not heard it, only watched the revs.
+- Backing out when the engine first misses: on the Lake's drop-off and bogged in a deep ford it did not work in the
+  tests (the SUV was already sliding in, or already stuck). Off the Lake's beach at a walking pace it did not work
+  either. So the line does not say BACK OUT: it says THE ENGINE IS CHOKING.
+- A drowned SUV out past the winch line's reach in Real has the strap and the tow home only.
+- The bank anchor was tried at the Lake's west beach only (in the Pond a tree was in reach and was taken); not on
+  steep banks.
+- The pop-up: one case caught and fixed. The kick itself (a pit's wall at full throttle) is still there, as it always
+  was; the SUV now comes straight back down from it. If it still pops, where and in which SUV would find the next one.
+- The map's header still runs under the SUV's name on a phone (it has since Build 10), and the names round the
+  Trailhead still overlap in a laptop window.
+- Ragged rut edges and berms as real shape, and mud on the body and tyres: still parked.
+
+## Mud Lab 19 (Nov 13 2026): four times the ground: a river to read, a lake to drown in, a track
+
+His words (Nov 13, 14:52): "4 times the area, so you're only doubling length and width. So I want the areas to be like
+interesting and new and unique. I know I want there to be like maybe a lake edge or just a deeper pond that you can
+get bogged all the way down in, a wider river crossing that you have to cross strategically. Maybe there's like a big
+chunk that is like clear you can cross just straight across like anywhere, and then like it gets harder and harder to
+cross the further up or downstream you go. Less woods, more interesting ground bits, like maybe it looks like a dirt
+bike or HEV trail. There's like hills and mounds. And like banked turns and stuff. Could we put that in an area?"
+
+And: "just so it doesn't get removed, there's a feature that is not a bug. It is so fun. While you're attached to the
+like pull strength post, if you don't detach and say get in the other vehicle, it yanks it across the sky super fast,
+and it's outrageously fun, and I love it. It might technically be a bug, but it's a bug that's staying."
+
+The thinking behind the river is the packet's map brief (`claude/mud-lab-map-brief.md` in the Project: how a river on
+soft ground lays itself out, and what that means for where a truck can cross).
+
+Builds 15 to 18 are as they were.
+
+### The map: 3,072 m a side, the old map its north-west quarter
+
+![The new map, drawn from the ground's own numbers; the dashed corner is the map as it was](docs/shots/mud-lab-19-layout.jpg)
+
+The square grew east and south from the same corner. So every place on the first map is where it was, with the
+numbers it had: the ground's height, soil, moisture, water, sod, woods and trails are the same to the last digit at
+138,386 of 147,456 points; the 9,070 that differ are all in the removed bank's zone or at the two road starts (120 of them inside the old map proper, the road starts) (`tools/world/dump.js`: every 4 m of the old square, Build 18's file against this one's). What changed there:
+
+- **the bank along the old east and south edges is gone** (it would have stood between the old ground and the new), so
+  the ground within about 50 m of those two edges is different;
+- **two new two-tracks leave the old map:** the River Road from the Quarry's east rim, the Track Road from the Field
+  Track's west end;
+- the old map's woods run on east past the old edge and thin out unevenly, so they don't stop on a ruled line.
+
+Nothing graded is near any of it: the same seven drives as ever, Build 18 against this one, come out **7 of 7 the same**.
+
+**The new ground** (`src/ml-world.js`, MUD LAB 19; less wooded: a grove here and there in open rolling country):
+
+| Place | What it is |
+|---|---|
+| **The River** | 3.1 km from the north edge down the east to the Lake; Big Creek runs on east into it. It swings from side to side. On the outside of each bend: a deep pool under a steep cut bank, trees along the bank's top. On the inside: a sand bar. Between two bends: a riffle, wide, shallow and firm: the ford |
+| **The Shallows** | 600 m in its middle where it spreads to 120 to 140 m of shin-deep water over firm sand, with bars and islands: cross anywhere |
+| **The fords** | every riffle up or down the river from the Shallows is deeper than the one before (and downstream the bed gets muddier), until it can't be crossed: the Narrows at the north, the muddy water above the Lake at the south. Table below |
+| **The Lake** | 780 by 470 m. A firm sandy shelf round the edge, wading depth for 9 m (30 ft); then it drops away to 3 m (10 ft) of water over soft muck. A sand beach on its west shore; woods along its east shore, to winch out to |
+| **The Track** | south of the Trailhead: a 2.9 km (1.8 mile) dirt loop, 10 m wide, over knolls (12 m of climb and fall). Every bend is banked, with a berm standing on its outside; four table-tops (1 to 1.8 m high), four rows of whoops, three kickers, a step-up. THINGS TO DO > THE TRACK times a lap and keeps each SUV's best |
+| **The Mounds** | in the Track's middle, and a bigger field on the Far Side: lumps 2 to 3 m high, 25 m apart, smaller ones between |
+| **The Far Side** | east of the River: open hills, reached by the Shallows |
+| **Four two-tracks** | the River Road (Quarry to the Shallows), the Track Road, the Lake Road (Track to the beach), the Far Side Road |
+
+### The fords, driven (`tools/test/ml-drive.js` T9.ford: straight across from the west bank at a steady 9 mph)
+
+| Ford | Deepest water on the line | Stock SUV, 4 HI | Rock & Mud, locked |
+|---|---|---|---|
+| the Shallows, middle | 26 cm (10 in) | across; slowest 7 mph, tyres 22 cm down | across; slowest 8 mph, tyres 26 cm down |
+| the Shallows, north end | 32 cm (13 in) | across; slowest 6 mph, tyres 28 cm down | across; slowest 8 mph, tyres 23 cm down |
+| the Shallows, south end | 27 cm (11 in) | across; slowest 7 mph, tyres 28 cm down | across; slowest 8 mph, tyres 25 cm down |
+| first ford north | 56 cm (22 in) | across; slowest 6 mph, tyres 45 cm down | across; slowest 8 mph, tyres 39 cm down |
+| second ford north | 70 cm (28 in) | **bogged** 40 m out, tyres 44 cm down | across; slowest 7 mph, tyres 40 cm down |
+| third ford north | 113 cm (44 in) | **bogged** 29 m out, tyres 46 cm down | **bogged** 54 m out, tyres 83 cm down |
+| first ford south | 47 cm (19 in) | across; slowest 6 mph, tyres 18 cm down | across; slowest 8 mph, tyres 16 cm down |
+| second ford south | 85 cm (33 in) | **bogged** 29 m out, tyres 48 cm down | across; slowest 4 mph, tyres 48 cm down |
+| third ford south | 126 cm (50 in) | **bogged** 33 m out, tyres 51 cm down | **bogged** 100 m out, tyres 79 cm down |
+
+His words were "a big chunk that is clear you can cross just straight across like anywhere, and then like it gets
+harder and harder to cross the further up or downstream you go": the table is that, measured.
+
+The first try had the Shallows up to 48 cm deep at its north end and the stock SUV bogged there (it sinks its tyres 25
+to 45 cm into wet sand as soon as it slows and spins). The Shallows is now 23 to 33 cm at its deepest anywhere, and
+the first ford each way about 45 to 55 cm.
+
+### The Lake: deep water (`src/ml-soil.js` mlDeep)
+
+**New rule: the engine drowns.** With the water over the engine's air intake for more than half a second the engine
+stops, and it stays stopped until the SUV has been pulled to where the intake is 30 cm clear of the water for two and a
+half seconds; then it starts again by itself. A drowned SUV's cab fills: over six seconds the water's lift on the body
+falls to under a third, and it settles onto the bottom, into the muck.
+
+**The intakes are put high on purpose:** at the top of the stock SUV's doors (1.55 m over the ground it stands on) and
+at the Rock & Mud's roof (2.05 m). The deepest water on the first map is 1.15 m (the Bog's last pit). So nothing on the
+first map can drown an engine and its balance is untouched: this is the Lake's rule, and the River's pools'.
+
+| | Stock SUV | Rock & Mud |
+|---|---|---|
+| Driven in off the west beach at 9 mph | engine drowned 16 m out; at rest 18.6 m out in 2.84 m of water, upright, tyres 31 cm into the muck | drowned 17.5 m out; at rest 19.8 m out in 2.86 m (3.15 m at the deepest), upright, tyres 48 cm down |
+| Stood in the deep off the wooded east shore | drowned in 4.4 s, 1.09 m of water over the roof. WINCH offered: 6 trees within 30 m, the nearest 25 m | drowned in 4.2 s, 72 cm over the roof, tyres 41 cm into the muck. WINCH offered: 5 trees, the nearest 26.4 m |
+| Winched out (`T9.lakeOut`) | the engine runs again 16 s into the pull (intake clear); out of the water by 40 s; line off at 51 s; hardest pull 26 kN | the engine catches at 16 s; out of the water by 40 s; line off at 52 s; hardest pull 26 kN |
+
+**No camera goes under the water** (`mlCamDry`): an eye that would be under a water's surface (the chase camera
+following a SUV down) is held 70 cm over it, looking down at where the SUV is. Air comes up over a SUV that is all the
+way under, so there is something to see.
+
+The second of the packet's questions ("must a drowned truck always be recoverable?") he hasn't answered. As built: in
+Free play RESET always works; in Real there is the winch (the east shore is wooded for it), the strap from the other
+SUV, and the tow home.
+
+### The Track, driven (T9.lap: its middle line followed at a steady speed, lifting for the bends)
+
+| | Rock & Mud, locked, holding 36 mph | Stock SUV, 4 HI, holding 30 mph |
+|---|---|---|
+| One lap (2,880 m) | 181.7 s | 220.0 s |
+| Most it leaned | 23 degrees | 22 degrees |
+| In the air | 0.55 to 1.0 s off every table-top, kicker and the step; up to 0.85 s in a row of whoops | 0.2 to 0.5 s off the table-tops and kickers; up to 1.0 s in one row of whoops |
+| Furthest off the middle at a feature | 1.1 m | 1.5 m |
+
+Neither went over. (An earlier try at 49 mph in the Rock & Mud: over in a bend 1,546 m round. It is a track for 30 to 40 mph in these.)
+
+The first try had the whoops a dirt bike's size (50 to 60 cm high, 6 to 8 m apart): at 36 mph the Rock & Mud went end
+over end in the first row, and the stock SUV was thrown about at 25. They are now a SUV's: 30 to 42 cm high, 9 to
+15 m apart.
+
+### What had to grow with the map
+
+- **The soil's store** (`src/ml-soil.js` MLS): 38,400 x 38,400 cells of 8 cm (it was 19,200 each way), still made only
+  where a tyre touches. The whole-world layer every 2.56 m is 1,200 x 1,200 (it was 600 x 600): four times the cells.
+- **Filling that layer** is still done while the title is up, and it is four times the work. It is now made in bands
+  of 48 rows from both ends at once (`mlPrepStep`, `mlPrepWorkers`): up to three background workers (each with the
+  world's generator, as the land's own worker has) take bands from the top; the page's own thread takes them from the
+  bottom, a few rows at a time. If no worker can be made (or `#noworker` is on the page's address) the page does it
+  all. `tools/test/ml-prep.py` times it and takes a fingerprint of every array in the layer:
+
+  | In the test browser (2 cores, software graphics) | Layer full, from the page's start | |
+  |---|---|---|
+  | Build 18 (a quarter of the cells) | 5.5 s | |
+  | Build 19, one worker (all this machine allows) and the page | 8.6 s (the page as sent: 7.9 s) | 14 bands by the worker, 11 by the page |
+  | Build 19, the page alone (`#noworker`) | 9.1 s | |
+  | Build 19, START pressed the moment the title is up (5 s) | 12.1 s | the first 7 s of the drive without soil |
+
+  The fingerprints are the same all four ways, and the same as the first try's (workers only), so the ground does not
+  depend on who made it. **START before the layer is full:** the SUV stands on the land's own ground (the same shape,
+  no soil yet), a line says LAYING OUT THE GROUND: THE SOIL IS A MOMENT AWAY, and the soil comes in when it is done
+  (the laptop's "still being built by the graphics driver" line waits for the layer, so the two are not said at once).
+  On a phone with eight cores three workers should make short work of it; that is not measured.
+- **The water** was a square for every 2.56 m cell with water in it, all drawn every frame. The River and the Lake
+  would have been about 60,000 more triangles in every frame. It is now one strip for each run of cells along a row:
+  3,654 triangles for all the water in the world (Build 18 drew 11,708 for a quarter of the ground).
+- **The big map** has four times the ground, and all of it at once is too small for its names on a phone. It opens as
+  it always did, a mile across with every name, on the ground round where you are; **WHOLE MAP**, one new button
+  beside it, shows all two miles with the eleven main places' names; CLOSE UP goes back.
+
+![The big map as it opens at the Trailhead, and WHOLE MAP](docs/shots/mud-lab-19-map.jpg)
+
+### Two things the Lake showed up
+
+**Wide water mirrored itself.** The first pictures of the Lake had a dull sandy band with a line through it lying
+across the water from about 20 to 140 m out. It read as a sandbar. It was the engine's screen reflections: looking low
+across level water, a row of pixels spans metres of it, and the first steps of each reflection's ray "hit" the water
+beside where they started, so the water there showed last frame's water in place of the sky. The Pond on the first map
+has had the same band, smaller (Build 18 draws it so). One line in the reflections' shader (`src/build.py`, MUD LAB 19; not the
+ground's shader): a hit on level ground or water at the mirror's own height is no hit, and the pixel takes the sky and
+the far shore from the reflections' own picture, as water nearer the eye always did. **This changes how the first
+map's waters look from a distance** (the Pond, Big Creek, the puddles: sky in them where the band was).
+
+![The Pond on the first map and the Lake: Build 18's reflections, and this build's](docs/shots/mud-lab-19-mirror.jpg)
+
+**"TAP GAS TO START" over a drowned engine.** The engine's own blinking line said so while `mlDeep` held the engine
+off. It now reads ENGINE DROWNED: PULL IT OUT until the intake is clear.
+
+![The Rock & Mud all the way under the Lake, 17 m off the west beach](docs/shots/mud-lab-19-drowned.jpg)
+
+### The sky-yank, kept (`tools/test/ml-yank.py`)
+
+It is this: `mlrSeat` (GET IN the other SUV) takes the winch's line off but not the pull test's. So with the line
+still on the post, the line is on the SUV you get into, far too short, and it is thrown at the post. A note at that
+line in `src/ml-recover.js` now says it is his and stays, with his words; and `tools/test/ml-yank.py BUILD` hooks the
+Rock & Mud to the post, stands the stock SUV 60 m away, gets in it and fails if it doesn't fly. This build: the SUV you get into reaches 268 mph, is thrown 67 m and is off the ground for 5.2 s.
+
+### Checked
+
+| | |
+|---|---|
+| Same seven drives, Build 18 against 19 | 7 of 7 the same. That was run on an earlier page of this build (md5 6e9ec33a..., before the layer was filled from both ends and before the two things the Lake showed up); that page against the one sent: 7 of 7 the same, no page errors |
+| The fords, the Lake and the laps | driven on that earlier page too. The ground's layer has the same fingerprint on both (`tools/test/ml-prep.py`), and the sky-yank was run on both: the same numbers |
+| The old map's ground, every 4 m | the same at 138,386 of 147,456 points; the 9,070 that differ are all in the removed bank's zone or at the two road starts (120 of them inside the old map proper, the road starts) |
+| landSoil (not touched) | 487,142 characters on the phone's tier, 500,740 on High, 16 samplers: Build 18's. No errors or warnings |
+| Triangles at a phone's size | the start 212,468 (Build 18: 226,548); the new places 122,000 to 239,000; the Track's first table-top looking back at the Trailhead with the plane and the other SUV in view: 269,184, the top of what the start has always been with them near |
+| Triangles on High (a laptop window) | the start 373,808 (Build 18: 381,862); the Lake 241,142 |
+| THINGS TO DO: THE TRACK, THE RIVER, THE LAKE; the Track's name on the map | each sets the SUV down upright and dry at its place with its line of words; THE TRACK starts the clock (2,880 m) |
+| The map's MENU (TUNE, CLEAR ALL RUTS, KEYS) with the map's new button beside it | MENU and its nine rows there with WHOLE MAP beside the map, the three tunes picked by real clicks and kept: as Build 18. The tool's CLEAR ALL RUTS and reload steps did not finish inside its 25 minutes in the test browser (they never have: the tool's fault, noted in Build 18's notes); the row is as it was in 17; the KEYS page was not re-run (nothing of it was touched) |
+| The Film camera, the card's line, the fly-past (Build 18's check) | 16 cameras, Film the 16th, the card's line, the fly-past 1.018 / 0.983: as Build 18, no errors |
+| Page errors | none in any run |
+
+![The Mud Hole and the Bog, Build 18 above and Build 19 below](docs/shots/mud-lab-19-old-places.jpg)
+
+### Not done, and limits
+
+- **Nothing here has been run on his phone or laptop.** How long the layer takes to fill on the phone, with three
+  workers, is not known; nor whether the phone minds the bigger store (by my count about 35 MB more than Build 18's:
+  the layer's arrays, its two pictures on the graphics card, and the list of soil squares).
+- The River's water is flat and still: no current. The right place to cross is a matter of depth and bed only.
+- The fords were driven straight across at a steady 9 mph only. A run at it, tyres aired down, a slanted line, the
+  winch to the far bank's trees: not tried.
+- The Lake's rule covers the engine and the cab filling. Nothing floats away.
+- The Track has no start gate, no posts and no lap counter on the screen beyond the timed run's clock.
+- A SUV all the way under the Lake can't be seen: the water is muddy from bank to bank. Air breaking the surface and
+  the rings round it show where it lies; the small map shows it too.
+- The reflections' change was looked at on the Lake, the Pond, the ford and the Mud Hole on the phone's tier, and on
+  the Lake once on High (`docs/shots/mud-lab-19-lake-laptop.jpg`: no band), all in software graphics.
+- Not re-run on this build: the Heron's HUD check, the hard-turn check and the graphics card's step-down check
+  (`ml-hud.py`, `ml-turn.py`, `ml-gpu.py`): nothing they look at was touched.
+- The helicopter camera knows ground, not water or trees.
+- Ragged rut edges and berms as real shape, and mud on the body and tyres: still parked.
+
+![The Shallows and the Lake](docs/shots/mud-lab-19-water.jpg)
+
+![The Track: a banked hairpin, and the big table-top](docs/shots/mud-lab-19-track.jpg)
+
+## Mud Lab 18 (Nov 13 2026): the packet: the Film camera, rollovers, the Heron's HUD, the graphics card
+
+His words (Nov 13, 06:03): "there are camera angles in the most recent Salt and Sand that I want to use. And I'm
+actually going to bring you a packet of those from that conversation." And with the packet (09:32): "this is next".
+
+The packet (`mud-lab-packet-2026-11-13.zip`; on the branch `packet-2026-11-13-handoff` and in the Project as
+`claude/mud-lab-packet-notes.md` and `claude/mud-lab-map-brief.md`) is from the session that was combining Ground
+Truth, Mud Lab and Salt & Sand. Four pieces, each a patch of exact text swaps made against Mud Lab 15's page. All 23
+swaps fit Build 17's page as they were written. They are now part of the build (`src/build.py`, its last section), not
+patches run afterwards. A page made by running the packet's four patches on Build 17 and the page `src/build.py`
+makes were held against each other line by line: they differ in the changes listed under each piece below, in a few
+comments, in "the car" reading "the truck" in one line of the Settings text, and in a `typeof` test the build doesn't
+need.
+
+Builds 15, 16 and 17 are as they were.
+
+### 1. The Film camera (`src/ml-film.js`, Salt & Sand's)
+
+A 16th camera, second on the list after Chase (CAM on the phone, C on a keyboard). It watches what the SUV is doing
+and cuts between the engine's cameras and two of its own, the way a car film would:
+
+- **stopped** (a second and a half): a slow walk round the SUV at about waist height (PARK ORBIT, its own);
+- **pulling away hard:** the wheel cam, a camera standing just ahead, the tracking car;
+- **sliding:** shots that keep the whole SUV in the picture (the helicopter, the orbiting drone, the low drone);
+- **under way:** the HELICOPTER (its own: a long lens 55 to 90 m off to one side and 9 to 25 m up, coming slowly round
+  from the front quarter to the rear), the low drone, the following drone, the chase camera, the wheel cam, a long
+  lens standing far ahead, the tracking car;
+- **over 58 mph:** the same with fly-pasts and the drone looking back from in front;
+- **in the air:** the jump cam, as on every camera.
+
+Each shot has a shortest and a longest time; the same shot never comes twice running.
+
+**Changed for Mud Lab** (each marked MUD LAB in the file):
+
+- Salt & Sand told its dunes from its highway and flats by asking "north of the highway?". Mud Lab has neither, and
+  that line would have split this map in two along an arbitrary line. Here all the ground is rough ground: the dunes'
+  shots under 58 mph, the fast ones above.
+- The wheel cam joins the rough ground's shots (it was only in "pulling away" and "fast"): the wheels in the mud are
+  what this game is about. A pick of mine: say if it should go.
+- **In the Heron the Film camera is the Heron's own chase camera.** A film crew's shots (the wheel cam, a camera
+  standing by the road) are for a truck. Picture below: the same view from behind the plane on both.
+
+The softer **fly-past sound** came with it (Settings, Dev: "Softer fly-past sound", on unless switched off). Read from
+the page: passing a camera standing 20 m away at 67 mph, the engine's note rises 1.8% coming and drops 1.7% going; it
+was 9.6% and 8.0%. The sound engine's own listener bends the pitch on top of that, as it always did.
+
+### 2. Rollovers that roll like a truck (Ground Truth build 26's fix, re-pointed for the soil)
+
+The fault he found in Ground Truth on 8 Nov ("flips really hard really fast") is in the engine's wheels, which Mud Lab
+shares: a truck rolled onto its side still had its wheels "touching", and the springs and the tyres' side grip pushed
+along the axles, which point straight up by then, and threw it back into the air spinning. Now a wheel lets go when
+the truck's up and the land's are more than about 70 degrees apart, and carries less from about 52.
+
+Ground Truth's fix as written read the soil's own 8 cm slope, so the wall of a rut counted as a truck on its side (the
+packet's count: 215 wheels let go in 9,120 touches on an upright truck in the pond). The packet's Mud Lab version
+reads the land under the ruts instead (`mlBroadUp` in `src/ml-soil.js`). That version is the one in this build.
+
+A hard turn at 56 mph on the dry field (`tools/test/ml-turn.py`, from the packet; run here on Builds 17 and 18):
+
+| Rock & Mud | Build 17 | Build 18 |
+|---|---|---|
+| Steering 0.3 | over at 4.58 s; **4.6 full turns**, fastest 849 degrees a second, 1.28 m into the air, ends on its roof | over at 4.58 s; 2.3 turns, 483 degrees a second, 0.71 m, ends on its side |
+| Steering 0.6 | over at 4.65 s; **6.3 full turns**, 1,006 degrees a second, 1.54 m, not at rest 6 s later | over at 4.65 s; 2.3 turns, 461 degrees a second, 0.68 m, ends on its side |
+| Full steering | stays on its wheels | the same, to the digit |
+| Stock SUV, 0.3 and full steering (27 mph: all it reaches in the test's 3 s) | stays on its wheels | the same, to the digit |
+
+These are the packet's own numbers for Mud Lab 15 and its patched page, to the digit.
+
+Whether a Rock & Mud should go over at all from 0.3 of steering at 56 mph on dry loam is a question about the truck
+and the soil, not about this fix: his call.
+
+### 3. The Heron's HUD (Ground Truth's two swaps)
+
+Flying, the HUD still showed the truck's TC / ABS / ESC lamps and a gear number in the rev dial. A plane has neither:
+both are gone while you are in the Heron. Picture below (a phone's size; drawn at a laptop's size too, the same).
+
+### 4. The graphics card (`src/ml-gpu.js`, from the combined trial)
+
+- **On a laptop** the title's bottom left corner names the graphics card the page is running on; on a built-in Intel
+  card it says how to give Edge the other one.
+- **A level above Low that can't hold about three frames a second** for several seconds goes back to Low by itself
+  and says why; the next title says what happened. Not on a phone.
+- When Windows resets the card under the page, the line no longer says "the phone" on a laptop.
+- **Changed for Mud Lab:** on a phone the title stays as it was (one chip, nothing to choose) unless the chip was
+  reset last time. His rule: nothing new on the phone's screen unless it is needed.
+
+- **Changed for Mud Lab:** the step down does not count while the soil's shader is still being built, nor for five
+  seconds after it takes over. On Windows that build is the browser's slowest job, at the start of every new build,
+  and a card busy with it is not a card that can't keep up. This guard was not seen at work: there is no slow Windows
+  shader build in the test browser.
+
+**The step down seen working, for the first time** (`tools/test/ml-gpu.py`: the page told it is not a test browser, on
+High, where the test browser's software graphics draw a frame every several seconds): after 75 s of driving the page
+said "This graphics card can't keep up on HIGH. Going back to the Low graphics level…", started again on Low, and the
+title read "Last time this card couldn't keep up on HIGH, so the game went back to Low." That is software graphics,
+not a real card that is struggling.
+
+If his laptop ever goes back to Low by itself with that line when the game was running well, that is this piece
+getting it wrong: say so and it comes out or gets a longer fuse.
+
+### Checked
+
+| | |
+|---|---|
+| Same seven drives, Build 17 against 18 | 6 of 7 the same to the last digit. The seventh is the dry field, the drive in which the Rock & Mud goes over (at 4.58 s of its 6.5 s): it ends at 34.37 mph, 21 cm from where Build 17's ended at 34.02 mph. That drive is meant to change: what a rolled truck does is what was fixed. The four soft-ground drives, the stock SUV's two and the Heron's take-off are the same. From here on two builds that both have the fix should show 7 of 7 again |
+| The hard turn (above) | the packet's numbers, to the digit |
+| landSoil (nothing in the shaders was touched) | 487,142 on the phone's tier, 500,740 on High: Build 17's to the character; 16 samplers |
+| The Film camera's shots in the Bog, the Mud Hole and at the pond (`tools/test/ml-views.py`, views `film-*`) | each held and drawn: pictures below; 145,000 to 241,000 triangles (his range) |
+| The packet's own check (`tools/test/ml-packet.py`) | 16 cameras, Film the 16th and second in the cycle; the card's line on a laptop-size title, none on a phone-size one; Film picked on a drive at 51 mph; no page errors or warnings |
+| The page as sent against the page those runs were made on (one change between them: the step down's guard in `src/ml-gpu.js`) | 7 of 7 the same to the last digit (the dry field with its rollover too: two builds that both have the fix agree) |
+| Rebuilt from source in a scratch copy | the same file (md5 d0063c43...) |
+| Page errors | none in any run |
+
+### Not done, and limits
+
+- **Nothing here has been run on his phone or laptop.** Nobody has watched the Film camera's cuts while driving: the
+  pictures are single shots held still. How the Helicopter does among the trees is for his eye (it climbs over ground
+  that is in the way; it does not know about trees).
+- The park orbit walks 35 cm over the ground at its lowest. At the pond's edge the picture below is over the water;
+  in the deepest water it could be under it. Not tested.
+- The fly-past sound was measured, never heard.
+- The step down to Low was seen here only with software graphics (above). The card-reset line has only been read.
+- Rollovers on side slopes (the Hill Climb) were not tested.
+- The HUD's dials drawn only when their numbers change (the packet's one efficiency idea nobody has built): not done.
+
+### The map brief (`MAP-BRIEF.md` in the packet): two questions for him before any of it
+
+1. "Four times bigger": four times the area (3,072 m a side) or four times each way (6,144 m a side)? The second
+   brings back the ground-detail seam Build 8 fixed and takes about 16 times as long to fill at the title.
+2. The deep pond: must a drowned truck always be recoverable with the winch or the strap, or may it be a place nothing
+   comes back from?
+
+![The Film camera's shots, each held for its picture: its own Helicopter and Park orbit, and the wheel cam as it uses it](docs/shots/mud-lab-18-film.jpg)
+![Park orbit at the pond, and the low drone in the Bog](docs/shots/mud-lab-18-film-2.jpg)
+![The Heron's HUD: Build 17 above (TC ABS ESC, a gear number in the dial), Build 18 below](docs/shots/mud-lab-18-hud.jpg)
+![The title at a laptop's size, the graphics card named bottom left (the test browser's software card)](docs/shots/mud-lab-18-title.jpg)
+![That corner: as it opens, and after the step down to Low](docs/shots/mud-lab-18-card.jpg)
+![In the Heron: the chase camera above, the Film camera below](docs/shots/mud-lab-18-fly.jpg)
+
+## Mud Lab 17 (Nov 13 2026): the water put right, tunes, CLEAR ALL RUTS
+
+His words on Build 16: "the leaving churn water doesn't work because all the water is muddy anyways and what it looks
+like is I'm leaving tire treads on the surface of the water more than churned ... there should be ripples coming off
+the tires but also a bow wake. And I think leaving the muddy turned water effect is bad ... So let's remove that".
+And for this round: "can we have like tuned presets for the performance part of the vehicle for both the stock and the
+rock and mud SUV in the drop-down menu ... that's on the map and then also can we add a clear all ruts button so that
+things like making new ruts can be done in free play and also ruts impede your ability to do consecutive hill climbs
+and then bogs as well."
+
+The packet from the session that was combining the games came while this build was being checked ("this is next").
+**Nothing from it is in this build:** it is Mud Lab 18.
+
+Builds 15 and 16 are as they were.
+
+### The water (`src/ml-look.glsl`, `src/ml-soil.js`)
+
+- **Out:** the darker, lumpy water over a bed the tyres had churned (Build 15) and its settling (Build 16). On water
+  that is muddy from bank to bank it read as tyre treads lying on the surface. Water is one surface again.
+- **Kept:** the rings off the tyres (Build 16).
+- **New: a bow wave** for the SUV you are in. A band of waves trails back from each corner of its leading end (the
+  tail's corners in reverse) at 23 degrees, its crests lying across the band, widening and fading along its length.
+  It starts at about 1 mph through the water and is full by 8 mph and 20 cm of water; the bands are 3 m long at a
+  crawl and up to 14 m at speed; it eases in and out over about a third of a second. Like the rings it is shading on
+  the level water. A roll of water ahead of the bumper was tried, could not be seen in any picture, and was left out.
+
+### Tunes: MENU > TUNE (`src/ml-suv.js`, `src/ml-menu.js`)
+
+Each tune is a handful of the engine's own garage parts laid over the SUV as it came, built by the engine's garage
+the way the bigger tyres are: the power, the weight, the gears and the sound are the engine's own. Tyres, suspension,
+diffs and the body are not touched. The first of each list is the SUV as it has always been (the same build, to the
+last digit). The list shows what each comes to; the one the SUV has is lit. Kept for each SUV over a reload. Pick one
+stopped (rolling: "STOP FIRST"); in Real only on dry ground and not bogged, as the tyre size.
+
+His SUV gets more power in three steps. The Rock & Mud comes with 2,175 hp, so its two tunes are for control: an
+automatic, shorter gears and a crawl box (4 to 1 in low instead of 2.64).
+
+| Stock SUV, 4 HI | Power | 0 to 30 mph | 0 to 60 mph | Speed after 8 s | Hill Climb, floored |
+|---|---|---|---|---|---|
+| FACTORY (as it came): 4.6 V8, 3.73 gears | 294 hp, 300 lb-ft | 2.5 s | 7.8 s | 61 mph | 49 ft |
+| BOLT-ONS: cold air, cat-back exhaust, street tune | 335 hp, 334 lb-ft | 2.2 s | 6.45 s | 66 mph | 52 ft |
+| SUPERCHARGED: a blower on the 4.6, 4.10 gears | 474 hp, 477 lb-ft | 1.8 s | 5.45 s | 79 mph | 52 ft |
+| 6.2 V8 SWAP: headers, street cam, 4.10 gears | 565 hp, 547 lb-ft | 1.75 s | 4.4 s | 87 mph | 43 ft |
+
+| Rock & Mud, locked | Power | 0 to 30 mph | 0 to 60 mph | Speed after 8 s | Hill Climb, floored |
+|---|---|---|---|---|---|
+| AS BUILT (as it came): blown 10.4 big-block, race four-speed, 4.10 gears, low 2.64 | 2,175 hp, 1,931 lb-ft | 1.6 s | 3.0 s | 143 mph | 74 ft |
+| TRAIL V8: 6.2 V8, automatic, 4.88 gears, crawl box (low 4) | 554 hp, 536 lb-ft | 1.65 s | 4.65 s | 81 mph | 80 ft |
+| FACTORY 4.6: the stock SUV's engine, automatic, 5.38 gears, crawl box | 294 hp, 300 lb-ft | 3.05 s | not in 8 s | 58 mph | 53 ft |
+
+On the Heron's strip from a standstill, and the Hill Climb with the throttle floored from the bottom (`tools/test/ml-drive.js`
+T9.accel, T9.tune; the test browser steps the physics, so these are the game's own numbers). Floored, more power is
+not more hill: the 6.2 swap spins its tyres and stops lower than the factory engine.
+
+Bests on the Hill Climb, the Bog and the trails are kept for each SUV, not for each tune.
+
+### CLEAR ALL RUTS (`src/ml-menu.js`)
+
+- A row on the MENU (phone and laptop), and the Backspace key: every rut, berm and track gone, the ground as it was
+  made.
+- **Found while testing it:** the Backspace key's raking, there since the first build, left a SUV that was sunk in
+  a rut inside the new ground. Measured before the fix: the Rock & Mud with a tyre 61 cm down was thrown 173 cm up at 4.71 m/s, was in the air for 2.63 s and did not land upright; the stock SUV, 35 cm down, rose 35 cm at 2.19 m/s.
+- **Now** a SUV whose tyres were more than 8 cm down is set on the new ground where it stands, as RESET does, and the
+  other SUV is stood on it too. Measured after: the Rock & Mud (a tyre 61 cm down) comes up 28 cm at 0.02 m/s, never off its wheels, upright; the stock SUV (35 cm down) 31 cm at 0.00 m/s, upright. Standing in the Bog it then settles about 18 cm into the soft ground again, as it does anywhere there.
+- In Real, not while you are bogged ("BOGGED: THE RUTS STAY. THE STRAP, THE WINCH OR A TOW HOME").
+
+### The shader's size (his limit: landSoil no bigger)
+
+| landSoil, as the browser hands it to the graphics driver | Build 14 | Build 15 | Build 16 | Build 17 |
+|---|---|---|---|---|
+| The phone's tier | 500,259 | 488,426 | 487,488 | 487,142 |
+| The laptop's tier (High) | 516,565 | 502,024 | 501,085 | 500,740 |
+| Texture samplers | 16 | 16 | 16 | 16 |
+
+The bow wave costs about what the churned water did. The last few hundred characters came from the roll ahead of the
+bumper (above) and from the soil's fine mottling, now one layer of noise instead of two.
+The plain ground a laptop shows while landSoil builds (`land`) and the reflections' ground (`landProbe`) are 10
+characters bigger each (the names of the bow wave's two numbers): phone 380,927 and 390,007.
+
+**Checked:**
+
+| | |
+|---|---|
+| Same seven drives, Build 16 against 17 (both SUVs as they came) | 7 of 7 the same to the last digit, no page errors |
+| MENU > TUNE and CLEAR ALL RUTS, a laptop-size window, real clicks (`tools/test/ml-tune.py`) | The list opens from the MENU; each pick changed the power, the gears and the low range to the table's, left the SUV where it stood (within 10 cm), closed the map, said its line ("THE ROCK & MUD, TRAIL V8: 554 HP") and was written to the browser's storage; the MENU's row then read TUNE: TRAIL V8; a pick while rolling was refused ("STOP FIRST: YOU ARE STILL ROLLING") and changed nothing. CLEAR ALL RUTS through the list's own row handler (stepped physics, `mlmPick('rake')`): deepest rut 2.7 cm, 37.6 m2 churned, 28.2 m2 pressed before; 0, 0 and 0 after; the map closed; "ALL RUTS CLEARED: THE GROUND IS AS IT WAS MADE". The test's own real click on that row did not get through in the test browser (it draws a frame every ten seconds and the list is filled in from the frame; the tool now waits for it) |
+| A tune over a reload | TRAIL V8 picked on the Rock & Mud, the page loaded again: TRAIL V8, 554 hp, 4.88 gears, six speeds, low 4; the stock SUV still FACTORY |
+| Triangles | nothing added |
+| Page errors | none |
+
+**Not done, and limits:**
+
+- Not run on his phone or laptop. Edge's shader compiler was not timed (landSoil is smaller by the count above).
+- The bow wave is for the SUV you are in only (not the other SUV, not the Heron). Its bands are straight even while
+  you turn. No white water.
+- The tunes' names and what goes in each are a first pick: say which to change.
+- Ragged rut edges and berms as real shape: not this round. The packet: Mud Lab 18.
+
+![The bow wave as the chase camera shows it: Build 16 above, 17 below, the same run into the Mud Hole](docs/shots/mud-lab-17-bow.jpg)
+![The same run from above and behind](docs/shots/mud-lab-17-bow-above.jpg)
+![Stopped in the Mud Hole: Build 16's churned water behind the SUV above, Build 17 below](docs/shots/mud-lab-17-mudhole.jpg)
+![The Bog's ruts, and after CLEAR ALL RUTS](docs/shots/mud-lab-17-clear.jpg)
+![MENU > TUNE on the map, laptop size](docs/shots/mud-lab-17-tune.jpg)
+![The MENU and MENU > TUNE at a phone's size](docs/shots/mud-lab-17-phone.jpg)
+![Build 17, the bow wave at laptop size (High)](docs/shots/mud-lab-17-bow-laptop.jpg)
+
+## Mud Lab 16 (Nov 13 2026): the keys, and water that moves
+
+His words, after playing Build 15 on the laptop: "The G key on the keyboard switches between the different grips of
+the soil, and that's the rear view camera. So if adding a key mapping function and the menu was possible, we should
+do that, as well as ... fixing the G key being two different functions that conflict." And of what could come next
+for the soil's look: "Water that moves and ripples and wakes around the SUV and churn water clearing over a few
+minutes would be amazing. Rugged rut edges and berms as real shapes. Both of those are good". Mud on the body and the
+tyres: "much later". Camera angles from the newest Salt & Sand: he is bringing a packet of them.
+
+This build is the keys and the water. Ragged rut edges as real shape are the next build; the cameras wait for his
+packet. Build 15 is as it was.
+
+### The keys (`src/ml-keys.js`, new)
+
+**What was wrong.** G is the engine's look-behind (held), and Mud Lab had put its switch between game grip and soil
+science on G too: looking behind changed the grip. Every letter on the keyboard was already taken by something.
+
+**What Build 16 does.**
+
+- The grip's switch is on **;** (beside J, K and L: lights, lockers, low range). G is look-behind only.
+- **MENU > KEYS** on the open map (only where there is a keyboard: a phone's MENU has no such row) lists 25 things
+  and the key each is on. Click a row, press the key you want. If that key was another row's, the other row gives it
+  up and takes the key this one had, and the list says so. Esc leaves the row as it was. 1 to 9 stay part gas.
+  RESET ALL KEYS puts everything back.
+- The choice is kept in the browser (`mudlab:keys`) and is there after a reload.
+- Text on the screen that names a key follows the table: the map's own "M TO CLOSE" and "GRIP: GAME (;)", "U: HOOK
+  UP", "ENTER: INTO THE HERON", and the legend in the pause menu.
+- Underneath: the engine keeps its keys in one table (`KEYS`); Mud Lab's four (grip, hook up, get in, rake) were
+  written straight into its own listeners and are now in the same table.
+
+**Checked** (`tools/test/ml-keys.py`: a laptop-size window, the game's own loop running, real key presses and mouse
+clicks):
+
+| What was done | What happened |
+|---|---|
+| G held, then let go | the camera looked behind and came back; the grip stayed on game grip |
+| ; pressed twice | soil science, then game grip again |
+| MENU > KEYS, GRIP's row clicked, G pressed | GRIP is G and LOOK BEHIND took ; (the list said so); the press itself did not switch the grip |
+| HOOK UP's row clicked, M pressed (the map's own key) | HOOK UP is M, MAP is U; the map stayed open |
+| HOOK UP's row clicked, Esc | left as it was; the game did not pause |
+| HOOK UP's row clicked, 5 | refused: "1 TO 9 ARE PART GAS" |
+| The page loaded again | the changed keys were still there; G switched the grip; the pause menu's legend listed the changed keys |
+| The map opened with U, RESET ALL KEYS | every key as it came; nothing left in the browser's store |
+| A phone-size touch screen, MENU | six rows, no KEYS |
+| Page errors | none |
+
+### The water (`src/ml-soil.js`, `src/ml-look.glsl`)
+
+- **Rings.** A tyre in standing water sends out a ring for every 70 cm it moves (a tyre spinning on the spot
+  counts), no more than nine a second between all the tyres; the last sixteen are drawn. Each widens at 1.1 m a
+  second and fades in 2.6 s. Under way they trail off behind as a wake; stuck and spinning, they spread from the
+  tyres. They are shading on the level water (the sky and the sun bend in them); the water's surface doesn't rise.
+- **Settling.** The churned look Build 15 gave the water (dark, dull, lumpy over a bed the tyres have turned) now
+  clears: whole for half a minute after the last tyre through it, gone in three minutes, by the same clock that
+  dries a wet track. What stays is water a little darker over the churned bed, smooth, with the sky in it again.
+- Nothing of the physics reads the rings and no dice are rolled for them.
+
+### The shader's size (his limit: landSoil no bigger)
+
+The rings are a sixteen-step loop in the water's part of the shader. Paid for by taking out eight of the cars' own
+materials that no mesh in Mud Lab is made with, on either tier (`tools/test/ml-mats.py`: the LED bar, carbon,
+louvres, halo lamps, City Limits' light strip and underglow, two of the Studio 2 car's surfaces), and by leaving
+out a pale wash round the tyres that could not be seen in the pictures.
+
+| As the browser hands it to the graphics driver | Build 14 | Build 15 | Build 16 |
+|---|---|---|---|
+| landSoil, the phone's tier | 500,259 | 488,426 | 487,488 |
+| landSoil, the laptop's tier (High) | 516,565 | 502,024 | 501,085 |
+| land (the plain ground while landSoil builds), the laptop's tier | 395,630 | 395,630 | 388,442 |
+| Texture samplers | 16 | 16 | 16 |
+
+**Checked:**
+
+| | |
+|---|---|
+| Same seven drives, Build 15 against 16 | 7 of 7 the same, to the last digit (`tools/test/ml-same.py`) |
+| Triangles | nothing added: the same count in four of the five views (174,322; 169,426; 175,772; 201,310) |
+| One frame in the test browser, the same phone-size views in both builds | +2, +6, -2, +5, -2 % (Mud Hole chase, Mud Hole from above, Mud Hole stopped, the same 200 s on, the Bog): no more than the same view of one build differs from run to run |
+| Page errors | none |
+
+**Not done, and limits:**
+
+- Not run on his phone or laptop. Edge's shader compiler was not timed (landSoil is smaller by the count above).
+- The rings come from the tyres only: not from the body's bow, a thrown clod, or the Heron. They don't bounce off
+  the bank.
+- The settling is by the clock alone; nothing flows.
+- The KEYS list is for the keyboard. A game controller's buttons are as the engine has them.
+- Ragged rut edges and berms as real shape: next. His Salt & Sand camera angles: when the packet comes.
+
+![MENU > KEYS on the map, laptop size](docs/shots/mud-lab-16-keys.jpg)
+![Spinning in the Mud Hole: Build 15 above, 16 below, the same drive](docs/shots/mud-lab-16-wake.jpg)
+![Build 16: the Mud Hole just driven through, and with the soil's clock wound on 200 seconds](docs/shots/mud-lab-16-settle.jpg)
+![Build 16, spinning in the Mud Hole, laptop size (High)](docs/shots/mud-lab-16-wake-laptop.jpg)
+
+## Mud Lab 15 (Nov 11 2026): the soil's look
+
+His words: he wants to keep working on Mud Lab, and "continue to upgrade the visuals of the soil cuz right now it's
+just like smooth shiny surface that erodes and changes". Build 14 is as it was; nothing in how the soil behaves is
+changed (the same seven drives end the same, below): this build is the picture.
+
+### What was found (Build 14, from low behind the SUV along its own tracks, at the phone's and the laptop's size)
+
+1. **Turned soil was lit as smooth mounds.** The only slopes the picture had were the soil's own heights every 8 cm;
+   a churned rut, a berm and a rut's wall came out as rounded putty. Wet, the whole mound had one even sheen.
+2. **Water lying in ruts and holes was one flat sheet** whatever had driven through it: a rut full of water was a
+   smooth brown bar, the Mud Hole a mirror from bank to bank with no sign of where the SUV had been.
+3. **Thrown clods were pale boulders**: the colour of dry clay whatever the ground, up to 20 cm across.
+4. **Braking lit the mud red.** The engine's brake lamps light the ground behind at the same strength by day as
+   after dark, and every wet edge caught a red glint: ruts that looked like cracks in lava.
+5. Turned-up clay kept the crack pattern of its dry crust.
+
+### What Build 15 does
+
+- **Lumps.** Bare soil has relief of its own now, in three sizes (clods about 35 cm, 14 cm and 5 cm across), each
+  shown only while a pixel is small enough to show it: slight on untouched ground, about ten times stronger where
+  the soil has been turned or squeezed up into a berm. Hollows are darker; on dry soil the crests are paler crumbs.
+  None in sand (its ripples are its picture's own). It is shading, worked out in the ground's shader on the phone and
+  the laptop alike (`src/ml-look.glsl`, "the relief"); no triangles are added and the soil's shape is as it was.
+- **Wet mud glints.** Wet, every lump shines and the lumps break the shine up into glints on the sides that face the
+  light. Too far off to see the lumps, wet turned soil has a dull sheen (it was a glossy one).
+- **Churned water is a slop.** Over a bed the tyres have churned, the water is darker, dull and lumpy, and the sky
+  doesn't show in it: a rut full of water reads as a rut of mud, and the SUV leaves two muddy wakes across the Mud
+  Hole that stay.
+- **Clods** are as dark as the wet ground they came out of, and drawn at two thirds the size (what they carry and
+  where they land is unchanged).
+- **Brake lamps**: their light on the ground is a sixteenth of the engine's by day and a quarter after dark (one swap
+  in `src/build.py`). The lamps themselves glow as before.
+- Turned clay: dark and wet as before where it is wet; where it is dry, the pale powder of a broken crust, without
+  the crust's cracks.
+
+### The shader's size (his limit: landSoil no bigger)
+
+The relief is three look-ups of the engine's noise and a dozen lines; the slop one more. Paid for twice over:
+
+- the soil no longer calls the engine's own dirt detail (a laptop-only bump with a nine-step search for pebbles in
+  it), which the relief replaces;
+- landSoil no longer carries the engine's own sand and mud painting. In that program the engine paints only what
+  lies outside the world (grass and bare dirt) and the moment before the soil is laid out; the plain ground a laptop
+  shows while landSoil builds keeps both.
+
+| landSoil, as the browser hands it to the graphics driver | Build 14 | Build 15 |
+|---|---|---|
+| The phone's tier | 500,259 | 488,426 |
+| The laptop's tier (High) | 516,565 | 502,024 |
+| Texture samplers | 16 | 16 |
+
+The other two programs of the land (`land`, `landProbe`) are the size they were, on both tiers.
+
+Tried and left out: grooves along a tyre's way (3.6 cm wide: on a phone they can't be seen past 3 m, and they cost
+a tenth of the relief's size again).
+
+**Checked:**
+
+| | |
+|---|---|
+| Same seven drives, Build 14 against 15 | 7 of 7 the same, to the last digit: place, speed, each wheel's spin, rut depth, soil dug, clods (`tools/test/ml-same.py`) |
+| Triangles | nothing added. The same count in five of the six phone views (222,104; 190,020; 213,430; 162,226; 193,456 in both builds); in the Bog's close view 180,856 against 183,160 (72 more clods still in the air when the frame was counted) |
+| One frame in the test browser (software graphics: only good for before against after), the same six phone-size views and three laptop-size views in both builds | phone: +7, +5, +5, -5, -3, -7 % (Bog close, Bog chase, field, Clay Pan, Mud Hole, gentle tracks); laptop: -3, 0, -2 %. No change that this test can see: the same view of the same build differs by as much from one run to the next |
+| Page errors, both tiers | none |
+
+**Not done, and limits:**
+
+- Not run on his phone or laptop: the pictures are from the test browser at the phone's and the laptop's picture
+  size. Edge's shader compiler was not timed (landSoil is smaller, by the count above).
+- The lumps are shading. A rut's outline against the sky and its edge at the water are as smooth as before.
+- After dark, braking on wet mud still shows red glints on the lumps (dimmer; no longer by day).
+- Still water that nothing has driven through is as it was. Churned water stays churned for good (the churn is the
+  soil's own record; nothing settles it).
+- A clod close to the camera is still a faceted lump (the engine's 32-triangle blob), only darker and smaller.
+- The night pair of pictures was not the same scene in both builds, so night was judged by eye.
+
+Each pair is the same drive in both builds (the views in `tools/test/ml-views.py` are repeatable now: a view's raking,
+dice, setting down and drive are one step of the page's script, so the same list of views in the same order gives the
+same pictures every run).
+
+![The Bog's ruts, phone size](docs/shots/mud-lab-15-bog.jpg)
+![The Mud Hole, phone size](docs/shots/mud-lab-15-mudhole.jpg)
+![Wheelspin in the field, phone size](docs/shots/mud-lab-15-field.jpg)
+![The Bog's ruts, laptop size](docs/shots/mud-lab-15-bog-laptop.jpg)
 
 ## Mud Lab 14 (Nov 11 2026): rocking out, Soil science regraded, the Hill Climb
 

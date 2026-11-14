@@ -26,7 +26,7 @@ function mlTitle(){
   const h=document.querySelector('#menu .mhead h1');if(h)h.innerHTML='Mud Lab <small class="tagw">'+ML_BUILD+'</small>';
   document.title='Mud Lab';
   const d=document.createElement('div');d.id='mlTitle';
-  d.innerHTML='<div class="mlT"><small>Two SUVs and a bush plane</small><h1>Mud Lab</h1><p>Five thousand feet of soil, wet and dry. Three mud trails: easy, medium, hard. A winch, a strap, and the Heron on its strip.</p>'+
+  d.innerHTML='<div class="mlT"><small>Two SUVs and a bush plane</small><h1>Mud Lab</h1><p>Ten thousand feet of soil, wet and dry. Three mud trails, a river to ford, a lake, a dirt track. A winch, a strap, and the Heron on its strip.</p>'+
     '<div id="mlBtns"><button id="mlGo" type="button">Start</button><button id="mlOut" type="button">Bay</button></div></div><i>'+ML_BUILD+'</i>';
   /* (the game holds behind the title: nothing drawn under it (Mud Lab 6), so the soil's preparation gets the time) */
   document.body.appendChild(d);mlSuvTitle(d);mlrTitle(d);GAME.hold=true;
