@@ -84,15 +84,15 @@ vec3 mlWoods(vec2 wp,float moist){
         if(tot>1.){wc/=tot;ws/=tot;wq/=tot;wsd/=tot;tot=1.;}float wlm=1.-tot,wg=max(s0.a,0.),wwd=max(-s0.a,0.);
         vec4 w0=vec4(0.,0.,0.,-9999.),w1=vec4(s0.r,0.,0.,0.);if(mlWin){w0=textureLod(uMLt,mlW,0.);w1=textureLod(uMLd,mlW,0.);}
         float wtab=s0.g-(w1.r+w0.r),moist=max(s0.b,smoothstep(-.3,-.02,wtab));
-        float n1=vn(wp*.35),n2=vn(wp*17.)*.55+vn(wp*41.)*.45;mlTf=smoothstep(uMLf.z,uMLf.w,gFP);
+        float n1=vn(wp*.35),n2=vn(wp*17.);mlTf=smoothstep(uMLf.z,uMLf.w,gFP);
         /* the sod and the woods' floor lie in patches, bare soil between them (not a tint over all of it) */
         float cov=min(1.,wg+wwd),pn=.3*n1+.35*vn(wp*1.3+2.)+.35*vn(wp*5.1+4.),cv=smoothstep(pn-.14,pn+.14,cov*1.5-.15);
         /* the soils, each only where there's some of it and it shows: bare, turned up, a berm, a trail */
-        vec3 cL=vec3(0.),cC=vec3(0.),cS=vec3(0.),cP=vec3(0.),cD=vec3(0.),cSo=vec3(0.);
+        vec3 cL=vec3(0.),cC=vec3(0.),cCt=vec3(0.),cS=vec3(0.),cP=vec3(0.),cD=vec3(0.),cSo=vec3(0.);
         if(cv<.996||mlWin&&(w0.g>.003||w0.r>.006||w1.a<-.0005)){
           if(wlm>.004){vec3 dl=mlG2(dirtCol(wp),T_DIRT,T_DIRT2,wp);cL=mix(dl*1.18+vec3(.03,.025,.015),dl*.5,smoothstep(.15,.85,moist));}
           if(wc>.004){float k=smoothstep(.25,.7,moist);vec3 a=vec3(0.),b=vec3(0.);
-            if(k<.998)a=mlGr(mix(vec3(.38,.33,.26),vec3(.45,.39,.3),n1),T_PLAYA,wp,1.);if(k>.002)b=mlGr(vec3(.19,.16,.125),T_MUD,wp,.4);cC=mix(a,b,k);}
+            if(k<.998)a=mlGr(mix(vec3(.38,.33,.26),vec3(.45,.39,.3),n1),T_PLAYA,wp,1.);if(k>.002)b=mlGr(vec3(.19,.16,.125),T_MUD,wp,.4);cC=mix(a,b,k);cCt=mix(vec3(.46,.4,.31),b*mix(.5,.65,n2),k);}
           if(ws>.004){float k=smoothstep(.2,.65,moist);vec3 b=vec3(0.);if(k>.002)b=mlGr(mix(vec3(.11,.095,.072),vec3(.15,.125,.095),n1),T_MUD,wp,.5);cS=mix(vec3(.36,.32,.26)*(.9+.2*n1),b,k);}
           if(wq>.004){float mossy=smoothstep(.35,.62,vn(wp*.6)+.15*(n2-.5));cP=vec3(.05,.037,.026)*(.85+.3*n2);if(mossy>.002)cP=mix(cP,mlG(vec3(.085,.1,.04),T_BOG,wp)*.72,mossy*.8);}
           if(wsd>.004){cD=mlG(vec3(@@SAND@@),T_SAND,wp);cD=mix(cD,cD*.5,smoothstep(.3,.8,moist));}
@@ -107,21 +107,25 @@ vec3 mlWoods(vec2 wp,float moist){
         spec=.03+.22*moist*moist*(wlm*.5+wc+ws)*(1.-.7*cv)+.05*wq;shin=8.+40.*moist*(wc+ws);pud=0.;em=1.-.4*wwd;
         mlSpec=mix(mix(.4,1.,smoothstep(.3,.7,moist)),.2,cv);
 #ifndef LEAN_D
-        /* (the laptop's fine bumps in the dirt and the grass: the engine's own, at half strength as before) */
-        {vec3 dz=vec3(1.);dirtDetail(wp,dz,1.-cv);vec2 g0=gG;gG=vec2(0.);grassDetail(wp,dz);gG=mix(g0,gG,cv*sat(wg*2.))*.5;}
+        /* (the laptop's fine bumps in the grass: the engine's own, at half strength as before) */
+        {vec3 dz=vec3(1.);grassDetail(wp,dz);gG*=cv*sat(wg*2.)*.5;}
 #endif
+        /* (Mud Lab 15) the soil's own relief, worked out below on every tier: rA how lumpy the soil is here (0 to 1:
+           slight on bare ground, many times more where it has been turned or squeezed up), rW how wet (water stands
+           in a wet soil's hollows) */
+        float rA=(.1+.12*moist*moist)*(1.-cv),rW=moist*moist*(1.-cv);
         if(mlWin){float mtx=uMLq.x,mcl=uMLq.y,cd=uMLo.z*1.28;
           /* the fine slopes the meshes don't carry: ruts, berms, the trails' two-track, the edges of the mud holes */
           float f0=textureLod(uMLt,mlW-vec2(mtx,0.),0.).r+textureLod(uMLd,mlW-vec2(mtx,0.),0.).r,f1=textureLod(uMLt,mlW+vec2(mtx,0.),0.).r+textureLod(uMLd,mlW+vec2(mtx,0.),0.).r,
             f2=textureLod(uMLt,mlW-vec2(0.,mtx),0.).r+textureLod(uMLd,mlW-vec2(0.,mtx),0.).r,f3=textureLod(uMLt,mlW+vec2(0.,mtx),0.).r+textureLod(uMLd,mlW+vec2(0.,mtx),0.).r;
           float c0=textureLod(uMLs0,mlUV-vec2(cd,0.),0.).r,c1=textureLod(uMLs0,mlUV+vec2(cd,0.),0.).r,c2=textureLod(uMLs0,mlUV-vec2(0.,cd),0.).r,c3=textureLod(uMLs0,mlUV+vec2(0.,cd),0.).r;
           float maa=1.-smoothstep(mcl*2.,mcl*10.,gFP);gG+=(vec2(f1-f0,f3-f2)/(2.*mcl)-vec2(c1-c0,c3-c2)/2.56)*mix(.3,1.,maa);
-          float mrut=max(-w0.r,0.)+max(-w1.a,0.)*.5,mberm=max(w0.r,0.),mch=clamp(w0.g*1.25,0.,1.),mpr=w0.b*(1.-mch*.6),wetc=max(moist,.0);
+          float mrut=max(-w0.r,0.)+max(-w1.a,0.)*.5,mberm=max(w0.r,0.),mch=clamp(w0.g*1.25,0.,1.),mpr=w0.b*(1.-mch*.6);
           /* the trails: the worn two-track bare and packed */
           float tw=smoothstep(.0,.04,-w1.a);alb=mix(alb,cSo*.85,tw*.85);
-          /* turned soil: dark and wet-looking, lumpy loam with dry crumbs, smooth sticky clay with a shine, glossy silt, black peat */
-          vec3 tc=cL*mix(.42,.7,n2)*wlm+cC*mix(.5,.65,n2)*wc+cS*.7*ws+vec3(.03,.022,.016)*(.8+.4*n2)*wq+cD*.78*wsd;
-          float crumb=smoothstep(.62,.8,vn(wp*23.+7.))*(1.-moist)*wlm;tc=mix(tc,cL*1.05,crumb*.5);alb=mix(alb,tc,mch);
+          /* turned soil: darker, the damp underneath (clay without the cracks of its crust: wet as dark as before, dry
+             the pale powder of the broken crust); its lumps and their shine are the relief's, below */
+          alb=mix(alb,cL*mix(.42,.7,n2)*wlm+cCt*wc+cS*.7*ws+vec3(.03,.022,.016)*(.8+.4*n2)*wq+cD*.78*wsd,mch);
           /* the tread: where a tyre rolled (not spun), its knobs pressed into the track, along the way it was heading */
           vec2 md2=w1.gb;float mtw=mpr*smoothstep(.45,.85,length(md2))*(1.-smoothstep(.006,.02,gFP))*(1.-mch);
           if(mtw>.01){float mth=atan(md2.y,md2.x)*.5;vec2 mdv=vec2(cos(mth),sin(mth)),mdp=vec2(-mdv.y,mdv.x);float ms=dot(wp,mdv)/.068,mc=dot(wp,mdp)/.085;
@@ -129,11 +133,21 @@ vec3 mlWoods(vec2 wp,float moist){
             alb*=1.-.22*mlug*mtw;gG+=mdv*(smoothstep(.08,.16,mk)-smoothstep(.5,.58,mk))*.9*mtw;}
           alb*=1.-.26*mpr;alb=mix(alb,cL*1.05,smoothstep(.008,.05,mberm)*(1.-mch)*.5*wlm*(1.-moist));
           alb*=1.-.22*smoothstep(.03,.22,mrut)*(1.-mch*.3);em*=1.-.3*smoothstep(.02,.2,mrut);
-          spec=mix(spec,.22,max(mpr*.3,moist*mch*.85));shin=mix(shin,mix(40.,90.,wc+ws),max(mpr*.5,moist*mch));mlSpec=mix(mlSpec,1.,max(mpr*.5,moist*mch));
-          gG+=(vec2(vn(wp*31.),vn(wp*31.+3.1))-.5)*.25*mch*maa*(1.-ws-wq*.5);
+          spec=mix(spec,.16,max(mpr*.3,moist*mch*.85));shin=mix(shin,mix(24.,40.,wc+ws),max(mpr*.5,moist*mch));mlSpec=mix(mlSpec,1.,max(mpr*.5,moist*mch));
           /* wet tracks, drying over a minute and a half */
           float wd=1.-clamp((uMLq.w-w0.a)/90.,0.,1.);wd*=wd;alb*=1.-.42*wd;spec=mix(spec,.28,wd*.6);shin=mix(shin,70.,wd*.6);mlSpec=mix(mlSpec,1.,wd*.6);
+          rA=min(1.,rA+(.9*mch+5.*min(mberm,.12)*(1.-mch))*(1.-.4*moist*ws));rW=max(rW,max(moist*mch,wd*.7));
           }
+        /* (Mud Lab 15) the relief: clods three hand-spans, a hand and a finger across, each only while a pixel is small
+           enough to show it; none in sand (its ripples are its picture's). Hollows darker, a dry soil's crests paler
+           crumbs. Wet, every lump shines (a little more where water stands in the hollows): the lumps break the
+           shine into glints on the sides that face the light, where it was one smooth sheet */
+        float rk=(1.-smoothstep(.06,.18,gFP))*rA*(1.-wsd);
+        if(rk>.004){vec3 a=vnd(wp*2.9+1.7),b=vnd(wp*7.3+4.1),c=vnd(wp*19.+2.3);float k1=1.-smoothstep(.025,.075,gFP),k2=1.-smoothstep(.008,.024,gFP);
+          float h=a.x*.45+(b.x*.35-.175)*k1+(c.x*.2-.1)*k2+.275;gG+=(a.yz*.3+b.yz*.55*k1+c.yz*.55*k2)*rk;
+          float lk=min(1.,rk*1.4),hol=(1.-smoothstep(.28,.66,h))*lk;
+          alb*=(1.-.4*hol)*(1.+.3*smoothstep(.56,.8,h)*lk*(1.-moist));em*=1.-.25*hol;
+          float wk=rW*lk;spec=mix(spec,mix(.18,.33,hol),wk);shin=mix(shin,mix(35.,80.,hol),wk);mlSpec=mix(mlSpec,1.,wk);}
         /* water lying in ruts past the patch (the patch's own ruts are under the water's own surface). (Mud Lab 8) And
            everywhere past the patch a water's shore follows the ground's own heights, not the triangles of the land's
            coarser mesh (which made a saw-toothed waterline): ground that the heights say is under a water's level is
@@ -148,7 +162,20 @@ vec3 mlWoods(vec2 wp,float moist){
          brown where it's deeper; the sky in it, more the lower you look */
       if(vC.a>.5&&mlIn){float gy=mlWin?textureLod(uMLd,mlW,0.).r+textureLod(uMLt,mlW,0.).r:textureLod(uMLs0,mlUV,0.).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.14,dep),ed=smoothstep(0.,.035,dep);
         if(dep<-.004&&!(uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985))discard;
-        alb=mix(vec3(.06,.044,.028),mix(vec3(.105,.076,.046),vec3(.135,.096,.054),sh),ed);spec=mix(.1,.2,ed);shin=mix(30.,420.,ed*ed);ssr=ed>.5?.5:0.;N=normalize(vec3(gw.x*.55*ed,1.,gw.y*.55*ed));}
+        alb=mix(vec3(.06,.044,.028),mix(vec3(.105,.076,.046),vec3(.135,.096,.054),sh),ed);spec=mix(.1,.2,ed);shin=mix(30.,420.,ed*ed);ssr=ed>.5?.5:0.;N=normalize(vec3(gw.x*.55*ed,1.,gw.y*.55*ed));
+        /* (Mud Lab 16, 17) what a truck does to the water, as slopes on its level surface (the sky and the sun bend in
+           them). The rings a tyre sends out (uMLk, sixteen at a time: where, how long ago, how strong:
+           src/ml-soil.js): each widens at 1.1 m a second and fades in 2.6 s. And the bow wave of the truck you are
+           in (uMLb: the bow, how strong, half its width; uMLc: the way it is going, how long the arms are): a band
+           of waves trailing back from each corner of its leading end at 23 degrees, its crests lying across the
+           band as a real wake's do, widening and fading along its length. (Mud Lab 15's and 16's darker, lumpy water over a churned bed is gone: on water that is
+           muddy from bank to bank it read as tyre treads lying on the surface, his eye, Nov 13) */
+        {vec2 wg=vec2(0.);
+          for(int i=0;i<16;i++){vec4 e=uMLk[i];if(e.w>0.){vec2 q=vP.xz-e.xy;float d=length(q),x=d-.25-1.1*e.z;
+            if(abs(x)<1.)wg+=q/max(d,.05)*(e.w*exp(-x*x*5.)/(1.+e.z*1.2)*(1.-e.z/2.6)*sin(x*11.));}}
+          if(uMLb.z>.01){vec2 q=vP.xz-uMLb.xy,n=vec2(-uMLc.y,uMLc.x);float t=-dot(q,uMLc.xy),s=dot(q,n),x=abs(s)-uMLb.w-t*.42;
+            if(t>-.3&&t<uMLc.z)wg+=n*(sign(s)*uMLb.z*(1.-t/uMLc.z)*exp(-x*x/(.16+t*.2))*sin(x*8.-t*3.));}
+          N=normalize(N+vec3(wg.x,0.,wg.y)*(.9*ed*(1.-.7*smoothstep(.05,.15,gFP))));}}
 #endif
 //@@ trunk
     /* (Mud Lab 8) the trees' trunks: bark, furrowed up and down the trunk, darker toward the ground (the engine's wood

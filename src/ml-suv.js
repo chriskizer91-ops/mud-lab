@@ -16,14 +16,37 @@ const MLSV={pick:(()=>{try{return localStorage.getItem('mudlab:suv')==='stock'?'
      need; the Rock & Mud on 40 in mud-terrains. Built by the engine's own garage (rigBuild), so the bigger tyre's
      radius, width, weight, tread and the taller gearing it gives are the engine's; the soil reads them as it reads
      any tyre. Picked on the title (tap your SUV's name again), each SUV's own, remembered */
-  big:{crawler:false,stock:false},bib:{crawler:-1,stock:-1}};
-for(const k of ['crawler','stock'])try{MLSV.big[k]=localStorage.getItem('mudlab:big:'+k)==='1';}catch(e){}
+  big:{crawler:false,stock:false},bib:{crawler:-1,stock:-1},
+  /* (Mud Lab 17) a tune for each (ML_TUNE below; '' is as it came), each SUV's own, remembered; rb: the builds made */
+  tune:{crawler:'',stock:''},rb:{}};
+for(const k of ['crawler','stock'])try{MLSV.big[k]=localStorage.getItem('mudlab:big:'+k)==='1';MLSV.tune[k]=localStorage.getItem('mudlab:tune:'+k)||'';}catch(e){}
 const ML_BIG={stock:{tires:'at33',ride:'lift2'},crawler:{tires:'mt40'}},ML_TYRE={stock:['29s','33s'],crawler:['37s','40s']};
 const mlSuvKind=v=>v&&!v.rt&&v.build&&(v.build.kit||v.build.id)==='stock'?'stock':'crawler';
 const mlIsStock=v=>!!(v&&!v.rt&&v.build&&(v.build.kit||v.build.id)==='stock');
 const ML_SUV_NAME={crawler:'ROCK & MUD',stock:'STOCK SUV'},ML_SUV_SHORT={crawler:'ROCK & MUD',stock:'STOCK'};
+/* (Mud Lab 17) tuned presets of the engine and the gearing, his ask: "tuned presets for the performance part of the
+   vehicle for both the stock and the rock and mud SUV in the drop-down menu". Each is a handful of the engine's own
+   garage parts laid over the SUV as it came, built by the garage (rigBuild) like the bigger tyres, so the power, the
+   weight, the gears and the sound are the engine's own. The first of each list is the SUV as it has always been
+   (the same build as before, to the last digit). Tyres, suspension, diffs and the body are not touched: the stock
+   SUV keeps its open diffs and all-seasons, the Rock & Mud its lockers and mud-terrains.
+   His SUV: more power in three steps. The Rock & Mud comes with 2,175 hp (a blown 10.4 litre and a race
+   four-speed): its two tunes are for control, an automatic, shorter gears and a crawl box (4 to 1 in low) */
+const ML_TUNE={
+  stock:[{id:'',name:'FACTORY',note:'4.6 V8, 3.73 GEARS'},
+    {id:'bolt',name:'BOLT-ONS',note:'COLD AIR, CAT-BACK EXHAUST, STREET TUNE',rig:{intake:1,exhaust:'catback',tune:1}},
+    {id:'sc',name:'SUPERCHARGED',note:'A BLOWER ON THE 4.6, 4.10 GEARS',rig:{power:'roots',intake:1,exhaust:'catback',tune:1,axle:4.1}},
+    {id:'v62',name:'6.2 V8 SWAP',note:'HEADERS, STREET CAM, 4.10 GEARS',rig:{engine:'v62',intake:2,exhaust:'headers',cam:1,tune:1,axle:4.1}}],
+  crawler:[{id:'',name:'AS BUILT',note:'BLOWN 10.4 BIG-BLOCK, RACE FOUR-SPEED, 4.10 GEARS'},
+    {id:'trail',name:'TRAIL V8',note:'6.2 V8, AUTOMATIC, 4.88 GEARS, CRAWL BOX',rig:{engine:'v62',power:'none',intake:1,exhaust:'headers',cam:1,tune:1,nos:0,trans:'auto6',axle:4.88,transfer:'crawl'}},
+    {id:'f46',name:'FACTORY 4.6',note:'THE STOCK SUV\'S ENGINE, AUTOMATIC, 5.38 GEARS, CRAWL BOX',rig:{engine:'v46',power:'none',intake:0,exhaust:'stock',cam:0,tune:0,nos:0,trans:'auto6',axle:5.38,transfer:'crawl'}}]};
+const mlTuneOf=k=>ML_TUNE[k].find(q=>q.id===MLSV.tune[k])||ML_TUNE[k][0];
+/* (what a tune comes to, from the engine's own spec: horsepower and pound-feet at the crank) */
+function mlTuneHp(k,q){if(q.hp===undefined){try{const e=specOf(q.rig?rigBuild('suv',Object.assign(presetRig(k),q.rig)):BUILDS.findIndex(b=>b.id===k));q.hp=Math.round(e.peak.hp);q.lbft=Math.round(e.peak.tq*.7376);}catch(e){q.hp=0;q.lbft=0;}}return q;}
 /* (the builds: the Rock & Mud as the game made it at boot; his SUV as its garage preset) */
 function mlSuvIdx(k){
+  {const q=mlTuneOf(k);if(q.rig){const key=k+'|'+(MLSV.big[k]?1:0)+'|'+q.id;if(MLSV.rb[key]===undefined){try{MLSV.rb[key]=rigBuild('suv',Object.assign(presetRig(k),MLSV.big[k]?ML_BIG[k]:{},q.rig));}catch(e){console.warn('tune',key,e);MLSV.rb[key]=-1;}}
+    if(MLSV.rb[key]>=0)return MLSV.rb[key];MLSV.tune[k]='';}}
   if(MLSV.big[k]){if(MLSV.bib[k]<0){try{MLSV.bib[k]=rigBuild('suv',Object.assign(presetRig(k),ML_BIG[k]));}catch(e){console.warn('big tyres',e);MLSV.big[k]=false;}}if(MLSV.bib[k]>=0)return MLSV.bib[k];}
   if(k==='crawler'){if(MLSV.bi.crawler<0){const c=GAME.car;MLSV.bi.crawler=c&&!c.rt&&(c.build.kit||c.build.id)==='crawler'?c.bi:BUILDS.findIndex(b=>b.id==='crawler');}return MLSV.bi.crawler;}
   if(MLSV.bi.stock<0){try{MLSV.bi.stock=rigBuild('suv',presetRig('stock'));}catch(e){MLSV.bi.stock=BUILDS.findIndex(b=>b.id==='stock');}}return MLSV.bi.stock;}
@@ -75,4 +98,7 @@ function mlSuvTitle(root){
 function mlSuvStart(){if(MLSV.pick==='stock'&&mlSuvKind(GAME.car)!=='stock')mlSuvSet('stock');
   /* (the size picked: the game makes the standard one) */
   {const i=mlSuvIdx(MLSV.pick);if(GAME.car&&!GAME.car.rt&&i>=0&&GAME.car.bi!==i)spawnCar(i);}}
-window.__mlsv={MLSV,mlSuvSet,mlSuvIdx,mlIsStock,mlLow,mlMode};
+/* (for the tests: what a rig comes to) */
+function mlRigTry(k,rig){const i=rigBuild('suv',Object.assign(presetRig(k),rig||{})),e=specOf(i),b=BUILDS[i],c=buildChassis(i,null);
+  return {i,hp:e.peak&&Math.round(e.peak.hp),tq:e.peak&&Math.round(e.peak.tq),rpm:e.peak&&e.peak.rpm,red:e.redline,fd:e.fd,gears:e.gears,mass:Math.round(c.mass),lowK:c.diff&&c.diff.lowK,can:c.diff&&c.diff.can,nos:e.nosKw,rig:b.rig};}
+window.__mlsv={MLSV,ML_TUNE,mlTuneOf,mlTuneHp,mlSuvSet,mlSuvIdx,mlSuvKind,mlIsStock,mlLow,mlMode,mlRigTry};

@@ -66,7 +66,10 @@ const ML_PREF=50000,ML_TAU=.06,ML_RHO=1000;
 const ML_T={mu:1.05,cap:1.1,rr:.12,rv:.5,lf:1,L0:.24};
 const ML_SURFS=['grass','dirt','strip','trail','rock','mud','concrete','water','gravel','asphalt','ruts','sand'];
 function mlWheelDrag(w,kr,kd){const a=w.__mlRR,b=w.__mlDG;if(!a||a.k===kr&&b.k===kd)return;a.k=kr;b.k=kd;for(const q of ML_SURFS){a[q]=kr;b[q]=kd;}}
-const MLS={ready:false,prep:0,C:.08,WS:1536,N:19200,T:64,NT:300,NW:1536,NM:600,CM:2.56,BC:.64,BN:64,NB:38,x0:0,z0:0,h0:0,terra:false,
+/* (Mud Lab 19: the world is 3,072 m a side, four times the ground: WS, and with it N (8 cm cells across), NT (5.12 m
+   squares across), NM (2.56 m cells across) and NB (41 m blocks across) are twice what they were. Its corner is where
+   it was, so every cell, square and block of the first map has the place and the number it had) */
+const MLS={ready:false,prep:0,C:.08,WS:3072,N:38400,T:64,NT:600,NW:1536,NM:1200,CM:2.56,BC:.64,BN:64,NB:75,x0:0,z0:0,h0:0,terra:false,
   tiles:null,ntile:0,blocks:new Map(),cB:null,cW:null,cMo:null,cM:null,cG:null,cWd:null,cTr:null,map:null,s0:null,s1:null,w0:null,w1:null,wc:[NaN,NaN],up:new Set(),act:new Map(),
   clock:0,lut:null,hb:null,db:null,col:{},stat:{dug:0,clods:0,landed:0,up:0,splash:0}};
 const MLP={mesh:null,n:0,E:30,cx:0,cz:0,on:false,water:null};
@@ -127,21 +130,51 @@ function mlRut(i,j){if(i<0||j<0||i>=MLS.N||j>=MLS.N)return 0;const t=MLS.tiles[(
 function mlDirtyT(t){MLS.up.add(t.tj*MLS.NT+t.ti);}
 /* ---------- the world's ground every 2.56 m: made a slice at a time while the title is up (or all at once if START
    comes first), then its textures, its map and its water ---------- */
+/* (Mud Lab 19) The layer is filled in bands of 48 rows. Background workers (mlPrepWorkers) take bands from the top;
+   the page's own thread takes them from the bottom, a few rows at a time inside the time it is given (most of each
+   tick while the title is up, a little once you are driving), so there is always headway whatever the workers do, and
+   on a phone with cores to spare it is done in a fraction of the time. MLS.pb: each band 0 free, 1 being made, 2 done */
+const ML_BAND=48;
 function mlPrepStep(ms){
-  if(MLS.prep>=2||!WG.mlA)return MLS.prep>=2;const A=WG.mlA,M=MLS.NM,M2=M*M,o={};
-  if(!MLS.cB){MLS.h0=WG.mlLevel();MLS.x0=A.x-MLS.WS/2;MLS.z0=A.z-MLS.WS/2;MLS.cB=new Float32Array(M2);MLS.cW=new Float32Array(M2);MLS.cMo=new Uint8Array(M2);MLS.cM=new Uint8Array(M2*4);
-    MLS.cG=new Uint8Array(M2);MLS.cWd=new Uint8Array(M2);MLS.cTr=new Uint8Array(M2);MLS.prow=0;}
-  const t0=performance.now();
-  while(MLS.prow<M&&performance.now()-t0<ms){const j=MLS.prow++;for(let i=0;i<M;i++){const k=j*M+i;WG.mlZone(MLS.x0+(i+.5)*MLS.CM-A.x,MLS.z0+(j+.5)*MLS.CM-A.z,o);
-    MLS.cB[k]=o.h;MLS.cW[k]=o.wl>-90?o.wl:o.h-1;MLS.cMo[k]=Math.round(o.moist*255);const w=[o.clay,o.silt,o.peat,o.sand];for(let c=0;c<4;c++)MLS.cM[c*M2+k]=Math.round(Math.max(0,Math.min(1,w[c]))*255);
-    MLS.cG[k]=Math.round(o.grass*255);MLS.cWd[k]=Math.round(o.wood*255);MLS.cTr[k]=o.trail<3.6?Math.round(255*(1-o.trail/3.6)):o.strip>.5&&o.stripD<4.2?Math.round(200*Math.min(1,(4.2-o.stripD)/1.5)):0;}}
-  if(MLS.prow>=M){MLS.prep=2;mlPaintMap();}return MLS.prep>=2;}
+  if(MLS.prep>=2||!WG.mlA)return MLS.prep>=2;const A=WG.mlA,M=MLS.NM,M2=M*M;
+  if(!MLS.cB){MLS.h0=WG.mlLevel();MLS.x0=A.x+A.cu-MLS.WS/2;MLS.z0=A.z+A.cv-MLS.WS/2;MLS.cB=new Float32Array(M2);MLS.cW=new Float32Array(M2);MLS.cMo=new Uint8Array(M2);MLS.cM=new Uint8Array(M2*4);
+    MLS.cG=new Uint8Array(M2);MLS.cWd=new Uint8Array(M2);MLS.cTr=new Uint8Array(M2);MLS.S0=new Uint16Array(M2*4);MLS.S1=new Uint8Array(M2*4);
+    MLS.pb=new Uint8Array(Math.ceil(M/ML_BAND));MLS.pleft=MLS.pb.length;MLS.pm=null;MLS.pt0=performance.now();MLS.pmine=0;mlPrepWorkers();}
+  const t0=performance.now(),PB=MLS.pb,all=ms>1e8;
+  /* (a worker that has had a band for 20 s has stopped: its band is free again) */
+  if(MLS.pw)for(const w of MLS.pw)if(w.b>=0&&t0-w.t>20000){if(PB[w.b]===1)PB[w.b]=0;w.b=-1;w.dead=true;try{w.terminate();}catch(_){}}
+  while(MLS.pleft>0&&(all||performance.now()-t0<ms)){
+    if(!MLS.pm){let b=PB.length-1;while(b>=0&&PB[b])b--;
+      /* (asked to finish it all now, START pressed with the workers still at it: their bands too) */
+      if(b<0&&all){b=PB.length-1;while(b>=0&&PB[b]!==1)b--;}
+      if(b<0)break;PB[b]=1;MLS.pm={b,j:b*ML_BAND,j1:Math.min(M,(b+1)*ML_BAND)};}
+    const m=MLS.pm,j=m.j;m.j=Math.min(m.j1,j+4);mlPrepTake(WG.mlLayerRows(MLS.x0-A.x,MLS.z0-A.z,MLS.CM,M,j,m.j));
+    if(m.j>=m.j1){if(PB[m.b]!==2){PB[m.b]=2;MLS.pleft--;MLS.pmine++;}MLS.pm=null;}}
+  if(MLS.pleft<=0){MLS.prep=2;MLS.pms=performance.now()-MLS.pt0;if(MLS.pw){for(const w of MLS.pw)try{w.terminate();}catch(_){}MLS.pw=null;}mlPaintMap();}return MLS.prep>=2;}
+/* (some rows, from a worker or from here, into the world's layer) */
+function mlPrepTake(r){const M=MLS.NM,M2=M*M,n=(r.j1-r.j0)*M,o=r.j0*M;MLS.cB.set(r.B,o);MLS.cW.set(r.Wl,o);MLS.cMo.set(r.Mo,o);MLS.cG.set(r.Gr,o);MLS.cWd.set(r.Wd,o);MLS.cTr.set(r.Tr,o);
+  for(let c=0;c<4;c++)MLS.cM.set(r.Ms.subarray(c*n,(c+1)*n),c*M2+o);MLS.S0.set(r.S0,o*4);MLS.S1.set(r.S1,o*4);}
+/* the workers: up to three (cores left for the page and the land's own worker), each with the world's generator, as the
+   land's worker has. None if they can't be made (or the page's address ends #noworker): the page's own thread does it all */
+function mlPrepWorkers(){MLS.pw=null;MLS.pwn=0;if(/noworker/.test(location.hash))return;
+  const A=WG.mlA,M=MLS.NM,PB=MLS.pb,nW=Math.max(1,Math.min(3,(navigator.hardwareConcurrency||4)-2)),src=WORLDGEN.toString()+'\nconst G=WORLDGEN('+WSEED+');\n'+
+    'onmessage=e=>{const q=e.data,r=G.mlLayerRows(q.u0,q.v0,q.CM,q.M,q.j0,q.j1);r.b=q.b;postMessage(r,[r.B.buffer,r.Wl.buffer,r.Mo.buffer,r.Ms.buffer,r.Gr.buffer,r.Wd.buffer,r.Tr.buffer,r.S0.buffer,r.S1.buffer]);};';
+  const L=[],give=w=>{w.b=-1;if(MLS.prep>=2||w.dead)return;let b=0;while(b<PB.length&&PB[b])b++;if(b>=PB.length)return;PB[b]=1;w.b=b;w.t=performance.now();w.postMessage({b,u0:MLS.x0-A.x,v0:MLS.z0-A.z,CM:MLS.CM,M,j0:b*ML_BAND,j1:Math.min(M,(b+1)*ML_BAND)});};
+  try{const url=URL.createObjectURL(new Blob([src],{type:'text/javascript'}));
+    for(let q=0;q<nW;q++){const w=new Worker(url);w.b=-1;
+      w.onmessage=e=>{const r=e.data;if(MLS.prep>=2)return;if(PB[r.b]!==2){mlPrepTake(r);PB[r.b]=2;MLS.pleft--;}give(w);};
+      w.onerror=e=>{console.warn('soil prep worker failed; its rows on the main thread',e&&e.message);if(w.b>=0&&PB[w.b]===1)PB[w.b]=0;w.b=-1;w.dead=true;};L.push(w);}
+    MLS.pw=L;MLS.pwn=nW;for(const w of L)give(w);}
+  catch(e){for(const w of L)try{w.terminate();}catch(_){}MLS.pw=null;MLS.pwn=0;}}
 /* lay the world out on the graphics card (the first time the truck drives) */
 function mlInit(){
-  if(MLS.ready||!WG.mlA)return;const t0=performance.now();while(!mlPrepStep(1e9));MLS.tiles=new Array(MLS.NT*MLS.NT).fill(null);
-  const M=MLS.NM,M2=M*M,s0=new Uint16Array(M2*4),s1=new Uint8Array(M2*4);
-  for(let k=0;k<M2;k++){s0[k*4]=mlHalf(MLS.cB[k]);s0[k*4+1]=mlHalf(MLS.cW[k]);s0[k*4+2]=mlHalf(MLS.cMo[k]/255);s0[k*4+3]=mlHalf(MLS.cG[k]>=MLS.cWd[k]?MLS.cG[k]/255:-MLS.cWd[k]/255);
-    for(let c=0;c<4;c++)s1[k*4+c]=MLS.cM[c*M2+k];}
+  /* (Mud Lab 19: START with the layer not finished. With workers at it, up to two and a half seconds are given for
+     them and this thread to finish it between frames: until then there is no soil, the SUV stands on the land's own
+     ground as it does outside the world. Then, or without workers, it is finished here and now, as it always was) */
+  if(MLS.ready||!WG.mlA)return;const t0=performance.now();
+  if(!mlPrepStep(0)){if(MLS.pw&&MLS.pw.some(w=>!w.dead)&&t0-(MLS.pwait||(MLS.pwait=t0))<2500){if(!mlPrepStep(12))return;}else while(!mlPrepStep(1e9));}
+  MLS.tiles=new Array(MLS.NT*MLS.NT).fill(null);
+  const M=MLS.NM,M2=M*M,s0=MLS.S0,s1=MLS.S1;MLS.S0=MLS.S1=null;
   const mk=(u,f)=>{const t=gl.createTexture();gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,t);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,f);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,f);return t;};
@@ -175,18 +208,32 @@ function mlPatchBuild(){
 /* the water: a flat surface at each water's own level, in 2.56 m squares over wherever there's water (the ground hides
    it wherever it stands higher) */
 function mlWaterBuild(){
+  /* (Mud Lab 19: a strip for each run of cells at one level along a row, in place of a square for every cell: the
+     River and the Lake would have been 60,000 more triangles in every frame; this way all the world's water is a few
+     thousand) */
   const NM=MLS.NM,P=[],I=[];let nv=0;const step=MLS.CM;
-  for(let j=0;j<NM-1;j++)for(let i=0;i<NM-1;i++){let lv=-99;
-    for(let b=0;b<=1;b++)for(let a=0;a<=1;a++){const k=(j+b)*NM+i+a,w=MLS.cW[k];if(w>MLS.cB[k]-.6)lv=Math.max(lv,w);}
-    if(lv<-90)continue;const x0=MLS.x0+(i+.5)*MLS.CM-step*.5,z0=MLS.z0+(j+.5)*MLS.CM-step*.5;
-    for(const [dx,dz] of [[0,0],[step*2,0],[0,step*2],[step*2,step*2]])P.push(x0+dx-WG.mlA.x,lv,z0+dz-WG.mlA.z);
-    I.push(nv,nv+3,nv+1,nv,nv+2,nv+3);nv+=4;}
+  for(let j=0;j<NM-1;j++){let a0=0,rl=-99;const z0=MLS.z0+j*step;
+    for(let i=0;i<NM;i++){let lv=-99;
+      if(i<NM-1)for(let b=0;b<=1;b++)for(let a=0;a<=1;a++){const k=(j+b)*NM+i+a,w=MLS.cW[k];if(w>MLS.cB[k]-.6)lv=Math.max(lv,w);}
+      if(lv===rl)continue;
+      if(rl>-90){const xa=MLS.x0+a0*step,xb=MLS.x0+(i+1)*step;for(const [x,dz] of [[xa,0],[xb,0],[xa,step*2],[xb,step*2]])P.push(x-WG.mlA.x,rl,z0+dz-WG.mlA.z);I.push(nv,nv+3,nv+1,nv,nv+2,nv+3);nv+=4;}
+      a0=i;rl=lv;}}
   if(!nv){MLP.water=null;return;}
   const pos=new Float32Array(P),nrm=new Float32Array(nv*3),col=new Float32Array(nv*4),mat=new Float32Array(nv).fill(50);
   for(let k=0;k<nv;k++){nrm[k*3+1]=1;col[k*4]=.07;col[k*4+1]=.055;col[k*4+2]=.035;col[k*4+3]=1;}
   MLP.water=makeMesh({pos,nrm,col,mat,idx:nv<65536?new Uint16Array(I):new Uint32Array(I)});MLP.water.tris=I.length/3;}
 /* ---------- the ground under a point, inside the world: the soil's own height and slope, its surface ---------- */
 const ML_IN=2,MLG={};
+/* (Mud Lab 18, from Ground Truth's rollover fix by way of the packet of 13 Nov) the land's own slope under a point,
+   against a direction: the ground the soil lies on, without the ruts, berms and clods the soil has at 8 cm. For the
+   wheels' "has the truck rolled onto its side?" (src/build.py): read off the soil itself, a rut's wall counted as a
+   truck on its side. Not a number outside the soil's square (the engine's own ground is asked there) */
+const ML_BU=[0,0];
+function mlBroadUp(x,z,U){
+  if(!MLS.ready||MLS.off)return NaN;
+  const N=MLS.N,C=MLS.C,fx=(x-MLS.x0)/C-.5,fz=(z-MLS.z0)/C-.5;
+  if(fx<ML_IN||fz<ML_IN||fx>N-1-ML_IN||fz>N-1-ML_IN)return NaN;
+  mlBase(x,z,ML_BU);return (U[1]-ML_BU[0]*U[0]-ML_BU[1]*U[2])/Math.hypot(ML_BU[0],1,ML_BU[1]);}
 function mlGround(x,z,o){
   if(MLS.off)return false;
   const N=MLS.N,C=MLS.C,fx=(x-MLS.x0)/C-.5,fz=(z-MLS.z0)/C-.5;
@@ -267,9 +314,11 @@ function mlThrow(t,w,dt,S,W,wd){
   const hub=[cp[0]+n[0]*R,cp[1]+n[1]*R,cp[2]+n[2]*R],v=t.v,cap=fxCap(),col=MLS.col[soil]||MLS.col.loam,soupy=soil==='silt'||soil==='peat'&&W.peat>.6;
   const clod=(th,k,dep,kind)=>{if(FX.length>=cap)return;const sn=Math.sin(th),cs=Math.cos(th),sp=Math.min(awr,11)*k;
     const px=hub[0]+R*(-s*ux*sn-n[0]*cs),py=hub[1]+R*(-s*uy*sn-n[1]*cs),pz=hub[2]+R*(-s*uz*sn-n[2]*cs),lat=(Math.random()-.5)*.38*sp;
-    const r0=Math.random(),sz=(.012+.05*r0*r0)*S.size,b=.82+Math.random()*.32,c=kind==='water'?MLS.col.water:col;
+    /* (Mud Lab 15: a wet soil's clods are as dark as the ground they came out of, and drawn at two thirds the size
+       (what they carry and where they land is as it was): they flew as pale boulders) */
+    const r0=Math.random(),sz=(.012+.05*r0*r0)*S.size,b=(.82+Math.random()*.32)*(kind==='water'?1:1-.45*(S.m||0)),c=kind==='water'?MLS.col.water:col;
     FX.push({kind:kind||'mud',x:px,y:py,z:pz,vx:v[0]+sp*(-s*ux*cs+n[0]*sn)+rx*lat+(Math.random()-.5)*.6,vy:v[1]+sp*(-s*uy*cs+n[1]*sn)+ry*lat+Math.random()*.5,vz:v[2]+sp*(-s*uz*cs+n[2]*sn)+rz*lat+(Math.random()-.5)*.6,
-      s:kind==='water'?sz*1.4:sz,s0:sz,life:kind==='water'?1.4:3,max:3,r:c[0]*b,g:c[1]*b,b:c[2]*b,yaw:Math.random()*TAU,vol:dep&&kind!=='water'?4.19*sz*sz*sz*.55:0,soil,dusty:S.dust>.3,ml:1});MLS.stat.clods++;};
+      s:kind==='water'?sz*1.4:sz*.66,s0:sz,life:kind==='water'?1.4:3,max:3,r:c[0]*b,g:c[1]*b,b:c[2]*b,yaw:Math.random()*TAU,vol:dep&&kind!=='water'?4.19*sz*sz*sz*.55:0,soil,dusty:S.dust>.3,ml:1});MLS.stat.clods++;};
   /* roost: off the tread just behind the contact, back and up at the tread's speed (soupy soil as splashes) */
   const nr=fxCount(S.roost*spin*K*dt);for(let q=0;q<nr;q++)clod(.15+Math.random()*.8,.5+Math.random()*.5,true,soupy&&Math.random()<.6?'water':'mud');
   /* at speed in wet soil, it peels off the back of the tyre and arcs up */
@@ -299,13 +348,32 @@ function mlLand(p){
   if(p.dusty&&p.s0>.02&&FX.length<fxCap()&&Math.random()<.6){const dc=MLS.col['dust'+p.soil]||MLS.col.dustloam,sz=p.s0*3;
     FX.push({kind:'dust',x:p.x,y:p.y+.05,z:p.z,vx:p.vx*.15,vy:.3,vz:p.vz*.15,s:sz,s0:sz,life:.9+Math.random()*.6,max:1.5,r:dc[0],g:dc[1],b:dc[2],yaw:Math.random()*TAU});}
   MLS.stat.landed++;return true;}
+/* (Mud Lab 16) the rings a tyre sends out through standing water: the last sixteen (where, when by the soil's clock,
+   how strong), drawn by the water's shader (src/ml-look.glsl) as rings that widen and fade over 2.6 s. A tyre in water
+   sends one for every 70 cm it moves (or would have moved: a spinning tyre counts), no more than nine a second between
+   all the tyres. Nothing of the physics reads them and no dice are rolled */
+const MLWK={e:new Float32Array(64),u:new Float32Array(64),i:0,t:-9,n:0,
+  /* (Mud Lab 17) the bow wave of the truck you are in: where its leading end is, the way it is going, how strong
+     (0 to 1: by its speed through the water and the water's depth; it eases in and out over about a third of a
+     second), how long its arms are */
+  bx:0,bz:0,dx:1,dz:0,k:0,len:4};
+function mlWake(x,z,a){const k=MLWK.i*4,E=MLWK.e;E[k]=x;E[k+1]=z;E[k+2]=MLS.clock;E[k+3]=a;MLWK.i=(MLWK.i+1)&15;MLWK.t=MLS.clock;MLWK.n++;}
 /* ---------- the water against the truck: drag on the tyres and the body (by how deep and how fast), the bow wave ---------- */
 function mlWater(dt,t){
   const p=t.p,b=mlBase(p[0],p[2]),fi=(p[0]-MLS.x0)/MLS.C,fj=(p[2]-MLS.z0)/MLS.C,g=b+mlRut(fi|0,fj|0),wl=mlWL(p[0],p[2]),dw=wl-g;
   /* (how high the body's sills are off the ground: the water and the mud meet them there) */
   if(t.__mlClr===undefined){let mn=0;for(const q of t.c.hull||[])mn=Math.min(mn,q[1]);t.__mlClr=t.c.hull?Math.max(.15,Math.min(.8,t.c.hcg+mn)):.557;}
-  MLS.wd=dw;if(dw<=.02)return;
   const M=t.M,fx=M[0],fz=M[6],fl=Math.hypot(fx,fz)||1,f=[fx/fl,fz/fl],v=t.v,vf=v[0]*f[0]+v[2]*f[1],vs=-v[0]*f[1]+v[2]*f[0];
+  if(t===GAME.car){const B=MLWK,sp=Math.abs(vf),want=dw>.04&&!(t.wheels.every(w=>!w.contact)&&p[1]-(t.c.hcg||.7)>wl+MLS.h0+.05)?sst(.5,3.5,sp)*Math.min(1,dw/.2):0;B.k+=(want-B.k)*Math.min(1,dt*3.5);
+    if(want>0){const g=vf>=0?1:-1;B.dx=f[0]*g;B.dz=f[1]*g;B.bx=p[0]+B.dx*2.3;B.bz=p[2]+B.dz*2.3;B.len=Math.min(14,3+2.2*sp);}}
+  MLS.wd=dw;if(dw<=.02){if(t.mlDrowned||t.mlWet>0||t.mlFlood>0)mlDeepDry(t);return;}
+  const flood=mlDeep(dt,t,wl);
+  /* (Mud Lab 21) IN THE AIR OVER WATER IS NOT IN IT. Found with the first jump over the River: the Rock & Mud left the
+     lip at 152 mph, rose 60 ft as it should, and came down 26 ft further on: the drag below is worked out from how deep
+     the water is over the ground under the SUV, whatever height the SUV is at, and over 6 ft of river that is a wall.
+     Nothing had ever been over water without being in it. With all four tyres off the ground and the lowest of the SUV
+     clear of the surface: no drag, no lift, no bow wave. Anything else is exactly as it was */
+  if(MLS.over=!t.wheels.some(w=>w.contact)&&p[1]-(t.c.hcg||.7)>wl+MLS.h0+.05){MLS.buoy=0;return;}
   /* (the body meets the water above its sills: the Rock & Mud's are 56 cm up, his SUV's 32 cm (Mud Lab 6: the body's
      depth measured from its own sills, the Rock & Mud's as before)) */
   const imm=Math.max(0,dw-.3+(.557-t.__mlClr)),wh=Math.min(dw,.94),Cd=.9,m=t.c.mass||2500;
@@ -316,7 +384,17 @@ function mlWater(dt,t){
   /* (Mud Lab 6) water over the sills lifts the body: a quarter of the water the body pushes aside below the waterline (a
      cab isn't sealed), so the tyres press down less and grip less; his SUV's lower body floats sooner than the
      Rock & Mud's */
-  {const sub=Math.max(0,dw-t.__mlClr);if(sub>0){const B=ML_RHO*9.81*4.9*1.9*Math.min(sub,1.1)*.25;v[1]+=Math.min(B,.85*m*9.81)/m*dt;MLS.buoy=B;}else MLS.buoy=0;}
+  /* (Mud Lab 20) OFF THE GROUND, THE LIFT IS FOR THE WATER THE BODY IS REALLY IN. His words, 13 Nov 2026: "When you're in
+     very mucky stuff and you're moving the soil around beneath the SUV, sometimes the SUV can pop up out of the water
+     kind of intensely." Caught in the Bog's last pit (tools/test/ml-drive.js T9.churn, Build 19): the Rock & Mud,
+     rocking flat out in 1.2 m of water, was kicked up at 3.6 m/s by the pit's own wall, and then hung in the air for
+     3.4 s, its sills 2.2 m over the water, and rolled over up there. The lift is worked out from how deep the water
+     is over the ground under the SUV's middle, whatever height the SUV itself is at: two thirds of its weight in that
+     pit, and it went on being lifted by two thirds of its weight all the way up, out of the water, falling at a third
+     of gravity. With a tyre on the ground the lift is as it always was (the Bog's marks and every crossing depend on
+     it). With none on the ground it is for the water over the body's own sills as it lies (never more than the old
+     figure): a SUV thrown out of the water comes straight back down */
+  {const air=!t.wheels.some(w=>w.contact),up=wl+MLS.h0-(p[1]-(t.c.hcg||.7)),sub=Math.max(0,(air?Math.min(dw,up):dw)-t.__mlClr);if(sub>0){const B=ML_RHO*9.81*4.9*1.9*Math.min(sub,1.1)*.25*flood;v[1]+=Math.min(B,.85*m*9.81)/m*dt;MLS.buoy=B;}else MLS.buoy=0;}
   v[0]+=f[0]*dvf-f[1]*dvs;v[2]+=f[1]*dvf+f[0]*dvs;
   /* the bow wave: water pushed up and out in front of the truck, and a mist off it */
   const sp=Math.abs(vf);if(sp>1.2&&!reduce){const cap=fxCap(),nb=fxCount(Math.min(1,dw/.35)*sp*sp*1.4*LOOK.dust*dt),fwd=vf>=0?1:-1,L=2.5*fwd;
@@ -324,16 +402,108 @@ function mlWater(dt,t){
       FX.push({kind:'water',x,y:wl+MLS.h0+.05,z,vx:v[0]*.9+f[0]*fwd*sp*.15-f[1]*out,vy:1+Math.random()*1.6+sp*.18,vz:v[2]*.9+f[1]*fwd*sp*.15+f[0]*out,
         s:.04+Math.random()*.06,s0:.05,life:1.3,max:1.3,r:MLS.col.water[0],g:MLS.col.water[1],b:MLS.col.water[2],yaw:0});MLS.stat.splash++;}}
 }
+/* (Mud Lab 19) DEEP WATER: THE ENGINE DROWNS. (Mud Lab 20) AND IT CHOKES FIRST. His words, 13 Nov 2026: "when it does
+   submerge I think that it should like take a moment like vehicles do in real life and so the stock SUV's tailpipe can
+   go below the water but it's the intake that can't go below the water, and then the Rock and Mud SUV with its snorkel
+   can go until the snorkel goes below water, and then once it does go below water it like chokes the way an engine
+   would, not just dying immediately."
+   WHERE THE AIR GOES IN, measured on the two models (tools/world: their hoods, roofs and the snorkel): the stock SUV
+   breathes from under the front edge of its hood (the hood is 1.07 to 1.17 m off the ground: 1.05 m), the Rock & Mud
+   from its snorkel's mouth on the windscreen pillar (2.05 m; its roof is 2.27). ML_INTAKE: metres ahead of the SUV's
+   middle, above the ground it stands on, to its side, and the height of its centre of gravity as measured (a tyre
+   size up lifts the body and that centre together). Where that point is against the water is worked out from the
+   body as it lies (mlUnder), so a SUV nosing down a bank puts a front intake under sooner. Build 19 had them at 1.55 m
+   (the top of the stock SUV's doors) and 2.05 m, over the SUV's middle.
+   THE EXHAUST is no part of it: a tailpipe under water is a running engine.
+   CHOKING: the intake under for a third of a second, the engine starts to miss (the engine's own fuel cut, a miss at
+   a time: its sound is the engine's own misfire), more and longer as it swallows more, the revs sagging with each
+   miss; three seconds of that and it dies. Get the intake clear before then and it coughs for as long again and
+   clears. (The line said BACK OUT at first. Off the Lake's beach, in the Pond and in a deep ford, backing out at the
+   first miss never saved it in the tests: the SUV was already sliding in, or already bogged. It says what is
+   happening instead.)
+   Dead, it stays dead until the intake has been 30 cm clear of the water for two and a half seconds; then it
+   starts, and coughs once more.
+   THE CAB (t.mlFlood, 0 to 1): fills in six seconds once the engine has drowned, and drains in eight once it is
+   running again: the water's lift on the body falls to under a third as it fills, so a drowned SUV settles onto the
+   bottom, into the muck. (Build 19 gave the lift all back at once the moment the engine restarted: a jolt upward.)
+   ON THE FIRST MAP: the Rock & Mud's snorkel is where it was. The stock SUV's intake is half a metre lower than
+   Build 19 had it, so it now chokes in water over its hood: README, Mud Lab 20, has where that is */
+const ML_INTAKE={stock:[1.9,1.05,.5,.74],crawler:[.25,2.05,1,.982]},ML_CHOKE=3;
+/* (how far under the water a point of the body is, m; negative: clear of it. q: ahead, up from the ground, to the side,
+   and the centre of gravity's height it was measured with) */
+function mlUnder(t,q,wl){const M=t.M;return wl+MLS.h0-(t.p[1]+M[3]*q[0]+M[4]*(q[1]-q[3])+M[5]*q[2]);}
+/* (Mud Lab's own dice for what is only seen and heard: the game's are counted, and the test drives count on that) */
+let ML_DICE=12345;const mlDice=()=>{ML_DICE=(Math.imul(ML_DICE,1664525)+1013904223)|0;return (ML_DICE>>>8)/16777216;};
+/* (a choking engine: a miss, then a gap; the wetter, the longer the miss and the shorter the gap) */
+function mlCough(dt,t){const pt=t.pt,w=t.mlWet;if(!pt||pt.st!=='run')return;t.mlCutG=(t.mlCutG||0)-dt;
+  if(t.mlCutG<=0){const c=.05+.25*w*(.6+.8*mlDice());pt.cutT=Math.max(pt.cutT||0,c);t.mlCutG=c+(.4-.3*w)*(.5+mlDice());}
+  if(pt.cutT>0&&!pt.locked){const iw=pt.e.idle*TAU/60;if(pt.we>iw*.6)pt.we-=pt.we*Math.min(.5,dt*(1.5+5*w));}}
+function mlDeep(dt,t,wl){const kind=mlSuvKind(t),over=mlUnder(t,ML_INTAKE[kind]||ML_INTAKE.crawler,wl),pt=t.pt,me=t===GAME.car;
+  if(over>(t.mlOverMax||-9))t.mlOverMax=over;
+  if(!t.mlDrowned){const run=pt&&pt.st!=='off'&&pt.st!=='stopping';
+    if(over>0&&run){t.mlDrT=(t.mlDrT||0)+dt;if(t.mlDrT>.33){if(!(t.mlWet>0)&&me)say(kind==='stock'?'WATER IN THE INTAKE: THE ENGINE IS CHOKING':'WATER IN THE SNORKEL: THE ENGINE IS CHOKING',2.6,PAL.gold);t.mlWet=Math.min(1,(t.mlWet||0)+dt/ML_CHOKE);}}
+    else{t.mlDrT=0;if(t.mlWet>0){t.mlWet=Math.max(0,t.mlWet-dt/(run?ML_CHOKE:.6));if(!t.mlWet){if(me&&run&&t.mlWetMax>.3)say('IT COUGHED THE WATER OUT',2.2);t.mlWetMax=0;}}}
+    if(t.mlWet>0){t.mlWetMax=Math.max(t.mlWetMax||0,t.mlWet);mlCough(dt,t);}
+    if(t.mlWet>=1){t.mlDrowned=MLS.clock+1e-6;t.mlDryT=0;t.mlWet=0;t.mlWetMax=0;MLS.stat.drowned=(MLS.stat.drowned||0)+1;if(pt&&pt.stop&&pt.st!=='off')pt.stop();
+      if(me){MLS.drownT=t;for(let q=GAME.msgs.length-1;q>=0;q--)if(/^(BOGGED|WHEELSPIN|WATER IN)/.test(GAME.msgs[q].t))GAME.msgs.splice(q,1);
+        say('THE ENGINE HAS DROWNED: '+(MLR.mode==='real'&&!MLR.off?'WINCH, STRAP, OR A TOW HOME (MAP)':'WINCH, STRAP OR RESET'),6,PAL.gold);}}}
+  else{
+    if(over<-.3){t.mlDryT+=dt;if(t.mlDryT>2.5){t.mlDrowned=0;t.mlWet=.45;t.mlWetMax=0;if(me){if(pt&&(pt.st==='off'||pt.st==='stopping'))startEngine();say('THE INTAKE IS CLEAR: THE ENGINE RUNS AGAIN',3);}}}
+    else{t.mlDryT=0;if(pt&&pt.stop&&pt.st!=='off'&&pt.st!=='stopping')pt.stop();
+      /* (air coming up out of it: a few drops breaking the surface over where it lies, so there is something to see of
+         a SUV that is all the way under; fewer once the cab has filled) */
+      if(!reduce&&MLS.col.water){const k=MLS.clock-t.mlDrowned,n=fxCount((k<8?9:2.5)*LOOK.dust*dt),cap=fxCap();for(let q=0;q<n&&FX.length<cap;q++){const a=Math.random()*6.283,r=Math.random()*1.6;
+        FX.push({kind:'water',x:t.p[0]+Math.cos(a)*r,y:wl+MLS.h0+.03,z:t.p[2]+Math.sin(a)*r,vx:(Math.random()-.5)*.5,vy:.9+Math.random()*1.3,vz:(Math.random()-.5)*.5,s:.05+Math.random()*.07,s0:.06,life:.9,max:.9,r:MLS.col.water[0],g:MLS.col.water[1],b:MLS.col.water[2],yaw:0});}
+        if(MLS.clock-(t.mlRingT||0)>.5){t.mlRingT=MLS.clock;mlWake(t.p[0]+(Math.random()-.5)*1.5,t.p[2]+(Math.random()-.5)*1.5,k<8?.9:.4);}}}}
+  /* the cab */
+  t.mlFlood=t.mlDrowned?Math.min(1,(t.mlFlood||0)+dt/6):Math.max(0,(t.mlFlood||0)-dt/8);
+  return 1-.7*t.mlFlood;}
+/* (a drowned SUV that is out of the water altogether, set there by RESET or a tow home: it starts again at once, dry) */
+function mlDeepDry(t){if(t.mlDrowned){t.mlDrowned=0;t.mlDrT=0;t.mlWet=0;t.mlFlood=0;if(t===GAME.car&&t.pt&&(t.pt.st==='off'||t.pt.st==='stopping'))startEngine();}else if(t.mlWet>0||t.mlFlood>0){t.mlWet=0;t.mlFlood=0;t.mlDrT=0;}}
+/* (Mud Lab 19) no camera under the water: an eye that would be under a water's surface (the chase camera following a
+   SUV down into the Lake) is held 70 cm over it, looking down at the SUV.
+   (Mud Lab 20) EXCEPT THE CAMERAS THAT ARE ON THE SUV. His words, 13 Nov 2026: "when you do fully submerge under the
+   water you can switch wheel cam and actually see the SUV underwater." The Wheel cam, the Hood and the Cockpit go
+   under with it once the water is deep over them (in the Film camera too, while it is on one of them). MLS.eyeUnder
+   is how deep the eye is (0: in the air), and mlUnderEnv below turns that into muddy water to look through */
+const ML_ONBOARD={'Wheel cam':1,'Hood':1,'Cockpit':1};
+function mlCamDry(c){MLS.eyeWas=MLS.eyeUnder||0;MLS.eyeUnder=0;if(!MLS.ready||MLS.off||!MLS.cW||!c||!c.eye)return c;const x=c.eye[0],z=c.eye[2];
+  if(x<MLS.x0+4||z<MLS.z0+4||x>MLS.x0+MLS.WS-4||z>MLS.z0+MLS.WS-4)return c;const wl=mlC(MLS.cW,x,z),g=mlC(MLS.cB,x,z);if(wl<g-.2)return c;
+  if(ML_ONBOARD[camMode()]){
+    /* (under only when the eye would be well under: more than 55 cm, and then until it is less than 35 cm. In water
+       shallower than that over the eye, the Mud Hole's or a ford's, the camera is held over the surface as Build 19
+       held it: an eye just under a surface that isn't drawn from below sees the SUV standing in no water at all) */
+    const w2=mlWL(x,z),d=w2+MLS.h0-c.eye[1];if(w2>mlBase(x,z)-.05&&d>(MLS.eyeWas>0?.35:.55)){MLS.eyeUnder=d;return c;}}
+  const y=wl+MLS.h0+.7;if(c.eye[1]<y){c.eye[1]=y;const t=GAME.car;if(t){const dx=t.p[0]-x,dy=t.p[1]+.8-y,dz=t.p[2]-z,l=Math.hypot(dx,dy,dz)||1;c.fwd=[dx/l,dy/l,dz/l];}}return c;}
+/* (Mud Lab 20) LOOKING THROUGH MUDDY WATER (the engine's own environment for the frame, changed after it is worked
+   out: src/build.py). The engine's light-in-the-air pass does the work: its haze made about a hundred times thicker
+   and brown, the same at every height, so the SUV 15 ft away is seen dimly and anything past 30 ft not at all; the
+   sun's beam cut to a tenth, the sky's light to a half and browner the deeper the eye is; the sky itself the same
+   mud. Nothing is added to any shader */
+function mlUnderEnv(E){const d=GAME.state==='drive'?MLS.eyeUnder||0:0;if(!(d>0))return;
+  /* (w: the water thickens from nothing over the first foot of depth. mlCamDry lets an eye under only at more than a
+     foot, so this is 1 whenever it matters; it is kept so the look can never switch on at full strength at a surface) */
+  const k=Math.min(1,d/2),w=sst(0,.3,d),mix=(a,b)=>a+(b-a)*w,T=[.16,.115,.06].map(v=>v*(1-.4*k)),amb=mix(1,.65-.25*k),br=[1,mix(1,.85),mix(1,.6)];
+  E.fogDen=mix(E.fogDen,.11+.05*k);E.fogFall=mix(E.fogFall,0);E.fogAmb=E.fogAmb.map((v,i)=>mix(v,T[i]));E.fogCol=E.fogCol.map((v,i)=>mix(v,T[i]*1.1));
+  /* (the light down here is the water's own glow, soft and from everywhere: the sun's beam is all but gone, so the
+     water between is not lit up brighter than the SUV behind it) */
+  E.sunCol=E.sunCol.map(v=>v*mix(1,.1));E.ambUp=E.ambUp.map((v,i)=>v*amb*br[i]);E.ambDn=E.ambDn.map((v,i)=>v*amb*br[i]);
+  /* (and the sky is the same mud: it is what the reflections' own picture is made of, and the wet bed under the SUV,
+     which nothing ever saw from below, mirrored a bright sky) */
+  E.skyZen=E.skyZen.map((v,i)=>mix(v,T[i]*.8));E.skyHor=E.skyHor.map((v,i)=>mix(v,T[i]));E.skyGlow=E.skyGlow.map(v=>v*(1-w));E.stars=0;}
 /* ---------- each frame, after the physics ---------- */
 const ML_LUG={};
 function mlLug(tr){if(ML_LUG[tr]===undefined){const T=TREAD_MU[tr],M=TREAD_MU.mud;ML_LUG[tr]=T&&M?Math.max(.5,Math.min(1.1,T.mud/M.mud)):1;}return ML_LUG[tr];}
 function mlStep(dt,t){
   if(!WG.mlA||MLS.off)return;if(!MLS.ready)mlInit();if(!MLS.ready||!t||t.rt)return;MLS.clock+=dt;
   mlStepCar(dt,t);
+  /* (Mud Lab 19: a SUV made new while the one before it stood drowned (a tune picked, a tyre size): the engine gives a
+     new car the engine state of the old one, and that was "off". This one hasn't drowned: it runs) */
+  if(MLS.drownT){if(t!==MLS.drownT){if(!t.mlDrowned&&t.pt&&t.pt.st==='off'){t.pt.st='run';t.pt.we=t.pt.e.idle*TAU/60;}MLS.drownT=null;}else if(!t.mlDrowned)MLS.drownT=null;}
   /* (Mud Lab 9) the other SUV, while it's on the physics (strapped, or beside you: src/ml-recover.js): the same soil
      under its tyres; the readouts stay yours */
   {const o=mlrLive();if(o){const k=[MLS.wd,MLS.buoy,MLS.plough,MLS.res,GAME.dirt];mlStepCar(dt,o);o.mlDirt=Math.min(1,(o.mlDirt||0)+Math.max(0,GAME.dirt-k[4]));MLS.wd=k[0];MLS.buoy=k[1];MLS.plough=k[2];MLS.res=k[3];GAME.dirt=k[4];}}
-  if(!APP.bigMap&&MLS.gripBtn)MLS.gripBtn.hidden=true;
+  if(!APP.bigMap){if(MLS.gripBtn)MLS.gripBtn.hidden=true;if(MLMV.open){MLMV.open=false;MLMV.whole=false;if(MLMV.btn)MLMV.btn.hidden=true;}}
   mlSettle(dt);mlWindow();mlUpload();
 }
 /* one vehicle's tyres and belly on the soil, for this frame */
@@ -366,6 +536,8 @@ function mlStepCar(dt,t){
     if(A&&A.rr){const dv=Math.min(Math.abs(w.vl),A.rr*2.45*(1-soft)*dt)*Math.sign(w.vl),fx=w.f[0],fz=w.f[2],fl=Math.hypot(fx,fz)||1;t.v[0]-=fx/fl*dv;t.v[2]-=fz/fl*dv;}
     /* tyres come out of water or wet mud wet, and dry as they roll on */
     const wetSoil=W.moist*Math.max(W.silt+W.peat+W.clay*.6,.4);if(wd>.01||wetSoil>.55)w.mlWet=1;else w.mlWet=Math.max(0,w.mlWet-dt*(.04+.025*Math.abs(w.vl)));
+    if(wd>.03){const mv=Math.hypot(t.v[0],t.v[2])+Math.abs(wR-Math.abs(w.vl))*.4;w.mlWk=(w.mlWk||0)+mv*dt;
+      if(w.mlWk>.7&&MLS.clock-MLWK.t>.11){w.mlWk=0;mlWake(w.cp[0],w.cp[2],Math.min(1,.35+mv*.16)*Math.min(1,wd/.1));}}
     mlStamp(t,w,dt,S,W);if(!reduce)mlThrow(t,w,dt,S,W,wd);
     if(clayWet>.4&&roll>.2)GAME.dirt=Math.min(1,GAME.dirt+dt*.012*clayWet);}
   /* the belly in the mud (Mud Lab 6): sunk deeper than the body's underside sits above the tyres' bottoms, the axles and
@@ -421,11 +593,15 @@ function mlHookUse(G){if(G._mlu)return;G._mlu=1;ML_U0=Math.min(27,gl.getParamete
 /* the land's uniforms for the soil (each lit pass): where the world is, the window, the patch, the time */
 function mlUniforms(P){
   const G=R.G,on=MLS.ready?1:0;
+  if(!APP.bigMap&&MLMV.open){MLMV.open=false;MLMV.whole=false;if(MLMV.btn)MLMV.btn.hidden=true;}
   if(on&&GAME.car){if(MLP.lvl!==GFX.level)mlPatchBuild();const c=GAME.car,A=WG.mlA,lim=MLS.WS/2+MLP.E;
-    MLP.cx=Math.round(c.p[0]*2)/2;MLP.cz=Math.round(c.p[2]*2)/2;MLP.on=Math.abs(MLP.cx-A.x)<lim&&Math.abs(MLP.cz-A.z)<lim;}else MLP.on=false;
+    MLP.cx=Math.round(c.p[0]*2)/2;MLP.cz=Math.round(c.p[2]*2)/2;MLP.on=Math.abs(MLP.cx-A.x-A.cu)<lim&&Math.abs(MLP.cz-A.z-A.cv)<lim;}else MLP.on=false;
   const cs=MLS.T*MLS.C,wx=MLS.x0+(MLS.wc[0]+.5)*cs,wz=MLS.z0+(MLS.wc[1]+.5)*cs,half=(MLS.NW/MLS.T/2-1)*cs;
   G.uni(P,'uMLo',[MLS.x0-RO[0],MLS.z0-RO[2],1/MLS.WS,on]);G.uni(P,'uMLw',[wx-RO[0],wz-RO[2],1/(MLS.NW*MLS.C),Number.isFinite(wx)?half:-1]);
   G.uni(P,'uMLp',[MLP.cx-RO[0],MLP.cz-RO[2],MLP.E,MLP.on?1:0]);G.uni(P,'uMLq',[1/MLS.NW,MLS.C,MLS.h0-RO[1],on?mlNow():0]);G.uni(P,'uMLv',0);
+  /* (Mud Lab 16) the tyres' rings in the water: where (from the picture's own origin), how old, how strong (0: none) */
+  if(P.u&&P.u.uMLk){const U=MLWK.u,E=MLWK.e,now=MLS.clock;for(let k=0;k<64;k+=4){const age=now-E[k+2],a=on&&age>=0&&age<2.6?E[k+3]:0;U[k]=E[k]-RO[0];U[k+1]=E[k+1]-RO[2];U[k+2]=age;U[k+3]=a;}G.uni(P,'uMLk',U);
+    G.uni(P,'uMLb',[MLWK.bx-RO[0],MLWK.bz-RO[2],on?MLWK.k:0,1.02]);G.uni(P,'uMLc',[MLWK.dx,MLWK.dz,MLWK.len,0]);}
   /* (Mud Lab 8, src/ml-look.glsl) how far the trees are drawn: past it the woods' floor is painted as their canopy; and
      where his ground pictures fade to their own colour (metres across a pixel: by how sharply this tier filters them) */
   {const f=GFX.level==='mobile'?Math.min(GFX.q.propD,BUDGET.treeD):GFX.q.propD,a=GFX.q.texAniso||4;G.uni(P,'uMLf',[f*.72,f*.97,.06*a,.25*a]);}
@@ -439,12 +615,12 @@ function mlPatchDraw(u){
   return tris;}
 /* the world raked smooth again (K on a keyboard; the test tools) */
 function mlRake(){if(!MLS.ready)return;for(let q=0;q<MLS.tiles.length;q++)if(MLS.tiles[q]){MLS.tiles[q]=null;MLS.up.add(q);}MLS.ntile=0;MLS.act.clear();}
-addEventListener('keydown',e=>{if(GAME.state!=='drive'||e.repeat)return;if(e.code==='Backspace'){mlRake();say('The ground raked smooth',1.6);}if(e.code==='KeyG')mlGripToggle();});
+addEventListener('keydown',e=>{if(GAME.state!=='drive'||e.repeat)return;if(mlkIs('rake',e))mlmClear();if(mlkIs('grip',e))mlGripToggle();});
 /* for the test tools */
 function mlStats(){if(!MLS.ready)return {ready:false};let mn=0,mx=0,ch=0,pr=0,br=0,wet=0;const now=mlNow();
   for(const t of MLS.tiles){if(!t)continue;for(let k=0;k<4096;k++){const r=t.r[k];if(r<mn)mn=r;if(r>mx)mx=r;if(t.ch[k]>60)ch++;if(t.pr[k]>60)pr++;if(t.fl[k]&1)br++;if(now-t.wt[k]<60)wet++;}}
   const a=MLS.C*MLS.C,c=GAME.car;let here=null;if(c){const W=mlWeights(c.p[0],c.p[2],{});here={main:mlParams(W).main,moist:+W.moist.toFixed(2),place:GAME.place,mu:c.wheels.map(w=>+(w.mlMuT||0).toFixed(2)).join(','),waterCm:+(Math.max(0,MLS.wd||0)*100).toFixed(0),clog:c.wheels.map(w=>+(w.mlClog||0).toFixed(2)).join(','),grip:c.wheels.map(w=>+(w.mlGrip||1).toFixed(2)).join(',')};}
-  return {ready:true,ms:Math.round(MLS.ms),terra:MLS.terra,blocks:MLS.blocks.size,squares:MLS.ntile,mb:+(MLS.ntile*4096*14/1048576).toFixed(1),deepestCm:+(-mn*100).toFixed(1),bermCm:+(mx*100).toFixed(1),churnedM2:+(ch*a).toFixed(1),pressedM2:+(pr*a).toFixed(1),
+  return {ready:true,ms:Math.round(MLS.ms),prepMs:Math.round(MLS.pms||0),prepWorkers:MLS.pwn||0,prepBandsHere:MLS.pmine||0,prepBands:MLS.pb?MLS.pb.length:0,waterTris:MLP.water?MLP.water.tris:0,terra:MLS.terra,blocks:MLS.blocks.size,squares:MLS.ntile,mb:+(MLS.ntile*4096*14/1048576).toFixed(1),deepestCm:+(-mn*100).toFixed(1),bermCm:+(mx*100).toFixed(1),churnedM2:+(ch*a).toFixed(1),pressedM2:+(pr*a).toFixed(1),
     brokenM2:+(br*a).toFixed(1),wetTrackM2:+(wet*a).toFixed(1),dugLitres:+(MLS.stat.dug*1000).toFixed(1),clods:MLS.stat.clods,splash:MLS.stat.splash,fx:FX.length,patch:MLP.mesh?MLP.mesh.tris:0,water:MLP.water?MLP.water.tris:0,settling:MLS.act.size,here};}
 
 
@@ -484,18 +660,32 @@ function mlMapFill(X0,Y0,n,cx0,cz0,mpp,keep){
   for(let j=0;j<n;j++){const Y=Y0+j;if(Y<0||Y>=BH)continue;const o=Y*BW+X0,z=cz0+(j+.5-n/2)*mpp,mj=Math.floor((z-MLS.z0)/MLS.CM);
     for(let i=0;i<n;i++){const X=X0+i;if(X<0||X>=BW)continue;const x=cx0+(i+.5-n/2)*mpp,mi=Math.floor((x-MLS.x0)/MLS.CM);
       HB[o+i]=mi<0||mj<0||mi>=M||mj>=M?out:MLS.map[mj*M+mi];}}}
+/* (Mud Lab 19) the big map at two scales. It opens as it always was, a mile across with every name on it, on the
+   ground round where you are (the map has four times the ground now, and all of it at once is too small for its
+   names on a phone); WHOLE MAP, a button beside it, shows all two miles with the main places' names only; CLOSE UP
+   goes back. mlMapView(): which is showing, its middle (u, v) and how many metres it is across */
+const MLMV={open:false,whole:false,cu:0,cv:0,span:0,btn:null};
+function mlMapView(){const A=WG.mlA,V=MLMV,full=MLS.WS*1.06;
+  if(!V.open){V.open=true;const t=GAME.car,half=full/4,lim=full/2-half;V.tu=t?Math.max(A.cu-lim,Math.min(A.cu+lim,t.p[0]-A.x)):0;V.tv=t?Math.max(A.cv-lim,Math.min(A.cv+lim,t.p[2]-A.z)):0;}
+  if(V.whole){V.cu=A.cu;V.cv=A.cv;V.span=full;}else{V.cu=V.tu;V.cv=V.tv;V.span=full/2;}return V;}
+/* (is a place's name on the map as it is showing: in the close-up, the ones inside it; on the whole map, the main ones) */
+function mlMapHas(p,u,v){const V=MLMV;return V.whole?!!p:Math.max(Math.abs(u-V.cu),Math.abs(v-V.cv))<V.span/2*.97;}
+function mlMapBtn(){const V=MLMV;let b=V.btn;if(!b){b=V.btn=document.createElement('button');b.type='button';b.id='mlWhole';
+    b.style.cssText='position:fixed;right:calc(50% + 48vh + 8px);top:calc(50% + 24px);z-index:62;font:600 13px system-ui,sans-serif;letter-spacing:.05em;padding:9px 16px;border-radius:999px;border:1px solid rgba(242,230,210,.4);background:rgba(20,14,9,.82);color:#f2e6d2;cursor:pointer';
+    b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',e=>{e.stopPropagation();V.whole=!V.whole;if(typeof MLV!=='undefined'){MLV.sel=null;if(MLV.jb)MLV.jb.hidden=true;}});document.body.appendChild(b);}
+  const tx=V.whole?'CLOSE UP':'WHOLE MAP';if(b.textContent!==tx)b.textContent=tx;if(b.hidden)b.hidden=false;}
 function mlBigMap(){
-  const A=WG.mlA,size=Math.min(H-14,W-14)|0,x0=Math.round((W-size)/2),y0=Math.round((H-size)/2),n=size*HS,span=MLS.WS*1.06;
+  const A=WG.mlA,size=Math.min(H-14,W-14)|0,x0=Math.round((W-size)/2),y0=Math.round((H-size)/2),n=size*HS,V=mlMapView(),span=V.span;
   hRect(0,0,W,H,pack(0,0,0,110));hRect(x0-2,y0-2,size+4,size+4,pack(0,0,0,225));
-  mlMapFill(x0*HS,y0*HS,n,A.x,A.z,span/n,true);
-  const toM=(u,v)=>[x0+size/2+u/span*size,y0+size/2+v/span*size];
-  for(const [name,u,v,kind] of WG.mlPlaces){const [a,b]=toM(u,v),col=kind==='trail'?pack(240,226,190,255):kind==='water'||kind==='ford'?PAL.cyan:kind==='camp'?PAL.gold:PAL.ink;
+  mlMapFill(x0*HS,y0*HS,n,A.x+V.cu,A.z+V.cv,span/n,true);mlMapBtn();
+  const toM=(u,v)=>[x0+size/2+(u-V.cu)/span*size,y0+size/2+(v-V.cv)/span*size];
+  for(const [name,u,v,kind,big] of WG.mlPlaces){if(!mlMapHas(big,u,v))continue;const [a,b]=toM(u,v),col=kind==='trail'?pack(240,226,190,255):kind==='water'||kind==='ford'?PAL.cyan:kind==='camp'?PAL.gold:PAL.ink;
     if(kind!=='trail')hDisc(a,b,1.3,col);otxt3(name,a+3,b-6,col);}
   if(typeof mlvMap==='function')mlvMap(toM);
-  const t=GAME.car;{const [a,b]=toM(t.p[0]-A.x,t.p[2]-A.z);mapArrow(a,b,1.3);}
+  const t=GAME.car;{const [a,b]=toM(t.p[0]-A.x,t.p[2]-A.z);if(Math.max(Math.abs(a-x0-size/2),Math.abs(b-y0-size/2))<size/2)mapArrow(a,b,1.3);}
   hFrame(x0-2,y0-2,size+4,size+4,pack(255,255,255,70));
-  otxt3('MUD LAB  5,000 FT ACROSS',x0+3,y0+3,PAL.ink);otxt3(GAME.touch?'TAP TO CLOSE':'M TO CLOSE',x0+3,y0+size-8,PAL.dim);
-  otxt3((MLS.terra?'GRIP: SOIL SCIENCE':'GRIP: GAME')+(GAME.touch?'':'  (G)'),x0+size-3,y0+size-8,MLS.terra?PAL.gold:PAL.cyan,1,'r');
+  otxt3(V.whole?'MUD LAB  ALL OF IT: 10,000 FT ACROSS':'MUD LAB  5,000 FT OF ITS 10,000',x0+3,y0+3,PAL.ink);otxt3(GAME.touch?'TAP TO CLOSE':mlkName('map')+' TO CLOSE',x0+3,y0+size-8,PAL.dim);
+  otxt3((MLS.terra?'GRIP: SOIL SCIENCE':'GRIP: GAME')+(GAME.touch?'':'  ('+mlkName('grip')+')'),x0+size-3,y0+size-8,MLS.terra?PAL.gold:PAL.cyan,1,'r');
   /* (on a phone, the switch for the grip under the map) */
   if(GAME.touch){let b=MLS.gripBtn;if(!b){b=MLS.gripBtn=document.createElement('button');b.type='button';b.id='mlGrip';
       b.style.cssText='position:fixed;right:calc(env(safe-area-inset-right) + 12px);top:calc(50% - 84px);z-index:60;font:600 14px system-ui,sans-serif;letter-spacing:.06em;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(20,14,9,.75);color:#f2e6d2';
@@ -515,8 +705,14 @@ function mlSoilPromote(){const G=R&&R.G;if(!G||!P_LANDML||P_LANDML===P_LAND||MLS
   MLS.lite=P_LAND;P_LAND=P_LANDML;MLS.soilFS=performance.now();if(R)R.resetTAA=true;
   if(MLS.soilWait&&GAME.state==='drive')say('THE GROUND\'S DETAIL IS READY',2.5);}
 /* (at Start, if the full ground isn't built yet (a Windows laptop the first time): say so, so plain ground isn't a surprise) */
-function mlSoilNote(){setTimeout(()=>{if(P_LANDML&&P_LAND!==P_LANDML&&!MLS.noSoilFS&&GAME.state==='drive'){MLS.soilWait=true;
-  say('THE GROUND\'S DETAIL IS STILL BEING BUILT BY THE GRAPHICS DRIVER: PLAIN GROUND UNTIL IT\'S READY (SLOW THE FIRST TIME ON A LAPTOP)',6);}},1500);}
-window.__ml={MLS,MLP,ML_T,mlStats,mlRake,mlGround,ML_SOIL,mlWeights,mlParams,mlGripToggle,mlBase,mlWL,land:()=>({cur:P_LAND&&P_LAND.name,soil:P_LANDML&&P_LANDML.ready,at:MLS.soilFS,no:MLS.noSoilFS})};
+function mlSoilNote(){
+  /* (Mud Lab 19: START with the world's layer still being filled: say so, once; it is seconds. And the driver's line
+     waits for the layer: until it is full the plain ground is the layer's doing, and the line above has said so) */
+  let lay=false,drv=false;
+  for(const ms of [300,1000,2000])setTimeout(()=>{if(!lay&&MLS.prep<2&&GAME.state==='drive'){lay=true;say('LAYING OUT THE GROUND: THE SOIL IS A MOMENT AWAY',3);}},ms);
+  for(const ms of [1500,4500,9000])setTimeout(()=>{if(drv||MLS.prep<2)return;drv=true;if(P_LANDML&&P_LAND!==P_LANDML&&!MLS.noSoilFS&&GAME.state==='drive'){MLS.soilWait=true;
+  /* (Mud Lab 20: the laptop's line is 128 letters, and a phone's screen holds about 105: it ran off both edges) */
+  say(GAME.touch?'THE GROUND\'S DETAIL IS STILL BEING BUILT: PLAIN GROUND FOR A MOMENT':'THE GROUND\'S DETAIL IS STILL BEING BUILT BY THE GRAPHICS DRIVER: PLAIN GROUND UNTIL IT\'S READY (SLOW THE FIRST TIME ON A LAPTOP)',6);}},ms);}
+window.__ml={MLS,MLP,MLMV,ML_INTAKE,mlUnder,mlUnderEnv,ML_T,mlStats,mlRake,mlGround,ML_SOIL,mlWeights,mlParams,mlGripToggle,mlBase,mlWL,land:()=>({cur:P_LAND&&P_LAND.name,soil:P_LANDML&&P_LANDML.ready,at:MLS.soilFS,no:MLS.noSoilFS})};
 /* the world's ground every 2.56 m made a slice at a time while the title is up */
-{let mlPrepE=0;const mlPrepT=setInterval(()=>{try{if(WG&&WG.mlA&&mlPrepStep(GAME.hold?20:10))clearInterval(mlPrepT);}catch(e){if(++mlPrepE>3){console.warn('soil prep: '+(e&&e.message||e));clearInterval(mlPrepT);}}},25);}
+{let mlPrepE=0;const mlPrepT=setInterval(()=>{try{if(WG&&WG.mlA&&mlPrepStep(GAME.hold?20:MLS.pw?5:10))clearInterval(mlPrepT);}catch(e){if(++mlPrepE>3){console.warn('soil prep: '+(e&&e.message||e));clearInterval(mlPrepT);}}},25);}
