@@ -104,16 +104,25 @@ vec3 mlWoods(vec2 wp,float moist){
         alb*=.83+.2*vn(wp*.027+9.)+.14*vn(wp*.093+2.);
         /* past where the trees are drawn, the woods show as their canopy: from the Heron the woods are woods */
         {float cn=wwd*smoothstep(uMLf.x,uMLf.y,dist);if(cn>.004)alb=mix(alb,vec3(.04,.068,.024)*(.62+.5*vn(wp*.19)+.3*vn(wp*.05+3.)),cn*.92);}
-        spec=.03+.22*moist*moist*(wlm*.5+wc+ws)*(1.-.7*cv)+.05*wq;shin=8.+40.*moist*(wc+ws);pud=0.;em=1.-.4*wwd;
-        mlSpec=mix(mix(.4,1.,smoothstep(.3,.7,moist)),.2,cv);
+        /* (Mud Lab 22) WET SOIL IS DARK, NOT SHINY. His words, 14 Nov 2026: "the ground's kind of shiny. I know that it's
+           like wet and not wet but wet soil is dark not shiny." Until now damp ground was lit as a smooth wet sheet
+           (a tight highlight and the sky's grey in it at a low angle), from the first sign of damp. Damp soil's own
+           colour already goes dark (above); its surface stays rough. Now no soil is lit as a sheet, wet or dry: it
+           is as matt as dry ground. The only shine left on soil is water standing in the deepest of its hollows
+           where it is soaked right through (gl: nothing below three quarters wet, all of it at the water's edge:
+           the relief, below), a faint smear where a tyre has pressed it, and a wet track while it dries. Open water
+           is as it was */
+        float gl=smoothstep(.75,1.,moist)*(1.-cv);spec=.03+.05*wq;shin=8.;pud=0.;em=1.-.4*wwd;
+        mlSpec=mix(.4,.2,cv);
 #ifndef LEAN_D
         /* (the laptop's fine bumps in the grass: the engine's own, at half strength as before) */
         {vec3 dz=vec3(1.);grassDetail(wp,dz);gG*=cv*sat(wg*2.)*.5;}
 #endif
         /* (Mud Lab 15) the soil's own relief, worked out below on every tier: rA how lumpy the soil is here (0 to 1:
-           slight on bare ground, many times more where it has been turned or squeezed up), rW how wet (water stands
-           in a wet soil's hollows) */
-        float rA=(.1+.12*moist*moist)*(1.-cv),rW=moist*moist*(1.-cv);
+           many times more where it has been turned or squeezed up), rW how far water stands in its hollows.
+           (Mud Lab 22: bare ground that nothing has touched is crumbs too, dry more than wet: nearly three times
+           the relief it had, so it reads as grains and not a painted sheet) */
+        float rA=(.28-.1*moist)*(1.-cv),rW=gl;
         if(mlWin){float mtx=uMLq.x,mcl=uMLq.y,cd=uMLo.z*1.28;
           /* the fine slopes the meshes don't carry: ruts, berms, the trails' two-track, the edges of the mud holes */
           float f0=textureLod(uMLt,mlW-vec2(mtx,0.),0.).r+textureLod(uMLd,mlW-vec2(mtx,0.),0.).r,f1=textureLod(uMLt,mlW+vec2(mtx,0.),0.).r+textureLod(uMLd,mlW+vec2(mtx,0.),0.).r,
@@ -133,21 +142,32 @@ vec3 mlWoods(vec2 wp,float moist){
             alb*=1.-.22*mlug*mtw;gG+=mdv*(smoothstep(.08,.16,mk)-smoothstep(.5,.58,mk))*.9*mtw;}
           alb*=1.-.26*mpr;alb=mix(alb,cL*1.05,smoothstep(.008,.05,mberm)*(1.-mch)*.5*wlm*(1.-moist));
           alb*=1.-.22*smoothstep(.03,.22,mrut)*(1.-mch*.3);em*=1.-.3*smoothstep(.02,.2,mrut);
-          spec=mix(spec,.16,max(mpr*.3,moist*mch*.85));shin=mix(shin,mix(24.,40.,wc+ws),max(mpr*.5,moist*mch));mlSpec=mix(mlSpec,1.,max(mpr*.5,moist*mch));
+          spec=mix(spec,.1,mpr*.35);shin=mix(shin,20.,mpr*.35);
           /* wet tracks, drying over a minute and a half */
-          float wd=1.-clamp((uMLq.w-w0.a)/90.,0.,1.);wd*=wd;alb*=1.-.42*wd;spec=mix(spec,.28,wd*.6);shin=mix(shin,70.,wd*.6);mlSpec=mix(mlSpec,1.,wd*.6);
-          rA=min(1.,rA+(.9*mch+5.*min(mberm,.12)*(1.-mch))*(1.-.4*moist*ws));rW=max(rW,max(moist*mch,wd*.7));
+          float wd=1.-clamp((uMLq.w-w0.a)/90.,0.,1.);wd*=wd;alb*=1.-.5*wd;spec=mix(spec,.1,wd*.4);shin=mix(shin,20.,wd*.4);
+          rA=min(1.,rA+(.9*mch+5.*min(mberm,.12)*(1.-mch))*(1.-.4*moist*ws));rW=max(rW,wd*.5);
           }
         /* (Mud Lab 15) the relief: clods three hand-spans, a hand and a finger across, each only while a pixel is small
            enough to show it; none in sand (its ripples are its picture's). Hollows darker, a dry soil's crests paler
-           crumbs. Wet, every lump shines (a little more where water stands in the hollows): the lumps break the
-           shine into glints on the sides that face the light, where it was one smooth sheet */
+           crumbs. Soaked, water stands in the deepest hollows and they glint. (Mud Lab 22: more of the relief is in the two
+           finer sizes, the hand and the finger, and less in the big soft lumps: the grain of it) */
+        /* (Mud Lab 22) and wet soil is DARK: bare soil goes deeper and browner as it wets (a wet soil's own colours
+           were grey-browns, and under a blue sky they read as grey), a seventh less red, over a quarter less green
+           and two fifths less blue when soaked */
+        alb*=mix(vec3(1.),vec3(.86,.72,.58),smoothstep(.3,.9,moist)*(1.-cv));
+        /* (Mud Lab 22) THE GRAIN. "The like particulate of it": soil is grains, and bare ground was a smooth painted
+           sheet between its lumps (sand had no lumps at all: the Track, the jumps' lanes, the bars in the Shallows).
+           Now every bare soil is flecked with grains lighter and darker than their neighbours, at two sizes (about
+           an inch and a half, and half an inch), each on two grids laid across one another so no rows show, each
+           only while a pixel is small enough to hold a grain (further off they would only twinkle). Dry more than
+           wet. Four dice per pixel and no picture read: nothing the phone will notice */
+        {vec2 wr=mat2(.8,.6,-.6,.8)*wp;alb*=1.+((h12(floor(wp*29.))+h12(floor(wr*37.))-1.)*(1.-smoothstep(.012,.04,gFP))+(h12(floor(wp*83.))+h12(floor(wr*71.))-1.)*(1.-smoothstep(.005,.016,gFP)))*(.2-.08*moist)*(1.-cv);}
         float rk=(1.-smoothstep(.06,.18,gFP))*rA*(1.-wsd);
         if(rk>.004){vec3 a=vnd(wp*2.9+1.7),b=vnd(wp*7.3+4.1),c=vnd(wp*19.+2.3);float k1=1.-smoothstep(.025,.075,gFP),k2=1.-smoothstep(.008,.024,gFP);
-          float h=a.x*.45+(b.x*.35-.175)*k1+(c.x*.2-.1)*k2+.275;gG+=(a.yz*.3+b.yz*.55*k1+c.yz*.55*k2)*rk;
+          float h=a.x*.3+(b.x*.4-.2)*k1+(c.x*.3-.15)*k2+.35;gG+=(a.yz*.2+b.yz*.55*k1+c.yz*.8*k2)*rk;
           float lk=min(1.,rk*1.4),hol=(1.-smoothstep(.28,.66,h))*lk;
-          alb*=(1.-.4*hol)*(1.+.3*smoothstep(.56,.8,h)*lk*(1.-moist));em*=1.-.25*hol;
-          float wk=rW*lk;spec=mix(spec,mix(.18,.33,hol),wk);shin=mix(shin,mix(35.,80.,hol),wk);mlSpec=mix(mlSpec,1.,wk);}
+          alb*=(1.-.4*hol)*(1.+.4*smoothstep(.56,.8,h)*lk*(1.-moist));em*=1.-.25*hol;
+          float wk=rW*lk*(1.-smoothstep(.2,.42,h));spec=mix(spec,.22,wk);shin=mix(shin,50.,wk);mlSpec=mix(mlSpec,1.,wk);}
         /* water lying in ruts past the patch (the patch's own ruts are under the water's own surface). (Mud Lab 8) And
            everywhere past the patch a water's shore follows the ground's own heights, not the triangles of the land's
            coarser mesh (which made a saw-toothed waterline): ground that the heights say is under a water's level is
@@ -163,18 +183,23 @@ vec3 mlWoods(vec2 wp,float moist){
       if(vC.a>.5&&mlIn){float gy=mlWin?textureLod(uMLd,mlW,0.).r+textureLod(uMLt,mlW,0.).r:textureLod(uMLs0,mlUV,0.).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.14,dep),ed=smoothstep(0.,.035,dep);
         if(dep<-.004&&!(uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985))discard;
         alb=mix(vec3(.06,.044,.028),mix(vec3(.105,.076,.046),vec3(.135,.096,.054),sh),ed);spec=mix(.1,.2,ed);shin=mix(30.,420.,ed*ed);ssr=ed>.5?.5:0.;N=normalize(vec3(gw.x*.55*ed,1.,gw.y*.55*ed));
-        /* (Mud Lab 16, 17) what a truck does to the water, as slopes on its level surface (the sky and the sun bend in
-           them). The rings a tyre sends out (uMLk, sixteen at a time: where, how long ago, how strong:
-           src/ml-soil.js): each widens at 1.1 m a second and fades in 2.6 s. And the bow wave of the truck you are
-           in (uMLb: the bow, how strong, half its width; uMLc: the way it is going, how long the arms are): a band
-           of waves trailing back from each corner of its leading end at 23 degrees, its crests lying across the
-           band as a real wake's do, widening and fading along its length. (Mud Lab 15's and 16's darker, lumpy water over a churned bed is gone: on water that is
-           muddy from bank to bank it read as tyre treads lying on the surface, his eye, Nov 13) */
-        {vec2 wg=vec2(0.);
-          for(int i=0;i<16;i++){vec4 e=uMLk[i];if(e.w>0.){vec2 q=vP.xz-e.xy;float d=length(q),x=d-.25-1.1*e.z;
-            if(abs(x)<1.)wg+=q/max(d,.05)*(e.w*exp(-x*x*5.)/(1.+e.z*1.2)*(1.-e.z/2.6)*sin(x*11.));}}
-          if(uMLb.z>.01){vec2 q=vP.xz-uMLb.xy,n=vec2(-uMLc.y,uMLc.x);float t=-dot(q,uMLc.xy),s=dot(q,n),x=abs(s)-uMLb.w-t*.42;
-            if(t>-.3&&t<uMLc.z)wg+=n*(sign(s)*uMLb.z*(1.-t/uMLc.z)*exp(-x*x/(.16+t*.2))*sin(x*8.-t*3.));}
+        /* (Mud Lab 16, 17, 22) what a truck does to the water, as slopes on its level surface (the sky and the sun bend
+           in them), and all of it only inside a circle round the truck's own doings (uMLb). uMLr, 52 places laid
+           out by src/ml-soil.js: 0 to 35 the WAKES (Mud Lab 22: six waves, six points each, along the path each
+           tyre and the body really took), 36 to 51 the rings a spinning tyre sends out. Each stretch of path
+           between two points draws its own piece of the wave's two arms: a train of crests 80 cm apart, its middle
+           as far out from the path as the arms have moved by there (.z, more toward the older point), the train
+           wider the further it has travelled. Each piece fades in over a tenth of its length either side of its start and out the same at its
+           end, so two pieces meet without a seam and reach round the outside of a bend. A ring is a piece whose
+           two ends are one place (B stays nothing): circles. A pixel further from a piece's crests than they
+           reach (where the train has died to under a hundredth) does none of that piece's sums: most of the water
+           inside the circle, for most pieces. (Mud Lab 15's and 16's darker, lumpy water over a
+           churned bed is gone: on water that is muddy from bank to bank it read as tyre treads lying on the
+           surface, his eye, Nov 13) */
+        {vec2 wg=vec2(0.),wq=vP.xz-uMLb.xy;
+          if(dot(wq,wq)<uMLb.z)
+            for(int i=0;i<52;i++){vec4 A=uMLr[i],B=vec4(0.);if(A.w!=0.){if(i<36)B=uMLr[i+1]-A;vec2 q=vP.xz-A.xy,b=B.xy;float t=dot(q,b)/max(dot(b,b),.001);
+              if(abs(t-.5)<.6){q-=b*t;float r=A.z+B.z*t,d=length(q),x=d-r,e=.1+.3*r;if(x*x<5.*e)wg+=q*((A.w+B.w*t)*smoothstep(-.1,.1,t)*(1.-smoothstep(.9,1.1,t))*exp(-x*x/e)*sin(x*8.)/max(d,.05));}}}
           N=normalize(N+vec3(wg.x,0.,wg.y)*(.9*ed*(1.-.7*smoothstep(.05,.15,gFP))));}}
 #endif
 //@@ trunk
