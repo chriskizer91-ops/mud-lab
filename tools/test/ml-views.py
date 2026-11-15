@@ -151,6 +151,10 @@ VIEWS.update({
     # ('water-wake' is the Rock & Mud in the Mud Hole's deepest water, over its sills: its body's own wave. The same from ahead and from the side)
     'water-wakef': (-150, 562, 3.1, [['drive', .6, 0, 0, 5]], ['look', 8, 2.6, 4, 0, .3, 0, .9]),
     'water-wakes': (-150, 562, 3.1, [['drive', .6, 0, 0, 5]], ['look', 2, 1.5, 8, 1, .3, 0, .9]),
+    # (Mud Lab 22.2 water) the splash of going in: into the Mud Hole flat out, about a third of a second after the front tyres meet
+    # the water, from beside and ahead; and as the chase camera shows it
+    'water-entry':  (-112, 562, 3.1, [['drive', 1, 0, 0, 3.25]], ['look', 5, 1.8, 9, 1, .6, 0, .9]),
+    'water-entryc': (-112, 562, 3.1, [['drive', 1, 0, 0, 3.25]], None),
     # (the stock SUV wading the same water, from ahead: its body is lower, so its own wave starts in shallower water)
     'water-stock': (-150, 562, 3.1, [['stock'], ['drive', .8, 0, 0, 3.0]], ['look', 9, 3.2, 4, 0, .2, 0, .9]),
 })

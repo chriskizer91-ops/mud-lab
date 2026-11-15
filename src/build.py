@@ -6,7 +6,7 @@ Exact text swaps, each must match exactly as many times as said, so a changed en
 usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-19: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-22.1-water'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-22.2-water'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -139,7 +139,11 @@ swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uP
      "  if(uMLv>1.5){vec2 wq=w.xz-uMLb.xy;float mh=0.;\n"
      "    if(dot(wq,wq)<uMLb.z)for(int i=0;i<52;i++){vec4 A=uMLr[i],B=vec4(0.);if(A.w!=0.){bool hd=i<36&&i%6==0;if(i<36)B=uMLr[i+1]-A;vec2 q=w.xz-A.xy,b=B.xy;float t=dot(q,b)/max(dot(b,b),.001);\n"
      "      if(t<1.1&&(hd||t>-.1)){float tc=clamp(t,0.,1.);q-=b*tc;float r=A.z+B.z*tc,x=length(q)-r,e=.1+.3*r;\n"
-     "        if(x*x<5.*e)mh+=(A.w+B.w*tc)*(hd?1.:smoothstep(-.1,.1,t))*(1.-smoothstep(.9,1.1,t))*exp(-x*x/e)*cos(x*5.)*(i<24?.12:i<36?.3:.03);}}}\n"
+     # (Mud Lab 22.2 water) THE ROLL IS ALIVE. Its leading face is the steeper one (the wave leans the way it is going),
+     # and its height is not one smooth roll any more: it swells and sinks in lumps a couple of metres long that
+     # move along it, with a quicker small chop on top (to 0.4 and 1.24 of its height), anchored to the world
+     "        if(x*x<5.*e)mh+=(A.w+B.w*tc)*(hd?1.:smoothstep(-.1,.1,t))*(1.-smoothstep(.9,1.1,t))*exp(-x*x/(x>0.?e*.55:e))*cos(x*5.)*(i<24?.12:i<36?.3:.03);}}}\n"
+     "    vec2 wc=w.xz-uMLo.xy;mh*=.82+.3*sin(wc.x*2.1+uTime*2.3)*sin(wc.y*2.6-uTime*1.9)+.12*sin(wc.x*5.3-wc.y*4.1+uTime*4.);\n"
      "    mh*=1.-smoothstep(.6,.96,max(abs(aPos.x),abs(aPos.z))/14.);w.y+=mh;pw.y=w.y;vUV.x=mh;}\n"
      "#endif\n"
      "  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;")
@@ -175,6 +179,9 @@ swap("fxEmit(dt,t);fxStep(dt);", "mlStep(dt,t);mlvTick();fxEmit(dt,t);fxStep(dt)
 swap("if(!w.contact)continue;const R=w.R,surf=w.surf", "if(!w.contact||w.mlOn)continue;const R=w.R,surf=w.surf")
 swap("if(p.y<gy){p.y=gy;p.vx=p.vy=p.vz=0;", "if(p.y<gy){if(p.vol&&mlLand(p)){p.life=0;p.y=gy;continue;}p.y=gy;p.vx=p.vy=p.vz=0;")
 swap("const FX_MAX=360,", "const FX_MAX=1200,")
+# (Mud Lab 22.2 water) a puff of mist can say how thick it is (the wake's own, src/ml-soil.js: .27; the engine's spray off
+# wet tarmac stays .28)
+swap("p.kind==='spray'?.28*f*Math.min(1,(1-f)*6):.45*f;n++;}", "p.kind==='spray'?(p.al||.28)*f*Math.min(1,(1-f)*6):.45*f;n++;}")
 # (Mud Lab 15) the brake lamps' light on the ground: after dark a quarter of what the engine gives it (a little
 # over the tail lamps' own), by day a sixteenth. At full strength every wet lump of mud behind a braking SUV caught a red glint: ruts that looked like
 # cracks in lava, by day too
@@ -258,6 +265,16 @@ ML_CUT += cut("    else if(m==52){alb=vec3(.7,.68,.63);}\n", "    /* rain soaks 
 # painted bodies: Mud Lab's two SUVs carry none (liv:0) and are drawn from their bakes; there are no police. It pays
 # for the water's foam, the height of its waves and the far side of a wave mirroring sky (src/ml-look.glsl)
 ML_CUT += cut("    /* police (60_police): black and white, the doors and the roof white */\n", "    /* metallic flake under a smooth clear coat")
+# (Mud Lab 22.2 water) RAIN. It cannot rain in Mud Lab (the weather is the engine's Sim setting, whose part of the menu
+# src/ml-ui.js hides: uWet and uRain are always 0): out of the land's shaders go the rain soaking the ground and
+# putting a sheen on it, the puddles it fills, and the rain's rings on water and puddles
+def drop(a):
+    global s
+    assert s.count(a) == 1, f'drop, found {s.count(a)}: {a[:80]!r}'; s = s.replace(a, ''); return len(a)
+ML_CUT += drop("#ifndef LEAN_D\n      if(uRain>.35)gw+=ripplesS(wp*1.7)*uRain*near(.05);\n#endif\n")
+ML_CUT += drop("    if(uWet>0.){alb*=1.-uWet*(.36*por+.22*hard);spec=mix(spec,.6,uWet*(.75*hard+.2*por));shin=mix(shin,160.,uWet*(hard+.4*por));ssr=max(ssr,uWet*(.7*hard+.25*por));\n      if(por>0.)pud=max(pud,smoothstep(.66,.72,fbmS(wp*.09+11.3)*.8+vn(wp*.55)*.2+uWet*.12-.1)*uWet*.9);}\n")
+ML_CUT += drop("    float por=m==40||m==42||m==43||m==44||m==53||m==55||m==56||m==57?1.:0.,hard=m==54||m==45||m==58?1.:0.;\n")
+ML_CUT += drop("#ifndef LEAN_D\n      vec2 rg=uRain>.35?ripplesS(wp*1.8)*uRain*near(.05):vec2(0.);N=normalize(N+vec3(rg.x,0.,rg.y)*pud);\n#endif\n")
 # the leaves
 swap("      /* leaves: light comes through them; the crown is darker underneath and deep inside */\n      alb*=.6+.55*vn3(Pw*2.2);spec=.05;shin=10.;trans=.45;ground=false;\n      ao=.45+.55*sat(N.y*.5+.5)*sat(vL.y/7.+.2);\n", GL['leaves'])
 # the pictures' two ways of being looked up (src/ml-look.glsl's first piece), before the engine's picture helpers; the

@@ -216,13 +216,15 @@ vec3 mlWoods(vec2 wp,float moist){
            roll, across the bumper and back down both sides; src/ml-soil.js puts the head that far inside).
            AND THE CRESTS STAND UP: the same sums are done for a fine sheet of water round the SUV in the vertex
            shader (src/build.py), which lifts it by them; all of that sheet that a crest has not lifted clear of the
-           level water is thrown away at the top of this piece (uMLv 2: its height is in vUV.x) */
+           level water is thrown away at the top of this piece (uMLv 2: its height is in vUV.x).
+           (Mud Lab 22.2 water) The body's own wave (and the other SUV's: places 24 to 35) is lit as the steeper
+           wave it is: the sheet lifts it two and a half times a tyre's, and it was lit as flat as a tyre's */
         {vec2 wg=vec2(0.),wq=vP.xz-uMLb.xy;float wh=0.,wf=0.;
           if(dot(wq,wq)<uMLb.z)
             for(int i=0;i<52;i++){vec4 A=uMLr[i],B=vec4(0.);if(A.w!=0.){bool hd=i<36&&i%6==0;if(i<36)B=uMLr[i+1]-A;vec2 q=vP.xz-A.xy,b=B.xy;float t=dot(q,b)/max(dot(b,b),.001);
               if(t<1.1&&(hd||t>-.1)){float tc=clamp(t,0.,1.);q-=b*tc;float r=A.z+B.z*tc,d=length(q),x=d-r,e=.1+.3*r;
                 if(x*x<5.*e){float a=(A.w+B.w*tc)*(hd?1.:smoothstep(-.1,.1,t))*(1.-smoothstep(.9,1.1,t)),G=exp(-x*x/e),w=.25+.5*r;
-                  wg+=q*(a*G*(sin(x*5.)+.4*x/e*cos(x*5.))/max(d,.05));wh+=a*G*cos(x*5.);wf+=a*a*min(1.,dot(b,b))*(.7*G*G+a*exp(-d*d/(w*w)));}}}}
+                  wg+=q*((i/12==2?1.7:1.)*a*G*(sin(x*5.)+.4*x/e*cos(x*5.))/max(d,.05));wh+=a*G*cos(x*5.);wf+=a*a*min(1.,dot(b,b))*(.7*G*G+a*exp(-d*d/(w*w)));}}}}
           float wk=ed*(1.-.7*smoothstep(.05,.15,gFP));
           N=normalize(N+vec3(wg.x,0.,wg.y)*(.9*wk));alb*=1.+.25*wh*wk;shin=mix(shin,90.,min(1.,length(wg)*2.)*ed);
           if(wf>.03){float n=.6*abs(2.*vn(wp*4.)-1.)+.4*vn(wp*15.),c=smoothstep(n-.12,n+.14,wf)*ed*.85;alb=mix(alb,vec3(.4,.34,.26),c);shin=mix(shin,6.,c);N=normalize(mix(N,vec3(0.,1.,0.),c*.6));}

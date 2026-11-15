@@ -365,7 +365,7 @@ function mlLand(p){
    how strong), drawn by the water's shader (src/ml-look.glsl) as rings that widen and fade over 2.6 s. A tyre in water
    sends one for every 70 cm it moves (or would have moved: a spinning tyre counts), no more than nine a second between
    all the tyres. Nothing of the physics reads them and no dice are rolled */
-const MLWK={e:new Float32Array(64),c:new Float32Array(16),i:0,t:-9,n:0,R:[],ur:new Float32Array(208),o:[],tx:[0,0,0,0],tz:[0,0,0,0],td:[0,0,0,0],far:0,mid:[0,0],fx:[],mesh:null,lvl:'',lv:-99};
+const MLWK={e:new Float32Array(64),c:new Float32Array(16),i:0,t:-9,n:0,R:[],ur:new Float32Array(208),o:[],tx:[0,0,0,0],tz:[0,0,0,0],td:[0,0,0,0],far:0,mid:[0,0],fx:[],mesh:null,lvl:'',lv:-99,dripT:-9,dripK:0,nm:0};
 function mlWake(x,z,a,c){const k=MLWK.i*4,E=MLWK.e;E[k]=x;E[k+1]=z;E[k+2]=MLS.clock;E[k+3]=a;MLWK.c[MLWK.i]=c||1.1;MLWK.i=(MLWK.i+1)&15;MLWK.t=MLS.clock;MLWK.n++;}
 /* ---------- (Mud Lab 22) THE WAKE FOLLOWS THE WAY THE SUV MOVES ----------
    His words, 14 Nov 2026, with a photo of the Rock & Mud sliding sideways across shallow water and its V of waves still
@@ -434,10 +434,32 @@ const mlWkS=U=>sst(.5,3,U)*(.45+.55*sst(3,12,U));
    head, flung out and up and carried along. From 8 mph, more with speed. They are the wake's own (MLWK.fx, its own
    dice), like Build 22's side drops: the game's dice and its count of particles are untouched.
    R the wave, U how fast it goes, y the water's surface, s0 how big a puff starts, (nx, nz) across the way it goes */
-function mlWkMist(R,dt,U,y,s0,nx,nz){if(reduce||R.k<.2||U<3.5||!R.on)return;const F=MLWK.fx,cap=GFX.level==='mobile'?110:240,e=R.k*Math.min(U-3,12)*1.6*LOOK.dust*dt;
+function mlWkMist(R,dt,U,y,s0,nx,nz){if(reduce||R.k<.2||U<3.5||!R.on)return;const F=MLWK.fx,cap=mlWkCap(),e=R.k*Math.min(U-3,12)*3*LOOK.dust*dt;
   let n=Math.floor(e)+(mlWDice()<e-Math.floor(e)?1:0);
-  for(;n>0&&F.length<cap;n--){const sd=mlWDice()<.5?-1:1,o=sd*(R.w0*(.5+.7*mlWDice())),bk=mlWDice()*.8,out=sd*U*(.1+.2*mlWDice()),l=.5+mlWDice()*.5,s=s0*(.7+.6*mlWDice());
-    F.push({kind:'spray',x:R.x+nx*o-R.ux*bk,y:y+.1+mlWDice()*.25,z:R.z+nz*o-R.uz*bk,vx:R.ux*U*.5+nx*out,vy:.8+mlWDice()*1.4+U*.07,vz:R.uz*U*.5+nz*out,s,s0:s,life:l,max:l,r:.46,g:.41,b:.33,yaw:mlWDice()*6.283});}}
+  for(;n>0&&F.length<cap&&MLWK.nm<ML_WKM;n--,MLWK.nm++){const sd=mlWDice()<.5?-1:1,o=sd*(R.w0*(.5+.7*mlWDice())),bk=mlWDice()*.8,out=sd*U*(.14+.3*mlWDice()),l=.5+mlWDice()*.5,s=s0*(.7+.6*mlWDice());
+    F.push({kind:'spray',x:R.x+nx*o-R.ux*bk,y:y+.1+mlWDice()*.25,z:R.z+nz*o-R.uz*bk,vx:R.ux*U*.5+nx*out,vy:.9+mlWDice()*1.6+U*.12,vz:R.uz*U*.5+nz*out,s,s0:s,life:l,max:l,r:.56,g:.5,b:.41,al:.27,yaw:mlWDice()*6.283});}
+  /* (Mud Lab 22.2 water) THE FAN. From 10 mph the water a tyre or the body parts is thrown out to both sides as a fan
+     of drops: flung out and up at a share of its speed and carried along with it, the ones flung furthest out the
+     lowest, so they arc over and come down as a curtain beside the SUV. More and further with speed */
+  const ef=R.k*Math.max(0,Math.min(U-4.5,13))*(s0>.2?5:3.4)*LOOK.dust*dt,wc=MLS.col.water;let m=Math.floor(ef)+(mlWDice()<ef-Math.floor(ef)?1:0);
+  for(;m>0&&F.length<cap;m--){const sd=mlWDice()<.5?-1:1,a=mlWDice(),o=sd*R.w0*(.7+.4*mlWDice()),out=sd*U*(.16+.34*a),al=U*(.5+.25*mlWDice()),l=.45+mlWDice()*.5,sz=.05+mlWDice()*.07;
+    F.push({kind:'water',x:R.x+nx*o-R.ux*mlWDice()*.5,y:y+.06,z:R.z+nz*o-R.uz*mlWDice()*.5,vx:R.ux*al+nx*out,vy:1+U*(.1+.17*mlWDice())*(1-.45*a),vz:R.uz*al+nz*out,s:sz,s0:sz,life:l,max:l,r:wc[0]*1.9,g:wc[1]*1.9,b:wc[2]*1.9,yaw:0});}}
+/* (how many of the wake's own particles may be alive at once: the phone's share, everyone else's. And of those, how
+   many may be puffs of mist: the same on every tier, 56 (and 12 more for a splash). A puff is big and soft, and a
+   hundred of them behind a SUV in a hard turn were a white veil between it and the chase camera: the laptop's
+   picture showed it, the phone's did not only because its share ran out first) */
+const mlWkCap=()=>GFX.level==='mobile'?170:340,ML_WKM=56;
+/* (Mud Lab 22.2 water) THE SPLASH OF GOING IN. A tyre, or the body, that meets the water at 9 mph or more (down as
+   well as along: a jump's landing counts) throws up a burst the moment it does: drops flung forward and out and up
+   by how hard it hit, a few puffs of mist, and a ring. R the wave that has just begun, sp how hard, y the water's
+   surface, k how big (1 a tyre, 2 the body) */
+function mlWkSplash(R,sp,y,k){if(reduce||sp<4||MLS.clock-(R.spT||-9)<.6)return;R.spT=MLS.clock;const F=MLWK.fx,cap=mlWkCap(),wc=MLS.col.water,nx=-R.uz,nz=R.ux;
+  let n=Math.round(Math.min(40,8+sp*1.6)*k*LOOK.dust);
+  for(;n>0&&F.length<cap;n--){const an=(mlWDice()-.5)*3.4,c=Math.cos(an),sn=Math.sin(an),h=sp*(.18+.34*mlWDice()),l=.55+mlWDice()*.5,sz=.06+mlWDice()*.09;
+    F.push({kind:'water',x:R.x+(mlWDice()-.5)*.5*k,y:y+.06,z:R.z+(mlWDice()-.5)*.5*k,vx:(R.ux*c+nx*sn)*h+R.ux*sp*.3,vy:1.6+sp*(.14+.2*mlWDice()),vz:(R.uz*c+nz*sn)*h+R.uz*sp*.3,s:sz,s0:sz,life:l,max:l,r:wc[0]*1.9,g:wc[1]*1.9,b:wc[2]*1.9,yaw:0});}
+  for(n=Math.round((3+sp*.3)*k);n>0&&F.length<cap&&MLWK.nm<ML_WKM+12;n--,MLWK.nm++){const l=.6+mlWDice()*.5,sz=(.2+.16*mlWDice())*k;
+    F.push({kind:'spray',x:R.x+(mlWDice()-.5)*.8*k,y:y+.15+mlWDice()*.3,z:R.z+(mlWDice()-.5)*.8*k,vx:R.ux*sp*.4+(mlWDice()-.5)*2,vy:1.2+mlWDice()*1.6+sp*.08,vz:R.uz*sp*.4+(mlWDice()-.5)*2,s:sz,s0:sz,life:l,max:l,r:.56,g:.5,b:.41,al:.27,yaw:mlWDice()*6.283});}
+  mlWake(R.x,R.z,Math.min(1,.5+sp*.05),R.c);}
 /* all of them, for the SUV you are in */
 function mlWakeStep(dt,t){const p=t.p,v=t.v,now=MLS.clock;
   /* (a clock put back: the rings laid by the old clock are forgotten too, or each would be seen again as the new clock came to its time) */
@@ -459,7 +481,9 @@ function mlWakeStep(dt,t){const p=t.p,v=t.v,now=MLS.clock;
     let sh=0;for(let j=0;j<nw;j++)if(j!==q&&TD[j]>.03){const dx=TX[j]-x,dz=TZ[j]-z;if(dx*tx+dz*tz>.4)sh=Math.max(sh,1-sst(.35,.9,Math.abs(dz*tx-dx*tz)));}
     const wf=Math.hypot(w.f[0],w.f[2])||1,sb=Math.abs(tz*w.f[0]-tx*w.f[2])/wf,cb=Math.sqrt(Math.max(0,1-sb*sb));
     const d=Math.max(0,Math.min(wd,w.R)),ch=Math.sqrt(Math.max(0,w.R*w.R-(w.R-d)*(w.R-d))),hw=(w.front?t.c.tyreW:t.c.tyreWR||t.c.tyreW||.28)/2,ld=(ch*cb+hw*sb)*.8;
-    mlWkStep(R,dt,wd>.03,x+tx*ld,z+tz*ld,Ut,Math.sqrt(9.81*Math.max(.03,Math.min(wd,1))),hw*cb+ch*sb,mlWkS(Ut)*Math.min(1,wd/.1)*(1-sst(clr,clr+.22,wd))*(1-sh));mlWkMist(R,dt,Ut,wl+MLS.h0,.15,-tz,tx);}
+    const was=R.on;
+    mlWkStep(R,dt,wd>.03,x+tx*ld,z+tz*ld,Ut,Math.sqrt(9.81*Math.max(.03,Math.min(wd,1))),hw*cb+ch*sb,mlWkS(Ut)*Math.min(1,wd/.1)*(1-sst(clr,clr+.22,wd))*(1-sh));mlWkMist(R,dt,Ut,wl+MLS.h0,.15,-tz,tx);
+    if(!was&&R.on)mlWkSplash(R,Math.hypot(Ut,v[1]),wl+MLS.h0,1);}
   /* the body: from whichever of its sides is foremost the way it is going */
   /* (Mud Lab 22.1 water) THE BOW'S ROLL. The head of the body's path is put inside the body, as far back from its
      leading side as the body is half wide across the way it goes, less 10 cm: the shader draws the first piece of
@@ -467,8 +491,16 @@ function mlWakeStep(dt,t){const p=t.p,v=t.v,now=MLS.clock;
      leading side (10 cm off it: water piled up on the bumper, the flank, the tail), across the whole of it, and
      sweeps back round both corners into the arms. Sliding broadside
      the roll lies along the whole flank */
-  {const a=t.__mlHx,b=t.__mlHz,w0=a*us+b*uf,lead=a*uf+b*us-w0+.1;
-    mlWkStep(B,dt,deep>.02&&!air,p[0]+ux*lead,p[2]+uz*lead,U,Math.sqrt(9.81*Math.max(.05,Math.min(dw,1.2))),w0,sst(.4,2.5,U)*Math.min(1,.5+deep/.2));mlWkMist(B,dt,U,wl+MLS.h0,.3,-uz,ux);}
+  {const a=t.__mlHx,b=t.__mlHz,w0=a*us+b*uf,lead=a*uf+b*us-w0+.1,wasB=B.on;
+    mlWkStep(B,dt,deep>.02&&!air,p[0]+ux*lead,p[2]+uz*lead,U,Math.sqrt(9.81*Math.max(.05,Math.min(dw,1.2))),w0,sst(.4,2.5,U)*Math.min(1,.5+deep/.2));mlWkMist(B,dt,U,wl+MLS.h0,.3,-uz,ux);if(!wasB&&B.on)mlWkSplash(B,Math.hypot(U,v[1]),wl+MLS.h0,2);}
+  /* (Mud Lab 22.2 water) OUT OF THE WATER, IT RUNS OFF. A SUV that has been in over its axles (25 cm) drips for three
+     seconds once it is out: drops falling from under its body, all round it, many at first and fewer as it drains;
+     more of them the deeper it was */
+  if(dw>.25){MLWK.dripT=now;MLWK.dripK=Math.min(1,dw/.7);}
+  else if(dw<=.02&&!reduce){const age=now-MLWK.dripT;if(age<3){const F=MLWK.fx,cap=mlWkCap(),g=1-age/3,e=(14+50*MLWK.dripK)*g*g*LOOK.dust*dt,wc=MLS.col.water,a=t.__mlHx,b=t.__mlHz,yb=p[1]-(t.c.hcg||.7)+clr+.1;
+      let n=Math.floor(e)+(mlWDice()<e-Math.floor(e)?1:0);
+      for(;n>0&&F.length<cap;n--){const al=(mlWDice()*2-1)*a*.9,sd=(mlWDice()*2-1)*b,l=.5,sz=.02+mlWDice()*.025;
+        F.push({kind:'water',x:p[0]+fx*al-fz*sd,y:yb,z:p[2]+fz*al+fx*sd,vx:v[0]*.85,vy:-.3,vz:v[2]*.85,s:sz,s0:sz,life:l,max:l,r:wc[0],g:wc[1],b:wc[2],yaw:0});}}}
   /* the other SUV, towed or driven beside you: one wave for it, off its leading side, while a tyre of it is in water */
   {const o=mlrLive(),R=MLWK.R[5];let wet=false,hx=R.x,hz=R.z,Uo=0,wd=0,w0=1;
     if(o&&o!==t){for(const w of o.wheels)if(w.contact&&now-(w.mlWdT||-9)<.05)wd=Math.max(wd,w.mlWd||0);Uo=Math.hypot(o.v[0],o.v[2]);if(Uo>.3){R.ux=o.v[0]/Uo;R.uz=o.v[2]/Uo;}
@@ -519,18 +551,20 @@ function mlWater(dt,t){
      along whichever flank leads. They are the wake's own (MLWK.fx: rolled on its own dice, moved by mlWkDrops, handed
      to the engine's drawing only while a frame is drawn), so the game's dice and its count of particles are what they
      were with no slide at all: the test drives cannot tell */
-  {const sl=Math.abs(vs);if(sl>1.2&&!reduce&&t===GAME.car){const F=MLWK.fx,cap=GFX.level==='mobile'?130:280,e=Math.min(1,dw/.35)*sl*sl*1.4*LOOK.dust*dt,g=vs>=0?1:-1,sx=-f[1]*g,sz=f[0]*g;
+  {const sl=Math.abs(vs);if(sl>1.2&&!reduce&&t===GAME.car){const F=MLWK.fx,cap=mlWkCap(),e=Math.min(1,dw/.35)*sl*sl*1.4*LOOK.dust*dt,g=vs>=0?1:-1,sx=-f[1]*g,sz=f[0]*g;
       let n=Math.floor(e)+(mlWDice()<e-Math.floor(e)?1:0);
       for(;n>0&&F.length<cap;n--){const al=(mlWDice()-.5)*4.6,x=p[0]+sx*1.15+f[0]*al,z=p[2]+sz*1.15+f[1]*al,out=(mlWDice()-.5)*2*(1+mlWDice()*1.8)*sl*.22;
         F.push({kind:'water',x,y:wl+MLS.h0+.05,z,vx:v[0]*.9+sx*sl*.15+f[0]*out,vy:1+mlWDice()*1.6+sl*.18,vz:v[2]*.9+sz*sl*.15+f[1]*out,
           s:.04+mlWDice()*.06,s0:.05,life:1.3,max:1.3,r:MLS.col.water[0],g:MLS.col.water[1],b:MLS.col.water[2],yaw:0});}}}
 }
 /* (Mud Lab 22) the side spray's drops: they fall as the engine's own water drops do (fxStep) and end on the ground */
-function mlWkDrops(dt){const F=MLWK.fx,W=RANCH.W;
-  for(let i=F.length-1;i>=0;i--){const q=F[i];q.life-=dt;if(q.life<=0){F[i]=F[F.length-1];F.pop();continue;}
-    /* (Mud Lab 22.1 water: the mist drifts and swells as the engine's spray does; the drops fall) */
-    if(q.kind==='spray'){q.vx*=1-dt*2.4;q.vz*=1-dt*2.4;q.vy=q.vy*(1-dt*2)-dt*.6;q.s=q.s0*(1+(1-q.life/q.max)*3);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;continue;}
-    q.vy-=9.8*dt;q.vx*=1-dt*.4;q.vz*=1-dt*.4;q.s=q.s0*(1-(1-q.life/q.max)*.6);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;if(q.y<W.heightAt(q.x,q.z))q.life=0;}}
+function mlWkDrops(dt){const F=MLWK.fx,W=RANCH.W;let nm=0;
+  for(let i=F.length-1;i>=0;i--){const q=F[i];q.life-=dt;if(q.life<=0){F[i]=F[F.length-1];F.pop();continue;}if(q.kind==='spray')nm++;
+    /* (Mud Lab 22.1 water: the mist drifts as the engine's spray does; the drops fall. Mud Lab 22.2: it swells fast at
+       first and then slowly, so a puff is a haze almost at once and never a ball) */
+    if(q.kind==='spray'){q.vx*=1-dt*2.4;q.vz*=1-dt*2.4;q.vy=q.vy*(1-dt*2)-dt*.6;q.s=q.s0*(1+3.2*Math.sqrt(1-q.life/q.max));q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;continue;}
+    q.vy-=9.8*dt;q.vx*=1-dt*.4;q.vz*=1-dt*.4;q.s=q.s0*(1-(1-q.life/q.max)*.6);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;if(q.y<W.heightAt(q.x,q.z))q.life=0;}
+  MLWK.nm=nm;}
 /* (they join the engine's particles only for the moment it draws them) */
 {const draw=FXP.particles;FXP.particles=function(R,U,texs){const F=MLWK.fx,n=FX.length;for(let i=0;i<F.length&&FX.length<FX_MAX;i++)FX.push(F[i]);try{return draw.call(this,R,U,texs);}finally{FX.length=n;}};}
 /* (Mud Lab 19) DEEP WATER: THE ENGINE DROWNS. (Mud Lab 20) AND IT CHOKES FIRST. His words, 13 Nov 2026: "when it does
