@@ -136,6 +136,24 @@ VIEWS.update({
     'j-air':      (1153.6, 1117.2, -1.222, [], None),
     'j-airmarks': (1182.0, 1195.2, -1.222, [], ['look', -12, 5, 0, 30, -2, 0, .9]),
 })
+# (Mud Lab 22.1 water) the wakes: a hard turn through the Mud Hole; a broadside slide across it (set going sideways at
+# 29 mph, 65 degrees off the way it points); a crawl; and deep water, the body's own bow wave: the Mud Hole's deep
+# middle, from above and behind, from the side, from ahead, and as the chase camera shows it
+SIDE = lambda sp, deg: "(()=>{const t=__dyb.GAME.car,c=%s*Math.cos(%s/57.3),n=%s*Math.sin(%s/57.3);t.v[0]=t.M[0]*c+t.M[2]*n;t.v[2]=t.M[6]*c+t.M[8]*n;})()" % (sp, deg, sp, deg)
+VIEWS.update({
+    'water-turn':  (-112, 562, 3.1, [['drive', 1, 0, 0, 2.3], ['drive', .6, .6, 0, 1.3]], ['look', -9, 5.5, 3.5, 2, 0, 0, .95]),
+    'water-slide': (-112, 562, 3.1, [['drive', 1, 0, 0, 3.2], ['js', SIDE(13, 65)], ['drive', 0, 0, 0, .7]], ['look', -8, 5.5, -7, 0, 0, 1.5, .95]),
+    'water-crawl': (-150, 562, 3.1, [['drive', .22, 0, 0, 7]], ['look', -7.5, 3.4, 3.2, 1.5, 0, 0, .9]),
+    'water-deep':  (-150, 562, 3.1, [['drive', .8, 0, 0, 3.0]], ['look', -9, 4.5, 3.5, 3, 0, 0, .9]),
+    'water-deeps': (-150, 562, 3.1, [['drive', .8, 0, 0, 3.0]], ['look', 3, 1.6, 9, 1, .3, 0, .9]),
+    'water-deepf': (-150, 562, 3.1, [['drive', .8, 0, 0, 3.0]], ['look', 9, 3.2, 4, 0, .2, 0, .9]),
+    'water-deepc': (-150, 562, 3.1, [['drive', .8, 0, 0, 3.0]], None),
+    # ('water-wake' is the Rock & Mud in the Mud Hole's deepest water, over its sills: its body's own wave. The same from ahead and from the side)
+    'water-wakef': (-150, 562, 3.1, [['drive', .6, 0, 0, 5]], ['look', 8, 2.6, 4, 0, .3, 0, .9]),
+    'water-wakes': (-150, 562, 3.1, [['drive', .6, 0, 0, 5]], ['look', 2, 1.5, 8, 1, .3, 0, .9]),
+    # (the stock SUV wading the same water, from ahead: its body is lower, so its own wave starts in shallower water)
+    'water-stock': (-150, 562, 3.1, [['stock'], ['drive', .8, 0, 0, 3.0]], ['look', 9, 3.2, 4, 0, .2, 0, .9]),
+})
 HELP = r"""window.MLVW={
  hold(scale,ui){const G=__game;G.GAME.hold=true;G.DEVW.gpuT='hold';G.APP.photo=!ui;if(G.RESO)G.RESO.scale=scale;G.R.resize(G.PIC.w,G.PIC.h,scale);return [G.R.iw,G.R.ih,G.R.W,G.R.H,G.GFX.level];},
  drive(thr,steer,brk,secs){const D=__dyb,n=Math.round(secs*120);D.setTestInput({steer,thr,brk,hb:0,nos:false});for(let i=0;i<n;i++)D.step(1/120);D.setTestInput({steer:0,thr:0,brk:0,hb:0,nos:false});return +(D.GAME.car.speed*2.237).toFixed(1);},

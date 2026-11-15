@@ -180,27 +180,55 @@ vec3 mlWoods(vec2 wp,float moist){
 #if !defined(PROBE)&&defined(MLSOIL)
       /* (Mud Lab 8) muddy water: the wet bed showing at its very edge (no hard line where it meets the ground), cloudy
          brown where it's deeper; the sky in it, more the lower you look */
-      if(vC.a>.5&&mlIn){float gy=mlWin?textureLod(uMLd,mlW,0.).r+textureLod(uMLt,mlW,0.).r:textureLod(uMLs0,mlUV,0.).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.14,dep),ed=smoothstep(0.,.035,dep);
+      if(vC.a>.5&&mlIn){if(uMLv>1.5&&vUV.x<.004)discard;float gy=mlWin?textureLod(uMLd,mlW,0.).r+textureLod(uMLt,mlW,0.).r:textureLod(uMLs0,mlUV,0.).r,dep=vP.y-(uMLq.z+gy),sh=smoothstep(0.,.14,dep),ed=smoothstep(0.,.035,dep);
         if(dep<-.004&&!(uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985))discard;
         alb=mix(vec3(.06,.044,.028),mix(vec3(.105,.076,.046),vec3(.135,.096,.054),sh),ed);spec=mix(.1,.2,ed);shin=mix(30.,420.,ed*ed);ssr=ed>.5?.5:0.;N=normalize(vec3(gw.x*.55*ed,1.,gw.y*.55*ed));
-        /* (Mud Lab 16, 17, 22) what a truck does to the water, as slopes on its level surface (the sky and the sun bend
-           in them), and all of it only inside a circle round the truck's own doings (uMLb). uMLr, 52 places laid
-           out by src/ml-soil.js: 0 to 35 the WAKES (Mud Lab 22: six waves, six points each, along the path each
-           tyre and the body really took), 36 to 51 the rings a spinning tyre sends out. Each stretch of path
-           between two points draws its own piece of the wave's two arms: a train of crests 80 cm apart, its middle
-           as far out from the path as the arms have moved by there (.z, more toward the older point), the train
-           wider the further it has travelled. Each piece fades in over a tenth of its length either side of its start and out the same at its
-           end, so two pieces meet without a seam and reach round the outside of a bend. A ring is a piece whose
-           two ends are one place (B stays nothing): circles. A pixel further from a piece's crests than they
-           reach (where the train has died to under a hundredth) does none of that piece's sums: most of the water
-           inside the circle, for most pieces. (Mud Lab 15's and 16's darker, lumpy water over a
-           churned bed is gone: on water that is muddy from bank to bank it read as tyre treads lying on the
-           surface, his eye, Nov 13) */
-        {vec2 wg=vec2(0.),wq=vP.xz-uMLb.xy;
+        /* (Mud Lab 16, 17, 22) what a truck does to the water, and all of it only inside a circle round the truck's own
+           doings (uMLb). uMLr, 52 places laid out by src/ml-soil.js: 0 to 35 the WAKES (Mud Lab 22: six waves, six
+           points each, along the path each tyre and the body really took), 36 to 51 the rings a spinning tyre sends
+           out. Each stretch of path between two points draws its own piece of the wave's two arms, its crest as far
+           out from the path as the arms have moved by there (.z, more toward the older point), the train wider the
+           further it has travelled. Each piece fades in over a tenth of its length either side of its start and out
+           the same at its end, so two pieces meet without a seam and reach round the outside of a bend. A ring is a
+           piece whose two ends are one place (B stays nothing): circles. A pixel further from a piece's crests than
+           they reach (where the train has died to under a hundredth) does none of that piece's sums: most of the
+           water inside the circle, for most pieces. (Mud Lab 15's and 16's darker, lumpy water over a churned bed
+           is gone: on water that is muddy from bank to bank it read as tyre treads lying on the surface, his eye,
+           Nov 13)
+           (Mud Lab 22.1 water) THE WAVES HAVE A BODY. Build 22's were slopes only (a train of fine crests 80 cm
+           apart), and a slope shows only where it catches the sun: thin bright scratches on one side of the SUV,
+           nothing on the other. Now each piece gives three things:
+           - wg, its SLOPE, as before, but of a bolder wave: crests 1.25 m apart, so the fresh wave by the SUV is
+             one roll of water with a dip either side, and only spreads into a train as it travels;
+           - wh, its HEIGHT: crests are painted lighter and troughs darker, so the wave is there from every side,
+             sun or no sun; and where the water is worked up the sun's glint is a broad soft patch, not a needle;
+           - wf, FOAM: along a crest while it is fresh and strong (it has gone by a second or so out), and in the
+             strip the tyre or the body has just come through (wider the older it is: two tyres' strips run
+             together behind the SUV). Foam is muddy water's own: pale tan froth, matt, laid as a lace (it comes
+             first along the lines of a noise that stays where it is on the water, fills in between them where it
+             is thick, and thins back to the lace and then to flecks as it goes: gone in about a second and a half).
+             It goes by the wave's strength squared (cubed in the strip), so it is something speed makes, and by how
+             far the thing has come in that stretch of its path: a tyre creeping makes none, and a ring (which has
+             not moved at all) never has any. It never lies as two lasting stripes (Build 15's churned water did,
+             and read as tyre treads).
+           THE FIRST PIECE OF EACH WAVE REACHES ROUND THE FRONT: ahead of the head of its path it is drawn as far
+           out from the head itself, so the crest runs round the nose of whatever is cutting the water (the bow's
+           roll, across the bumper and back down both sides; src/ml-soil.js puts the head that far inside).
+           AND THE CRESTS STAND UP: the same sums are done for a fine sheet of water round the SUV in the vertex
+           shader (src/build.py), which lifts it by them; all of that sheet that a crest has not lifted clear of the
+           level water is thrown away at the top of this piece (uMLv 2: its height is in vUV.x) */
+        {vec2 wg=vec2(0.),wq=vP.xz-uMLb.xy;float wh=0.,wf=0.;
           if(dot(wq,wq)<uMLb.z)
-            for(int i=0;i<52;i++){vec4 A=uMLr[i],B=vec4(0.);if(A.w!=0.){if(i<36)B=uMLr[i+1]-A;vec2 q=vP.xz-A.xy,b=B.xy;float t=dot(q,b)/max(dot(b,b),.001);
-              if(abs(t-.5)<.6){q-=b*t;float r=A.z+B.z*t,d=length(q),x=d-r,e=.1+.3*r;if(x*x<5.*e)wg+=q*((A.w+B.w*t)*smoothstep(-.1,.1,t)*(1.-smoothstep(.9,1.1,t))*exp(-x*x/e)*sin(x*8.)/max(d,.05));}}}
-          N=normalize(N+vec3(wg.x,0.,wg.y)*(.9*ed*(1.-.7*smoothstep(.05,.15,gFP))));}}
+            for(int i=0;i<52;i++){vec4 A=uMLr[i],B=vec4(0.);if(A.w!=0.){bool hd=i<36&&i%6==0;if(i<36)B=uMLr[i+1]-A;vec2 q=vP.xz-A.xy,b=B.xy;float t=dot(q,b)/max(dot(b,b),.001);
+              if(t<1.1&&(hd||t>-.1)){float tc=clamp(t,0.,1.);q-=b*tc;float r=A.z+B.z*tc,d=length(q),x=d-r,e=.1+.3*r;
+                if(x*x<5.*e){float a=(A.w+B.w*tc)*(hd?1.:smoothstep(-.1,.1,t))*(1.-smoothstep(.9,1.1,t)),G=exp(-x*x/e),w=.25+.5*r;
+                  wg+=q*(a*G*(sin(x*5.)+.4*x/e*cos(x*5.))/max(d,.05));wh+=a*G*cos(x*5.);wf+=a*a*min(1.,dot(b,b))*(.7*G*G+a*exp(-d*d/(w*w)));}}}}
+          float wk=ed*(1.-.7*smoothstep(.05,.15,gFP));
+          N=normalize(N+vec3(wg.x,0.,wg.y)*(.9*wk));alb*=1.+.25*wh*wk;shin=mix(shin,90.,min(1.,length(wg)*2.)*ed);
+          if(wf>.03){float n=.6*abs(2.*vn(wp*4.)-1.)+.4*vn(wp*15.),c=smoothstep(n-.12,n+.14,wf)*ed*.85;alb=mix(alb,vec3(.4,.34,.26),c);shin=mix(shin,6.,c);N=normalize(mix(N,vec3(0.,1.,0.),c*.6));}
+          /* (a wave's far side, seen from low down, would mirror what is under the horizon: the land's colour, and the
+             wave read as a sand bar. Water there mirrors the sky just over the horizon instead) */
+          {vec3 wr=reflect(-V,N);if(wr.y<0.){wr.y=-wr.y;N=normalize(V+wr);}}}}
 #endif
 //@@ trunk
     /* (Mud Lab 8) the trees' trunks: bark, furrowed up and down the trunk, darker toward the ground (the engine's wood

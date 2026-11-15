@@ -205,6 +205,19 @@ function mlPatchBuild(){
   if(MLP.mesh&&MLP.mesh.vao)gl.deleteVertexArray(MLP.mesh.vao);
   MLP.mesh=makeMesh({pos:P,nrm:N,col:C,mat:M,idx:nv<65536?new Uint16Array(I):new Uint32Array(I)});MLP.mesh.tris=I.length/3;MLP.n=n;MLP.lvl=GFX.level;
 }
+/* (Mud Lab 22.1 water) THE SHEET THE WAVES LIFT: a grid of level water 28 m square that goes with the SUV you are in,
+   a vertex every 9 cm under it (11 on the phone) spreading to about half a metre at its edge. It is drawn a hair
+   (5 mm) under the level of the water the SUV is in, so none of it shows until the vertex shader has lifted it
+   (src/build.py: by the wakes' own sums). 18,000 triangles on the phone's tier, 25,000 on Low, 41,000 above, and
+   only while there is a wake to lift it */
+function mlWkMesh(){
+  const n=GFX.level==='mobile'?96:GFX.level==='low'?112:144,h=n/2,E=14,A=(GFX.level==='mobile'?.11:.09)*h,B=E-A,nv=(n+1)*(n+1);
+  const P=new Float32Array(nv*3),N=new Float32Array(nv*3),C=new Float32Array(nv*4),M=new Float32Array(nv).fill(50),I=[];
+  const w=q=>{const u=q/h-1;return A*u+B*u*u*u;};
+  for(let j=0;j<=n;j++)for(let i=0;i<=n;i++){const k=j*(n+1)+i;P[k*3]=w(i);P[k*3+2]=w(j);N[k*3+1]=1;C[k*4]=.07;C[k*4+1]=.055;C[k*4+2]=.035;C[k*4+3]=1;}
+  for(let j=0;j<n;j++)for(let i=0;i<n;i++){const p=j*(n+1)+i,q=p+1,r=p+n+1,s=r+1;I.push(p,s,q,p,r,s);}
+  if(MLWK.mesh&&MLWK.mesh.vao)gl.deleteVertexArray(MLWK.mesh.vao);
+  MLWK.mesh=makeMesh({pos:P,nrm:N,col:C,mat:M,idx:nv<65536?new Uint16Array(I):new Uint32Array(I)});MLWK.mesh.tris=I.length/3;MLWK.lvl=GFX.level;}
 /* the water: a flat surface at each water's own level, in 2.56 m squares over wherever there's water (the ground hides
    it wherever it stands higher) */
 function mlWaterBuild(){
@@ -352,7 +365,7 @@ function mlLand(p){
    how strong), drawn by the water's shader (src/ml-look.glsl) as rings that widen and fade over 2.6 s. A tyre in water
    sends one for every 70 cm it moves (or would have moved: a spinning tyre counts), no more than nine a second between
    all the tyres. Nothing of the physics reads them and no dice are rolled */
-const MLWK={e:new Float32Array(64),c:new Float32Array(16),i:0,t:-9,n:0,R:[],ur:new Float32Array(208),o:[],tx:[0,0,0,0],tz:[0,0,0,0],td:[0,0,0,0],far:0,mid:[0,0],fx:[]};
+const MLWK={e:new Float32Array(64),c:new Float32Array(16),i:0,t:-9,n:0,R:[],ur:new Float32Array(208),o:[],tx:[0,0,0,0],tz:[0,0,0,0],td:[0,0,0,0],far:0,mid:[0,0],fx:[],mesh:null,lvl:'',lv:-99};
 function mlWake(x,z,a,c){const k=MLWK.i*4,E=MLWK.e;E[k]=x;E[k+1]=z;E[k+2]=MLS.clock;E[k+3]=a;MLWK.c[MLWK.i]=c||1.1;MLWK.i=(MLWK.i+1)&15;MLWK.t=MLS.clock;MLWK.n++;}
 /* ---------- (Mud Lab 22) THE WAKE FOLLOWS THE WAY THE SUV MOVES ----------
    His words, 14 Nov 2026, with a photo of the Rock & Mud sliding sideways across shallow water and its V of waves still
@@ -410,11 +423,29 @@ function mlWkAt(R,T,o){const H=ML_WKH;let j=-1,jn=-1;
   o.b=R.hb[j];if(b1!==o.b){o.x=R.hx[j];o.z=R.hz[j];o.w=R.hw[j];o.s=R.hs[j];o.c=R.hc[j];o.a=0;return o;}
   const f=Math.min(1,Math.max(0,(T-R.ht[j])/Math.max(1e-6,t1-R.ht[j]))),g=1-f;
   o.x=R.hx[j]*g+x1*f;o.z=R.hz[j]*g+z1*f;o.w=R.hw[j]*g+w1*f;o.s=R.hs[j]*g+s1*f;o.c=R.hc[j]*g+c1*f;o.a=R.ha[j]*g+a1*f;return o;}
+/* (Mud Lab 22.1 water) HOW STRONG A WAVE IS, BY HOW FAST THE THING CUTTING THE WATER GOES. Build 22's were full
+   strength from 7 mph. Now a wave at a crawl is the gentle one it should be (under half strength at 7 mph: ripples,
+   no foam), and it builds on to full by about 27 mph: the shader's foam goes by the strength squared, so foam is
+   something speed makes. (The body's own wave is full from 6 mph: water deep enough to reach the body holds
+   the SUV to a wade, and a wade is when it pushes its biggest wave) */
+const mlWkS=U=>sst(.5,3,U)*(.45+.55*sst(3,12,U));
+/* (Mud Lab 22.1 water) MIST. Water thrown up fine where a wave breaks off a tyre or the body at speed: soft pale
+   puffs (the engine's own spray, as off wet tarmac: they swell, hang and drift), from either side of the wave's
+   head, flung out and up and carried along. From 8 mph, more with speed. They are the wake's own (MLWK.fx, its own
+   dice), like Build 22's side drops: the game's dice and its count of particles are untouched.
+   R the wave, U how fast it goes, y the water's surface, s0 how big a puff starts, (nx, nz) across the way it goes */
+function mlWkMist(R,dt,U,y,s0,nx,nz){if(reduce||R.k<.2||U<3.5||!R.on)return;const F=MLWK.fx,cap=GFX.level==='mobile'?110:240,e=R.k*Math.min(U-3,12)*1.6*LOOK.dust*dt;
+  let n=Math.floor(e)+(mlWDice()<e-Math.floor(e)?1:0);
+  for(;n>0&&F.length<cap;n--){const sd=mlWDice()<.5?-1:1,o=sd*(R.w0*(.5+.7*mlWDice())),bk=mlWDice()*.8,out=sd*U*(.1+.2*mlWDice()),l=.5+mlWDice()*.5,s=s0*(.7+.6*mlWDice());
+    F.push({kind:'spray',x:R.x+nx*o-R.ux*bk,y:y+.1+mlWDice()*.25,z:R.z+nz*o-R.uz*bk,vx:R.ux*U*.5+nx*out,vy:.8+mlWDice()*1.4+U*.07,vz:R.uz*U*.5+nz*out,s,s0:s,life:l,max:l,r:.46,g:.41,b:.33,yaw:mlWDice()*6.283});}}
 /* all of them, for the SUV you are in */
-function mlWakeStep(dt,t){const p=t.p,v=t.v,now=MLS.clock,U=Math.hypot(v[0],v[2]),M=t.M,fl=Math.hypot(M[0],M[6])||1,fx=M[0]/fl,fz=M[6]/fl;
+function mlWakeStep(dt,t){const p=t.p,v=t.v,now=MLS.clock;
+  /* (a clock put back: the rings laid by the old clock are forgotten too, or each would be seen again as the new clock came to its time) */
+  if(now<MLWK.t){MLWK.e.fill(0);MLWK.t=-9;}
+  const U=Math.hypot(v[0],v[2]),M=t.M,fl=Math.hypot(M[0],M[6])||1,fx=M[0]/fl,fz=M[6]/fl;
   const B=MLWK.R[4];if(U>.3){B.ux=v[0]/U;B.uz=v[2]/U;}const ux=B.ux,uz=B.uz,uf=Math.abs(ux*fx+uz*fz),us=Math.abs(uz*fx-ux*fz);
   if(t.__mlHx===undefined){let a=0,b=0;for(const q of t.c.hull||[]){a=Math.max(a,Math.abs(q[0]));b=Math.max(b,Math.abs(q[2]));}t.__mlHx=a>1?a:2.3;t.__mlHz=b>.5?b:1;}
-  const clr=t.__mlClr===undefined?.557:t.__mlClr,wl=mlWL(p[0],p[2]),dw=MLS.wd,air=!t.wheels.some(w=>w.contact)&&p[1]-(t.c.hcg||.7)>wl+MLS.h0+.05,deep=dw-clr;
+  const clr=t.__mlClr===undefined?.557:t.__mlClr,wl=mlWL(p[0],p[2]),dw=MLS.wd;if(dw>.02&&wl>-90)MLWK.lv=wl;const air=!t.wheels.some(w=>w.contact)&&p[1]-(t.c.hcg||.7)>wl+MLS.h0+.05,deep=dw-clr;
   /* the tyres: where each is (its hub, the same point whether it is on the ground or off it: a tyre chattering on
      and off the bed must not seem to jump about), and how far its foot is under the water there */
   const TX=MLWK.tx,TZ=MLWK.tz,TD=MLWK.td,nw=Math.min(4,t.wheels.length);
@@ -428,15 +459,21 @@ function mlWakeStep(dt,t){const p=t.p,v=t.v,now=MLS.clock,U=Math.hypot(v[0],v[2]
     let sh=0;for(let j=0;j<nw;j++)if(j!==q&&TD[j]>.03){const dx=TX[j]-x,dz=TZ[j]-z;if(dx*tx+dz*tz>.4)sh=Math.max(sh,1-sst(.35,.9,Math.abs(dz*tx-dx*tz)));}
     const wf=Math.hypot(w.f[0],w.f[2])||1,sb=Math.abs(tz*w.f[0]-tx*w.f[2])/wf,cb=Math.sqrt(Math.max(0,1-sb*sb));
     const d=Math.max(0,Math.min(wd,w.R)),ch=Math.sqrt(Math.max(0,w.R*w.R-(w.R-d)*(w.R-d))),hw=(w.front?t.c.tyreW:t.c.tyreWR||t.c.tyreW||.28)/2,ld=(ch*cb+hw*sb)*.8;
-    mlWkStep(R,dt,wd>.03,x+tx*ld,z+tz*ld,Ut,Math.sqrt(9.81*Math.max(.03,Math.min(wd,1))),hw*cb+ch*sb,sst(.5,3,Ut)*Math.min(1,wd/.1)*(1-sst(clr,clr+.22,wd))*(1-sh));}
+    mlWkStep(R,dt,wd>.03,x+tx*ld,z+tz*ld,Ut,Math.sqrt(9.81*Math.max(.03,Math.min(wd,1))),hw*cb+ch*sb,mlWkS(Ut)*Math.min(1,wd/.1)*(1-sst(clr,clr+.22,wd))*(1-sh));mlWkMist(R,dt,Ut,wl+MLS.h0,.15,-tz,tx);}
   /* the body: from whichever of its sides is foremost the way it is going */
-  {const a=t.__mlHx,b=t.__mlHz,lead=a*uf+b*us;
-    mlWkStep(B,dt,deep>.02&&!air,p[0]+ux*lead,p[2]+uz*lead,U,Math.sqrt(9.81*Math.max(.05,Math.min(dw,1.2))),a*us+b*uf,sst(.5,3,U)*Math.min(1,.5+deep/.2));}
+  /* (Mud Lab 22.1 water) THE BOW'S ROLL. The head of the body's path is put inside the body, as far back from its
+     leading side as the body is half wide across the way it goes, less 10 cm: the shader draws the first piece of
+     a wave round the front of its head at that half width (src/ml-look.glsl), so the crest stands against the
+     leading side (10 cm off it: water piled up on the bumper, the flank, the tail), across the whole of it, and
+     sweeps back round both corners into the arms. Sliding broadside
+     the roll lies along the whole flank */
+  {const a=t.__mlHx,b=t.__mlHz,w0=a*us+b*uf,lead=a*uf+b*us-w0+.1;
+    mlWkStep(B,dt,deep>.02&&!air,p[0]+ux*lead,p[2]+uz*lead,U,Math.sqrt(9.81*Math.max(.05,Math.min(dw,1.2))),w0,sst(.4,2.5,U)*Math.min(1,.5+deep/.2));mlWkMist(B,dt,U,wl+MLS.h0,.3,-uz,ux);}
   /* the other SUV, towed or driven beside you: one wave for it, off its leading side, while a tyre of it is in water */
   {const o=mlrLive(),R=MLWK.R[5];let wet=false,hx=R.x,hz=R.z,Uo=0,wd=0,w0=1;
     if(o&&o!==t){for(const w of o.wheels)if(w.contact&&now-(w.mlWdT||-9)<.05)wd=Math.max(wd,w.mlWd||0);Uo=Math.hypot(o.v[0],o.v[2]);if(Uo>.3){R.ux=o.v[0]/Uo;R.uz=o.v[2]/Uo;}
-      if(wd>.03){const m=o.M,l=Math.hypot(m[0],m[6])||1,gx=m[0]/l,gz=m[6]/l,af=Math.abs(R.ux*gx+R.uz*gz),as=Math.abs(R.uz*gx-R.ux*gz),ld=2.3*af+1*as;wet=true;hx=o.p[0]+R.ux*ld;hz=o.p[2]+R.uz*ld;w0=2.3*as+1*af;}}
-    mlWkStep(R,dt,wet,hx,hz,Uo,Math.sqrt(9.81*Math.max(.03,Math.min(wd,1.2))),w0,.7*sst(.5,3,Uo)*Math.min(1,wd/.1));}}
+      if(wd>.03){const m=o.M,l=Math.hypot(m[0],m[6])||1,gx=m[0]/l,gz=m[6]/l,af=Math.abs(R.ux*gx+R.uz*gz),as=Math.abs(R.uz*gx-R.ux*gz),ld=2.3*af+1*as;wet=true;w0=2.3*as+1*af;hx=o.p[0]+R.ux*(ld-w0+.1);hz=o.p[2]+R.uz*(ld-w0+.1);}}
+    mlWkStep(R,dt,wet,hx,hz,Uo,Math.sqrt(9.81*Math.max(.03,Math.min(wd,1.2))),w0,.7*mlWkS(Uo)*Math.min(1,wd/.1));}}
 /* ---------- the water against the truck: drag on the tyres and the body (by how deep and how fast), the bow wave ---------- */
 function mlWater(dt,t){
   const p=t.p,b=mlBase(p[0],p[2]),fi=(p[0]-MLS.x0)/MLS.C,fj=(p[2]-MLS.z0)/MLS.C,g=b+mlRut(fi|0,fj|0),wl=mlWL(p[0],p[2]),dw=wl-g;
@@ -482,7 +519,7 @@ function mlWater(dt,t){
      along whichever flank leads. They are the wake's own (MLWK.fx: rolled on its own dice, moved by mlWkDrops, handed
      to the engine's drawing only while a frame is drawn), so the game's dice and its count of particles are what they
      were with no slide at all: the test drives cannot tell */
-  {const sl=Math.abs(vs);if(sl>1.2&&!reduce&&t===GAME.car){const F=MLWK.fx,cap=GFX.level==='mobile'?70:160,e=Math.min(1,dw/.35)*sl*sl*1.4*LOOK.dust*dt,g=vs>=0?1:-1,sx=-f[1]*g,sz=f[0]*g;
+  {const sl=Math.abs(vs);if(sl>1.2&&!reduce&&t===GAME.car){const F=MLWK.fx,cap=GFX.level==='mobile'?130:280,e=Math.min(1,dw/.35)*sl*sl*1.4*LOOK.dust*dt,g=vs>=0?1:-1,sx=-f[1]*g,sz=f[0]*g;
       let n=Math.floor(e)+(mlWDice()<e-Math.floor(e)?1:0);
       for(;n>0&&F.length<cap;n--){const al=(mlWDice()-.5)*4.6,x=p[0]+sx*1.15+f[0]*al,z=p[2]+sz*1.15+f[1]*al,out=(mlWDice()-.5)*2*(1+mlWDice()*1.8)*sl*.22;
         F.push({kind:'water',x,y:wl+MLS.h0+.05,z,vx:v[0]*.9+sx*sl*.15+f[0]*out,vy:1+mlWDice()*1.6+sl*.18,vz:v[2]*.9+sz*sl*.15+f[1]*out,
@@ -491,6 +528,8 @@ function mlWater(dt,t){
 /* (Mud Lab 22) the side spray's drops: they fall as the engine's own water drops do (fxStep) and end on the ground */
 function mlWkDrops(dt){const F=MLWK.fx,W=RANCH.W;
   for(let i=F.length-1;i>=0;i--){const q=F[i];q.life-=dt;if(q.life<=0){F[i]=F[F.length-1];F.pop();continue;}
+    /* (Mud Lab 22.1 water: the mist drifts and swells as the engine's spray does; the drops fall) */
+    if(q.kind==='spray'){q.vx*=1-dt*2.4;q.vz*=1-dt*2.4;q.vy=q.vy*(1-dt*2)-dt*.6;q.s=q.s0*(1+(1-q.life/q.max)*3);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;continue;}
     q.vy-=9.8*dt;q.vx*=1-dt*.4;q.vz*=1-dt*.4;q.s=q.s0*(1-(1-q.life/q.max)*.6);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;if(q.y<W.heightAt(q.x,q.z))q.life=0;}}
 /* (they join the engine's particles only for the moment it draws them) */
 {const draw=FXP.particles;FXP.particles=function(R,U,texs){const F=MLWK.fx,n=FX.length;for(let i=0;i<F.length&&FX.length<FX_MAX;i++)FX.push(F[i]);try{return draw.call(this,R,U,texs);}finally{FX.length=n;}};}
@@ -722,6 +761,10 @@ function mlPatchDraw(u){
   if(!MLS.ready||!MLP.mesh)return 0;let tris=0;
   if(MLP.on){if(u.uMLv)gl.uniform1f(u.uMLv,1);atM(u,MLP.cx,0,MLP.cz);drawMesh(MLP.mesh);if(u.uMLv)gl.uniform1f(u.uMLv,0);tris+=MLP.mesh.tris;}
   if(MLP.water){atM(u,WG.mlA.x,MLS.h0,WG.mlA.z);drawMesh(MLP.water);tris+=MLP.water.tris;}
+  /* (Mud Lab 22.1 water) the sheet the waves lift, where the SUV is, at its water's level less 5 mm: only with the
+     soil's own program (the one whose vertex shader lifts it), only while there is a wake */
+  if(u.uMLr&&u.uMLv&&MLWK.far>0&&MLWK.lv>-90&&GAME.car){if(MLWK.lvl!==GFX.level)mlWkMesh();const c=GAME.car;
+    gl.uniform1f(u.uMLv,2);atM(u,c.p[0],MLS.h0+MLWK.lv-.005,c.p[2]);drawMesh(MLWK.mesh);gl.uniform1f(u.uMLv,0);tris+=MLWK.mesh.tris;}
   return tris;}
 /* the world raked smooth again (K on a keyboard; the test tools) */
 function mlRake(){if(!MLS.ready)return;for(let q=0;q<MLS.tiles.length;q++)if(MLS.tiles[q]){MLS.tiles[q]=null;MLS.up.add(q);}MLS.ntile=0;MLS.act.clear();}
