@@ -4,7 +4,7 @@ Christopher's soil game: the Rock & Mud — the exact truck, physics and engine 
 Truth — on ground that tears up for real. Its own game, not connected to Ground Truth's code: if the soil proves
 itself, it gets copied back into Ground Truth.
 
-**Open `builds/mud-lab-22.2-water.html`** (one self-contained page, 20 MB; Mud Lab 22.2 water: the second pass at the water's look, below). The world is two miles square (Mud Lab 19): the first map is its north-west quarter; east of it the River, with the Shallows to cross anywhere and fords that get deeper up and down stream; south-east the Lake, deep enough to drown an engine; south of the Trailhead the Track, a banked dirt loop with table-tops and whoops. The big map opens on the mile round you; WHOLE MAP beside it shows it all. On the title pick ROCK & MUD or STOCK SUV (tap
+**Open `builds/mud-lab-22.3-water.html`** (one self-contained page, 20 MB; Mud Lab 22.3 water: ripples that are worked out, and ruts that fill, below). The world is two miles square (Mud Lab 19): the first map is its north-west quarter; east of it the River, with the Shallows to cross anywhere and fords that get deeper up and down stream; south-east the Lake, deep enough to drown an engine; south of the Trailhead the Track, a banked dirt loop with table-tops and whoops. The big map opens on the mile round you; WHOLE MAP beside it shows it all. On the title pick ROCK & MUD or STOCK SUV (tap
 your pick again for a tyre size up: 33s on the stock SUV, 40s on the Rock & Mud), and FREE PLAY or REAL; START drives out from the Trailhead with the other SUV parked beside you. The map shows the whole world
 with every place named (Free play: tap a name, then JUMP and you're there, or GUIDE ME THERE and an arrow leads you;
 Real: tap a name and the arrow guides you), the
@@ -19,7 +19,7 @@ or STRAP (the other SUV in reach); U on a keyboard. Other keys: Enter is HERON/T
 L the low range (his SUV: AWD, 4 HI, 4 LO), Backspace clears all the ruts, C the next camera (the second is FILM, a
 camera that picks its own shots); MENU > KEYS on the map changes any key; a tap on the build's name in the corner of
 the title switches the numbers on (frames a second, triangles: F on a keyboard). Earlier builds stay as they were
-(`mud-lab-22.1-water.html`: no fan of drops off the tyres, no splash on going into water, nothing running off the SUV when it comes out, the bow wave one smooth roll, rain still in the ground's shader; `mud-lab-22.html`: the wakes painted on level water (thin bright lines on the sun's side of the SUV, tan stripes behind a slide), no foam, no mist, the water flat at the nose when wading; `mud-lab-21.html`: wet soil lit as a shiny sheet, no grain in bare soil, one V of waves pinned to the SUV's nose whichever way it slides; `mud-lab-20.html`: no jumps, THE LAKE on the map sets you down at its beach; `mud-lab-19.html`: the map's THE LAKE jumps into the Lake's middle, no WINCH for a drowned SUV, the engine stops dead with water over the doors' tops, no camera goes under water, a SUV kicked up in deep water hangs in the air; `mud-lab-18.html`: the first map only (a mile square), no engine drowning, a sandy band in the Pond's reflections; `mud-lab-17.html`: no Film camera, a rolled Rock & Mud is thrown back into the air spinning, the truck's lamps and gear
+(`mud-lab-22.2-water.html`: the wake drawn as a V of crests along the path the SUV took, a rut dug down to the water full and splashing at once; `mud-lab-22.1-water.html`: no fan of drops off the tyres, no splash on going into water, nothing running off the SUV when it comes out, the bow wave one smooth roll, rain still in the ground's shader; `mud-lab-22.html`: the wakes painted on level water (thin bright lines on the sun's side of the SUV, tan stripes behind a slide), no foam, no mist, the water flat at the nose when wading; `mud-lab-21.html`: wet soil lit as a shiny sheet, no grain in bare soil, one V of waves pinned to the SUV's nose whichever way it slides; `mud-lab-20.html`: no jumps, THE LAKE on the map sets you down at its beach; `mud-lab-19.html`: the map's THE LAKE jumps into the Lake's middle, no WINCH for a drowned SUV, the engine stops dead with water over the doors' tops, no camera goes under water, a SUV kicked up in deep water hangs in the air; `mud-lab-18.html`: the first map only (a mile square), no engine drowning, a sandy band in the Pond's reflections; `mud-lab-17.html`: no Film camera, a rolled Rock & Mud is thrown back into the air spinning, the truck's lamps and gear
 number on the Heron's HUD; `mud-lab-16.html`: churned water drawn darker and lumpy behind the SUV, no bow wave, no
 tunes, no CLEAR ALL RUTS on the MENU (Backspace raked, and could throw a sunk SUV into the air); `mud-lab-15.html`: G both looks behind and switches the grip, no list of keys, no rings in the water and churned
 water stays churned; `mud-lab-14.html`: the soil's look before Mud Lab 15: smooth mounds, flat water in the ruts, pale clods, the brake
@@ -47,7 +47,7 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The sound coming back | `src/ml-audio.js` | Out of sight, the sound stops; back, the engine's synth is made fresh and fades in (Mud Lab 7). |
 | The stock SUV | `src/ml-suv.js` | His own SUV as the engine has it (the Stock build's garage preset), the pick on the title and the map, its AWD / 4 HI / 4 LO. Mud Lab 17: the tunes for both SUVs (`ML_TUNE`). |
 | The Heron | `base/heron/`, `src/ml-heron.js` | Ground Truth's bush plane: the Redtail's flying code (frozen copies of salt-mini-plus `redtail/game/rt-game.js` and `rt-fly.js`, Nov 7 2026), the redtail-2 model (`heron-data.js`, made by that repo's `glb2js.py`, 60,481 triangles) in his Heron paint. |
-| The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. Mud Lab 15: the soil's relief (lumps, wet glints), churned water. Mud Lab 22: wet soil dark not shiny, the grain. Mud Lab 22.1 water: the wakes' height, foam, a wave's far side. Mud Lab 22.2 water: the spray, a livelier bow wave. |
+| The look | `src/ml-look.glsl`, `src/ml-look.js` | Mud Lab 8: how the ground, the water and the trees are painted (pieces of the land's shader), the picture's sharpening, and Mud Lab's own daylight. Mud Lab 15: the soil's relief (lumps, wet glints), churned water. Mud Lab 22: wet soil dark not shiny, the grain. Mud Lab 22.1 water: the wakes' height, foam, a wave's far side. Mud Lab 22.2 water: the spray, a livelier bow wave. Mud Lab 22.3 water: the worked-out ripples lit, a rut's water coming up. |
 | The keys | `src/ml-keys.js` | Mud Lab 16: Mud Lab's own keys in the engine's table, MENU > KEYS on the map to change any of them, the pause menu's legend. |
 | The Film camera | `src/ml-film.js` | Mud Lab 18: Salt & Sand's Film camera (a 16th camera that picks its own shots; its Helicopter and Park orbit) and the softer fly-past sound, from the packet of 13 Nov 2026. |
 | The graphics card | `src/ml-gpu.js` | Mud Lab 18: the card named on a laptop's title, the step down to Low when a card can't keep up, the card-reset line (from the same packet). |
@@ -58,6 +58,122 @@ stock SUV, hangs on Windows laptops; `mud-lab-4.html`: no plane; `mud-lab-3.html
 | The front door | `src/ml-ui.js` | Its own title; the phone's driving screen without N2O, O/D OFF, REAR and HORN. |
 | The build | `src/build.py` | `python3 src/build.py mud-lab-9` writes `builds/mud-lab-9.html` (each build its own name, never overwrite) with exact text swaps on the engine. |
 | Tests | `tools/test/` | Headless Chrome (software graphics: slow, so compare two builds, don't trust its speeds). `ml-run.py file://$PWD/builds/mud-lab-8.html TAG m "start;place:9_20_0;drive:1_0_0_1.2;shot:roost;stats"` (m phone size, l laptop): one-off steps. `ml-views.py builds/mud-lab-8.html OUTDIR m`: the thirteen fixed views at the phone's real picture size, each with its triangles and frame time: run it on two builds for before/after. `ml-same.py builds/A.html builds/B.html`: seven drives, every number has to match (a build that only changes the picture). `ml-mats.py builds/mud-lab-8.html`: every material Mud Lab makes a mesh with. `ml-shaders.py builds/mud-lab-8.html m`: the land's shaders' sizes and sampler counts (the two limits). `ml-pits.py builds/mud-lab-9.html tools/test/ml-drive.js runs.txt`: physics-only drives through a hole, along a trail, on a strap or a winch (how the trails were graded; its header lists the drives). `ml-rescue.py builds/mud-lab-9.html OUTDIR`: the title, the start, a strap rescue, a winch pull and the map, as pictures with their numbers. `ml-keys.py BUILD OUTDIR` and `ml-tune.py BUILD OUTDIR`: the map's KEYS and TUNE pages in a laptop window with real presses and clicks. `ml-turn.py BUILD out.json`: a hard turn at 56 mph on the dry field: does the truck go over, and what happens once it has (the rollover test). `ml-hud.py BUILD OUTDIR TAG m`: the Heron's HUD as a picture. `ml-packet.py BUILD OUTDIR TAG`: the card's line on the title, the Film camera in the list, the fly-past's pitch. `ml-gpu.py BUILD OUTDIR`: the step down to Low, with the page told it is not a test browser. `ml-yank.py BUILD` (Mud Lab 19): the sky-yank is still there (fails if it isn't). `ml-title.py BUILD OUT.png [m|l]` (Mud Lab 20): the title as a picture, and whether START is on the screen. In `ml-drive.js` (Mud Lab 20): `T9.jumps` (every name on the map), `T9.drown` (into deep water, then winch, RESET or backing out), `T9.churn` (rocking in deep muck: does it pop up?), `T9.wet`. `ml-prep.py BUILD [noworker] [rush] [shots=DIR]` (Mud Lab 19): how long the world's layer takes to fill, and its fingerprint. In `ml-drive.js`: `T9.ford`, `T9.cross`, `T9.lakeOut`, `T9.lap`, `T9.yank`. |
+
+## Mud Lab 22.3 water (Nov 15 2026): ripples that are worked out, and a rut that fills
+
+His words on Build 22.2: "There's a little bit too much splashing, or rather the splashing happens in a way that,
+like, when you make a rut nearby a body of water, you're making a puddle full of water ... the splashing happens like
+very suddenly, but the water would fill the rut after you made it. It wouldn't explode out of it unless you hit a rut
+that was already there." And: "simulating the bow wake. If instead of doing these lines coming off of it, we tried to
+simulate the water rippling effect slightly more realistically, or significantly more realistically if we can ...
+if you're pushing through the water, you're making ripples, and you're pushing forward, the ripples are stacking up on
+top of each other in front of the truck and getting stretched out behind the truck and propagating away from the side
+of the truck ... It doesn't matter the orientation of the truck, it's the direction the truck is moving through the
+water. So if we're just simulating the solid body of the truck, the solid body of the tires ... it's going to ripple
+at the same speed no matter what speed you're going. The faster you're going means those ripples get taller and
+tighter together because the ripples are still rippling."
+
+Both are in this build. Only what is seen: nothing of the physics. Builds 22 to 22.2 are as they were.
+
+### 1. The ripples are worked out (`src/ml-soil.js` mlRipple; `src/ml-look.glsl`; `src/build.py`)
+
+Builds 22 to 22.2 **drew** a wake: a V of crests laid along the path each tyre and the body had taken, their shape
+written down by hand. That is gone. Now the water's surface round the SUV is a sheet of points 28 m square, and each
+point's height is **worked out** from its four neighbours', many times a second (the wave equation: a point higher
+than its neighbours is pulled down, and overshoots). Nothing says where a crest should be.
+
+- **What makes ripples is the solid shapes in the water**, by where they are now and where they were a moment ago:
+  each tyre's foot (as long as its waterline, as wide as its tread) and the body below the waterline once the water
+  is over the sills. Water a shape moves into is pushed up; water it has just left is drawn down. So a shape pushes a
+  hump ahead of the way it **moves**, whichever way it points, and leaves a hollow behind; and a faster one moves more
+  water each moment, so its ripples are taller.
+- **How fast they travel is the water's own doing and nothing else's:** the speed of a wave in water that deep
+  (1.7 m/s in a foot of water, 3.1 in 3 ft), worked out for each point from the depth of the water at it. The SUV's
+  speed is no part of it. So ahead of a wading SUV the ripples it keeps making pile up close together, behind it
+  they are drawn out, and off its sides they spread away. Faster than the ripples travel, they cannot get ahead at
+  all and fold back into a V with a steep wave at the nose. None of that is written in: it is what the sums do.
+- They slow and bunch up as the water shallows, and turn back from a bank.
+- A spinning tyre works the water where it stands: rings.
+- **At speed the water is thrown aside.** Worked out as above, a fast tyre's push and the hollow behind it all but
+  cancel (it has left a point a thirtieth of a second after it came, before a ripple has gone anywhere). Water a fast
+  tyre parts does not sit on its nose: it is flung out and lands beside it. So what a shape pushes up is put down to
+  either side of the way the SUV is going, further out the faster (nothing at a wade, a metre at 37 mph), and the
+  hollow stays in its track: a trough with a ridge and foam each side, which the water then makes a wake of. This is
+  the one thing in the ripples that is a rule and not the sums.
+- A wave too steep to stand breaks: it is eased down and leaves foam. Foam also comes where a shape parts the water
+  fast. It stays where it is on the water and is gone in a second or two (the lace of 22.1).
+- **What is drawn:** the sheet itself, lifted by each point's height, so crests and troughs are real shape; lit by
+  each point's own slope; crests a little paler, troughs darker; choppier where it is worked up.
+- The sheet goes with the SUV you are in (a little behind it at speed: a wake lies behind), in whole steps of its own
+  grid, so the water never slides under the points. Its edge soaks ripples up.
+- The spray of 22.1 and 22.2 (the fan, the mist, the splash on going in, the drips) is as it was.
+
+### 2. A rut dug down to the water fills; it does not burst (`src/ml-soil.js` mlStand, mlStamp; `src/ml-look.glsl`)
+
+Water stands wherever the ground is under a water's level, so the moment a tyre dug a rut below it, the rut was full:
+the tyre was "in water" at once, and threw its spray, its splash and its waves. Now:
+
+- Every spot of ground remembers when it was first dug below the water. For 0.3 s after there is no water in it at
+  all; over the next 2.2 s the water comes up, the deepest of the rut first and out to its edges (in the picture too).
+- What a tyre is taken to be in, for everything that is seen (spray, splash, mist, rings, ripples), is the water
+  **standing half a metre ahead of it**, the way the SUV is going: the water that was there before it came, not the
+  water in the rut it is making.
+- A rut filled long ago is water like any other: hit it at speed and it splashes.
+- The engine's own drops off a tyre in a rut that has not filled are still rolled for and counted (so the game's dice
+  are what they were) and are of no size: not seen.
+- The physics still goes by the ground and the water's level as it always did: the drag, the lift and the grip are
+  untouched.
+
+### The shader's size (his limit: landSoil no bigger)
+
+| As the browser hands it to the graphics driver | Build 22 | Build 22.2 | Build 22.3 |
+|---|---|---|---|
+| landSoil, the phone's tier | 486,938 | 467,268 | 457,635 |
+| landSoil, the laptop's tier (High) | 500,535 | 471,076 | 461,442 |
+| landSoil's vertex shader | 37,779 | about 50,600 | 38,934 |
+| Texture samplers | 16 | 16 | 16 |
+
+The drawn wake was a loop of 52 sums for every pixel of water near the truck, and again for every point of the sheet.
+Both loops are gone: the sums are done once, on the processor, for the sheet's points only.
+
+### Checked
+
+| | |
+|---|---|
+| The same seven drives, Build 22.2 and Build 22.3 (`tools/test/ml-same.py`) | 7 of 7 the same, to the last digit (speed, place, ruts, soil dug, clods). No page errors in either |
+| A tyre digging down to the water beside the Mud Hole (a standing start flat out on the wet clay just short of it; each tyre's water by the old rule and by the new) | where a tyre had dug itself into 7 to 13 cm of water, the water standing ahead of it was 0 to 4 cm: no spray, no splash and no ripples from it; once in the Mud Hole's own water the two agree |
+| Pictures, phone size (`tools/test/ml-views.py`, twelve views: ten of the water, two of the Bog) | all drawn with landSoil, no page errors |
+| Pictures, laptop size (High, 1280 x 720) | the wade from behind and the hard turn: drawn with landSoil, no page errors |
+| The processor's share (the test browser, the phone's tier, one step of the game in the Mud Hole) | 1.01 ms in Build 22.2, 1.39 ms in 22.3: the ripples cost about 0.4 ms a step here. A phone's processor is slower than this machine's |
+| Triangles | the sheet is 24,642 on the phone's tier (22.2: 18,432), 32,258 on Low, 50,562 above, drawn only while there are ripples |
+| Page errors | none |
+
+### Not done, and limits
+
+- **Not run on his phone or laptop.** This is the build that most needs it: ripples are movement, and the pictures
+  can only show one moment of them. How big, how fast they die, how much foam: all set from still pictures.
+- **The processor does this, every frame there are ripples:** the sums (12,544 points on the phone's tier, 25,600 on
+  the laptop's), and sending the sheet to the graphics card (300 KB a frame on the phone's tier, 600 KB on the
+  laptop's). If the phone is slower in water than it was, say so: the sheet can be made coarser in one line.
+- The sheet's points are 25 cm apart on the phone (17.5 on the laptop): a ripple shorter than about a metre cannot be
+  held, so these are broad ripples, not fine ones. The fine ripples on the water are still the engine's own.
+- Ripples are worked out only on water at the level the SUV is standing in, over ground that was under water before
+  any rut was dug, and within the 28 m square. A rut's own water, a puddle at another level and the far side of the
+  Lake do not ripple.
+- The other SUV's tyres make ripples; its body does not. The Heron makes none.
+- How tall the hump at a wading SUV's nose stands, and how much foam, are set from the pictures. The hump is a
+  smooth swell of water with little foam on it: calmer than 22.2's drawn roll. Say if it should be more, or less.
+- Ripples push on nothing and wet nothing.
+- A rut's water comes up by the clock (2.5 s), the same for a hand's depth as for a foot. It does not flow in from
+  the pond: a rut dug far from open water fills the same way, from below.
+- Driving back through a rut that has filled does not empty it.
+
+![Wading the Mud Hole's deep middle, from the side: Build 22.2's drawn roll above, 22.3's worked-out water below](docs/shots/mud-lab-22.3-water-side.jpg)
+![The same from ahead](docs/shots/mud-lab-22.3-water-ahead.jpg)
+![And from behind](docs/shots/mud-lab-22.3-water-wade.jpg)
+![A crawl through the shallows: the drawn wake's lines above, ripples spreading at the water's own speed below](docs/shots/mud-lab-22.3-water-crawl.jpg)
+![36 mph through the shallows, the chase camera: Build 22.2 above, 22.3 below](docs/shots/mud-lab-22.3-water-fast.jpg)
+![Build 22.3 at laptop size (High): the wade from behind, and a hard turn](docs/shots/mud-lab-22.3-water-laptop.jpg)
 
 ## Mud Lab 22.2 water (Nov 15 2026): the second pass at the water, and a look for what the page carries that it doesn't need
 

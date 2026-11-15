@@ -6,7 +6,7 @@ Exact text swaps, each must match exactly as many times as said, so a changed en
 usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-19: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-22.2-water'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-22.3-water'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -118,7 +118,7 @@ swap("function groundInto(x,z,o){\n  const c=chunkAt(x,z);", "function groundInt
 # by how wet it is, the sod and the woods' floor, the ruts, the turned soil, the pressed and the wet tracks, and the
 # water (muddy, the bottom showing through where it's shallow)
 UNI = "uniform highp sampler2D uMLt;uniform highp sampler2D uMLd;uniform highp sampler2D uMLs0;uniform sampler2D uMLs1;uniform vec4 uMLo;uniform vec4 uMLw;uniform vec4 uMLp;uniform vec4 uMLq;uniform float uMLv;uniform vec4 uMLf;"
-swap("uniform vec3 uCam;uniform vec4 uFarDrop;\nout vec3 vP;", "uniform vec3 uCam;uniform vec4 uFarDrop;" + UNI + "uniform vec4 uMLr[52];uniform vec4 uMLb;\nout vec3 vP;")
+swap("uniform vec3 uCam;uniform vec4 uFarDrop;\nout vec3 vP;", "uniform vec3 uCam;uniform vec4 uFarDrop;" + UNI + "\nout vec3 vP;")
 swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;",
      "  /* (Mud Lab) the soil's patch: the ground's own height every 8 cm and the ruts (fading out toward its edge); its\n"
      "     slope from the world's ground */\n"
@@ -128,26 +128,14 @@ swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uP
      "    w.y=uMLq.z+mix(mbc,mb,win?1.:0.)+(win?textureLod(uMLt,mlw,0.).r*mlf:0.);pw.y=w.y;float mld=uMLo.z*1.28;\n"
      "    float mlx=textureLod(uMLs0,mlu+vec2(mld,0.),0.).r-textureLod(uMLs0,mlu-vec2(mld,0.),0.).r,mlz=textureLod(uMLs0,mlu+vec2(0.,mld),0.).r-textureLod(uMLs0,mlu-vec2(0.,mld),0.).r;\n"
      "    vN=normalize(vec3(-mlx,2.56,-mlz));vC=vec4(0.,0.,0.,1.);}\n"
-     # (Mud Lab 22.1 water) THE WAVES STAND UP. A fine sheet of water round the SUV (src/ml-soil.js mlWkMesh; uMLv 2),
-     # lying a hair under the water's level, is lifted here by the same waves the water's painting works out a pixel at a
-     # time (src/ml-look.glsl: the same places uMLr, the same sums; only the height is kept): a tyre's wave to 12 cm, the
-     # body's to 30 cm, a ring's 3 cm. Where a crest lifts it clear of the level water it is seen, and hides what is
-     # behind it and stands against the SUV; everywhere else it is under the level water, and the fragment shader throws
-     # it away (its height goes to it in vUV.x, which water has no other use for). It dies away toward the sheet's edge.
-     # Only landSoil's vertex shader has it
-     "#ifdef MLSOIL\n"
-     "  if(uMLv>1.5){vec2 wq=w.xz-uMLb.xy;float mh=0.;\n"
-     "    if(dot(wq,wq)<uMLb.z)for(int i=0;i<52;i++){vec4 A=uMLr[i],B=vec4(0.);if(A.w!=0.){bool hd=i<36&&i%6==0;if(i<36)B=uMLr[i+1]-A;vec2 q=w.xz-A.xy,b=B.xy;float t=dot(q,b)/max(dot(b,b),.001);\n"
-     "      if(t<1.1&&(hd||t>-.1)){float tc=clamp(t,0.,1.);q-=b*tc;float r=A.z+B.z*tc,x=length(q)-r,e=.1+.3*r;\n"
-     # (Mud Lab 22.2 water) THE ROLL IS ALIVE. Its leading face is the steeper one (the wave leans the way it is going),
-     # and its height is not one smooth roll any more: it swells and sinks in lumps a couple of metres long that
-     # move along it, with a quicker small chop on top (to 0.4 and 1.24 of its height), anchored to the world
-     "        if(x*x<5.*e)mh+=(A.w+B.w*tc)*(hd?1.:smoothstep(-.1,.1,t))*(1.-smoothstep(.9,1.1,t))*exp(-x*x/(x>0.?e*.55:e))*cos(x*5.)*(i<24?.12:i<36?.3:.03);}}}\n"
-     "    vec2 wc=w.xz-uMLo.xy;mh*=.82+.3*sin(wc.x*2.1+uTime*2.3)*sin(wc.y*2.6-uTime*1.9)+.12*sin(wc.x*5.3-wc.y*4.1+uTime*4.);\n"
-     "    mh*=1.-smoothstep(.6,.96,max(abs(aPos.x),abs(aPos.z))/14.);w.y+=mh;pw.y=w.y;vUV.x=mh;}\n"
-     "#endif\n"
+     # (Mud Lab 22.3 water) THE WORKED-OUT WATER (src/ml-soil.js mlRipple; uMLv 2): a sheet of points lying a hair under the
+     # water's level, each lifted by what it carries in aUV.x (its ripple's height and how big the ripples round it have
+     # lately been). The fragment shader throws away all of it that is not lifted clear, and lights the rest by what else
+     # the points carry (src/ml-look.glsl). (Builds 22.1 and 22.2 lifted a sheet here by working a drawn wake out again
+     # for every point of it: 52 sums a point. Gone)
+     "  if(uMLv>1.5){w.y+=aUV.x;pw.y=w.y;}\n"
      "  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;")
-swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "uniform vec4 uMLr[52];uniform vec4 uMLb;\nlayout(location=0) out vec4 oCol;")
+swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "\nlayout(location=0) out vec4 oCol;")
 swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;vec3 mlq1=dPx,mlq2=dPy;vec2 mlt1=dFdx(vUV),mlt2=dFdy(vUV);mlDx=dPx.xz;mlDy=dPy.xz;\n"
      "#ifndef PROBE\n  /* (Mud Lab) inside the world: the patch drawn only there; the chunks' ground not drawn under the patch */\n"
      "  vec2 mlUV=(vP.xz-uMLo.xy)*uMLo.z,mlW=fract((vP.xz-uMLo.xy)*uMLw.z);bool mlIn=(m==40||m==50)&&uMLo.w>.5&&mlUV.x>0.&&mlUV.y>0.&&mlUV.x<1.&&mlUV.y<1.;\n"
