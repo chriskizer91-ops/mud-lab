@@ -245,7 +245,7 @@ function mlPatchBuild(){
    squared over the grid's step squared (0: no water to ripple), dm what is left of v after a step (the edge soaks
    it up), m the same as c at every other point (worked out once as the sheet moves over new water), oa and ob how
    much of each point a solid shape takes up, this moment and the last (la, lb: which points) */
-const MLRP={n:0,dx:.25,ox:0,oz:0,lv:-99,on:false,lvl:'',h:null,v:null,e:null,f:null,c:null,dm:null,m:null,oa:null,ob:null,la:[],lb:[],flip:0,col:null,uv:null,mesh:null,dirty:false,acc:0,quiet:9,px:0,pz:0,ph:[0,0,0,0],peak:0};
+const MLRP={n:0,dx:.25,ox:0,oz:0,lv:-99,on:false,lvl:'',h:null,v:null,e:null,f:null,c:null,dm:null,m:null,oa:null,ob:null,la:[],lb:[],flip:0,col:null,uv:null,mesh:null,dirty:false,acc:0,quiet:9,px:0,pz:0,ph:[0,0,0,0],peak:0,j0:1,j1:0,u0:1,u1:0};
 const ML_RPDT=1/90;
 function mlRpMake(){const R=MLRP,n=GFX.level==='mobile'?112:GFX.level==='low'?128:160,dx=28/n,nn=n*n;
   R.n=n;R.dx=dx;for(const k of ['h','v','e','f','c','dm','oa','ob'])R[k]=new Float32Array(nn);R.m=new Float32Array((n>>1)*(n>>1));R.col=new Float32Array(nn*4);R.uv=new Float32Array(nn*2);R.la=[];R.lb=[];
@@ -254,31 +254,39 @@ function mlRpMake(){const R=MLRP,n=GFX.level==='mobile'?112:GFX.level==='low'?12
   for(let j=0;j<n-1;j++)for(let i=0;i<n-1;i++){const p=j*n+i,q=p+1,r=p+n,s=r+1;I.push(p,s,q,p,r,s);}
   if(R.mesh)freeMesh(R.mesh);R.mesh=makeMesh({pos:P,nrm:N,col:R.col,mat:M,uv:R.uv,idx:new Uint16Array(I)});R.mesh.tris=I.length/3;R.lvl=GFX.level;R.on=false;R.quiet=9;R.peak=0;}
 /* (the sheet has moved si, sj points over the water: what each point held goes with the water) */
-function mlRpShift(A,n,si,sj,fill){
-  if(sj>0)for(let j=0;j<n;j++){const s=j+sj;if(s<n)A.copyWithin(j*n,s*n,s*n+n);else A.fill(fill,j*n,j*n+n);}
-  else if(sj<0)for(let j=n-1;j>=0;j--){const s=j+sj;if(s>=0)A.copyWithin(j*n,s*n,s*n+n);else A.fill(fill,j*n,j*n+n);}
-  if(si>0)for(let j=0;j<n;j++){const o=j*n;A.copyWithin(o,o+si,o+n);A.fill(fill,o+n-si,o+n);}
-  else if(si<0)for(let j=0;j<n;j++){const o=j*n;A.copyWithin(o-si,o,o+n+si);A.fill(fill,o,o-si);}}
+function mlRpShift(A,n,si,sj,fill,st){const w=n*(st||1);si*=st||1;
+  if(sj>0)for(let j=0;j<n;j++){const s=j+sj;if(s<n)A.copyWithin(j*w,s*w,s*w+w);else A.fill(fill,j*w,j*w+w);}
+  else if(sj<0)for(let j=n-1;j>=0;j--){const s=j+sj;if(s>=0)A.copyWithin(j*w,s*w,s*w+w);else A.fill(fill,j*w,j*w+w);}
+  if(si>0)for(let j=0;j<n;j++){const o=j*w;A.copyWithin(o,o+si,o+w);A.fill(fill,o+w-si,o+w);}
+  else if(si<0)for(let j=0;j<n;j++){const o=j*w;A.copyWithin(o-si,o,o+w+si);A.fill(fill,o,o-si);}}
 /* (is there water to ripple at this point, and how fast do ripples go in it: water at the sheet's own level, over
    ground that was under it before any rut was dug) */
 function mlRpMask(a,b){const R=MLRP,x=R.ox+(a*2+.5)*R.dx,z=R.oz+(b*2+.5)*R.dx,wl=mlWL(x,z);if(wl<-90||Math.abs(wl-R.lv)>.01)return 0;
   const d=R.lv-mlBase(x,z);return d>.02?9.81*Math.min(1.3,Math.max(.06,d))/(R.dx*R.dx):0;}
 function mlRpPlace(cx,cz){const R=MLRP,n=R.n,hn=n>>1,dx=R.dx,s=2*dx,ox=Math.round((cx-n*dx/2)/s)*s,oz=Math.round((cz-n*dx/2)/s)*s;
   const si=R.on?Math.round((ox-R.ox)/dx):n,sj=R.on?Math.round((oz-R.oz)/dx):n;if(!si&&!sj)return;R.ox=ox;R.oz=oz;
-  if(Math.abs(si)>=n||Math.abs(sj)>=n){for(const k of ['h','v','e','f','oa','ob'])R[k].fill(0);R.la.length=0;R.lb.length=0;R.m.fill(-1);}
+  if(Math.abs(si)>=n||Math.abs(sj)>=n){for(const k of ['h','v','e','f','oa','ob','col','uv'])R[k].fill(0);R.la.length=0;R.lb.length=0;R.m.fill(-1);}
   else{for(const k of ['h','v','e','f','oa','ob'])mlRpShift(R[k],n,si,sj,0);mlRpShift(R.m,hn,si>>1,sj>>1,-1);
+    /* (and what is sent to the graphics card for each point) */
+    mlRpShift(R.col,n,si,sj,0,4);mlRpShift(R.uv,n,si,sj,0,2);
     for(const L of [R.la,R.lb]){let w=0;for(let q=0;q<L.length;q++){const k=L[q],i=k%n-si,j=((k/n)|0)-sj;if(i>=0&&j>=0&&i<n&&j<n)L[w++]=j*n+i;}L.length=w;}}
   const m=R.m,c=R.c,h=R.h,v=R.v;for(let b=0;b<hn;b++)for(let a=0;a<hn;a++){const q=b*hn+a;if(m[q]<0)m[q]=mlRpMask(a,b);const val=m[q],k=b*2*n+a*2;c[k]=c[k+1]=c[k+n]=c[k+n+1]=val;
     if(val<=0){h[k]=h[k+1]=h[k+n]=h[k+n+1]=0;v[k]=v[k+1]=v[k+n]=v[k+n+1]=0;}}
+  {const col=R.col;for(let k=3,e=n*n*4;k<e;k+=4)col[k]=1;}R.u0=0;R.u1=n-1;R.dirty=true;
+  /* (the rows with ripples on them go with the water too; a sheet laid afresh has none) */
+  if(Math.abs(si)>=n||Math.abs(sj)>=n){R.j0=1;R.j1=0;}else{R.j0=Math.max(1,R.j0-sj);R.j1=Math.min(n-2,R.j1-sj);}
   R.on=true;}
 /* (a solid shape in the water: how much of each point it takes up, as depth: a box hl long and hw wide each way from
    cx, cz, lying along ax, az, ds deep, its edges soft over one step of the grid) */
 function mlRpBox(O,L,cx,cz,ax,az,hl,hw,ds){const R=MLRP,n=R.n,dx=R.dx,r=Math.hypot(hl,hw)+dx,i0=Math.max(1,Math.floor((cx-r-R.ox)/dx)),i1=Math.min(n-2,Math.ceil((cx+r-R.ox)/dx)),j0=Math.max(1,Math.floor((cz-r-R.oz)/dx)),j1=Math.min(n-2,Math.ceil((cz+r-R.oz)/dx));
   for(let j=j0;j<=j1;j++){const pz=R.oz+j*dx-cz;for(let i=i0;i<=i1;i++){const px=R.ox+i*dx-cx,ca=(hl+dx*.5-Math.abs(px*ax+pz*az))/dx,cb=(hw+dx*.5-Math.abs(pz*ax-px*az))/dx;if(ca<=0||cb<=0)continue;
-    const k=j*n+i;if(O[k]===0)L.push(k);O[k]+=ds*(ca>1?1:ca)*(cb>1?1:cb);}}}
+    const k=j*n+i;if(O[k]===0)L.push(k);O[k]+=ds*(ca>1?1:ca)*(cb>1?1:cb);}}
+  mlRpRows(j0-2,j1+2);}
+/* (these rows of the sheet have something on them) */
+function mlRpRows(a,b){const R=MLRP,n=R.n;a=Math.max(1,a);b=Math.min(n-2,b);if(R.j0>R.j1){R.j0=a;R.j1=b;}else{if(a<R.j0)R.j0=a;if(b>R.j1)R.j1=b;}}
 /* (a knock on the water at a point: a spinning or creeping tyre's rings, the air coming up off a drowned SUV, a splash) */
 function mlRpPoke(x,z,a){const R=MLRP;if(!R.on)return;const n=R.n,i=Math.round((x-R.ox)/R.dx),j=Math.round((z-R.oz)/R.dx);if(i<2||j<2||i>n-3||j>n-3)return;
-  const k=j*n+i,h=R.h,c=R.c,q=.035*a;if(c[k]>0)h[k]+=q;for(const o of [1,-1,n,-n])if(c[k+o]>0)h[k+o]+=q*.5;R.quiet=0;}
+  const k=j*n+i,h=R.h,c=R.c,q=.035*a;if(c[k]>0)h[k]+=q;for(const o of [1,-1,n,-n])if(c[k+o]>0)h[k+o]+=q*.5;R.quiet=0;mlRpRows(j-3,j+3);}
 /* one moment of it, for the SUV you are in: nw tyres (where and how deep: MLWK.tx, tz, td), going U; its body lying
    along fx, fz with deep of water over its sills; air: all of it clear of the water */
 function mlRipple(dt,t,nw,U,fx,fz,deep,air){const R=MLRP;if(R.lvl!==GFX.level)mlRpMake();
@@ -297,6 +305,8 @@ function mlRipple(dt,t,nw,U,fx,fz,deep,air){const R=MLRP;if(R.lvl!==GFX.level)ml
   /* (the body: what is over its sills, and a share of what is under them: axles, engine and tyres fill much of that) */
   if(body)mlRpBox(O,L,p[0],p[2],fx,fz,t.__mlHx||2.3,t.__mlHz||1,1.6*Math.min(.6,deep+.12));
   if(owet)for(const w of o.wheels)if(w.contact&&(w.mlWdE||0)>.03){const wf=Math.hypot(w.f[0],w.f[2])||1;mlRpBox(O,L,w.cp[0],w.cp[2],w.f[0]/wf,w.f[2]/wf,.3,.16,.6*Math.min(w.mlWdE,.35));}
+  /* (Mud Lab 22.4: and the other SUV's body, as the one you are in) */
+  if(owet){let wd=0;for(const w of o.wheels)if(w.contact)wd=Math.max(wd,w.mlWdE||0);const dp=wd-(o.__mlClr===undefined?.557:o.__mlClr),m=o.M,l=Math.hypot(m[0],m[6])||1;if(dp>.02)mlRpBox(O,L,o.p[0],o.p[2],m[0]/l,m[6]/l,2.3,1,1.6*Math.min(.6,dp+.12));}
   /* what they have moved into is pushed up, what they have left drawn down (not for a SUV set down from somewhere
      else, nor the moment the sheet is first laid: that is not water being pushed) */
   const jump=!was||Math.hypot(p[0]-R.px,p[2]-R.pz)>3;R.px=p[0];R.pz=p[2];let moved=0;
@@ -306,7 +316,7 @@ function mlRipple(dt,t,nw,U,fx,fz,deep,air){const R=MLRP;if(R.lvl!==GFX.level)ml
      goes down to each side of the way the SUV is going (three quarters of it each side: thrown water lands in a heap), as far out as 6 cm for every m/s (nothing at a wade, a
      metre at 37 mph, 1.2 m at most), and the hollow stays in its track: a trough with a ridge either side, which the
      water then makes a wake of) */
-  if(!jump){const h=R.h,c=R.c,f=R.f,n=R.n,G=.6,kf=sst(2,9,U)*2.5,th=U>.5?Math.min(1.2,U*.06)/R.dx:0,oi=th?Math.round(-v[2]/U*th):0,oj=th?Math.round(v[0]/U*th):0;
+  if(!jump){const h=R.h,c=R.c,f=R.f,n=R.n,G=.6,kf=sst(2,9,U)*2.5+(body?sst(1,3.5,U)*.5:0),th=U>.5?Math.min(1.2,U*.06)/R.dx:0,oi=th?Math.round(-v[2]/U*th):0,oj=th?Math.round(v[0]/U*th):0;
     for(let q=0;q<L.length;q++){const k=L[q];if(c[k]<=0)continue;let d=O[k]-Op[k];d=d>.2?.2:d<-.2?-.2:d;moved+=d<0?-d:d;
       if(d>0&&(oi||oj)){const i=k%n,j=(k/n)|0;for(let sd=-1;sd<=1;sd+=2){const a=i+oi*sd,b=j+oj*sd,kk=a>0&&b>0&&a<n-1&&b<n-1&&c[b*n+a]>0?b*n+a:k;h[kk]+=G*d*.75;if(kf>0){const g=f[kk]+d*kf*2;f[kk]=g>.75?.75:g;}}}
       else{h[k]+=G*d;if(kf>0){const g=f[k]+(d<0?-d:d)*kf;f[k]=g>.6?.6:g;}}}
@@ -316,21 +326,31 @@ function mlRipple(dt,t,nw,U,fx,fz,deep,air){const R=MLRP;if(R.lvl!==GFX.level)ml
   if(R.quiet>1.5){if(!wet&&!owet)R.on=false;return;}
   /* the water's own moments */
   R.acc+=dt;let ns=0;const n=R.n,nn=n*n,h=R.h,vv=R.v,c=R.c,dm=R.dm;
+  /* (Mud Lab 22.4: only the rows of the sheet that have ripples on them, and three either side for them to spread into:
+     j0 to j1. A SUV wading has them over a third of the sheet; nothing is lost, the rest is still water) */
+  const ja=R.j0,jb=R.j1;if(ja>jb){R.acc=0;if(moved<=1e-4)R.quiet+=dt;return;}
   while(R.acc>=ML_RPDT&&ns<4){R.acc-=ML_RPDT;ns++;
-    for(let j=1;j<n-1;j++){let k=j*n+1;for(let i=1;i<n-1;i++,k++){const ck=c[k];if(ck<=0)continue;const hk=h[k];
+    for(let j=ja;j<=jb;j++){let k=j*n+1;for(let i=1;i<n-1;i++,k++){const ck=c[k];if(ck<=0)continue;const hk=h[k];
       vv[k]=(vv[k]+ck*ML_RPDT*((c[k-1]>0?h[k-1]:hk)+(c[k+1]>0?h[k+1]:hk)+(c[k-n]>0?h[k-n]:hk)+(c[k+n]>0?h[k+n]:hk)-4*hk))*dm[k];}}
-    for(let k=0;k<nn;k++)h[k]+=vv[k]*ML_RPDT;}
+    for(let k=ja*n,e=(jb+1)*n;k<e;k++)h[k]+=vv[k]*ML_RPDT;}
   if(R.acc>ML_RPDT)R.acc=0;if(!ns)return;
   /* what each point is drawn with: its lift, its height, its slope, its foam */
-  const e=R.e,f=R.f,col=R.col,uv=R.uv,T=ns*ML_RPDT,i2=.5/R.dx,kd=Math.max(0,1-T*1.1),kf=Math.max(0,1-T/1.3),dl=R.dx*R.dx/9.81*.7;let mx=0;
-  for(let j=1;j<n-1;j++){let k=j*n+1;for(let i=1;i<n-1;i++,k++){const ck=c[k],k2=k*2,k4=k*4;
+  const e=R.e,f=R.f,col=R.col,uv=R.uv,T=ns*ML_RPDT,i2=.5/R.dx,kd=Math.max(0,1-T*1.1),kf=Math.max(0,1-T/1.3),dl=R.dx*R.dx/9.81*.7;let mx=0,na=n,nb=0;
+  for(let j=ja;j<=jb;j++){let k=j*n+1,rm=0;for(let i=1;i<n-1;i++,k++){const ck=c[k],k2=k*2,k4=k*4;
     if(ck<=0){e[k]*=kd;uv[k2]=0;uv[k2+1]=0;col[k4]=0;col[k4+1]=0;col[k4+2]=0;continue;}
     let hk=h[k];const lim=ck*dl,top=.08+lim*.6;if(hk<-lim){hk=h[k]=-lim;if(vv[k]<0)vv[k]=0;}else if(hk>top){hk=h[k]=top;if(vv[k]>0)vv[k]=0;}
     hk=h[k]=hk+.02*(.25*(h[k-1]+h[k+1]+h[k-n]+h[k+n])-hk);
-    const ah=hk<0?-hk:hk;let ek=(e[k]*.6+.1*(e[k-1]+e[k+1]+e[k-n]+e[k+n]))*kd;if(ek<ah*1.15)ek=ah*1.15;e[k]=ek;if(ek>mx)mx=ek;
+    const ah=hk<0?-hk:hk;let ek=(e[k]*.6+.1*(e[k-1]+e[k+1]+e[k-n]+e[k+n]))*kd;if(ek<ah*1.15)ek=ah*1.15;e[k]=ek;if(ek>rm)rm=ek;
     const sx=(h[k+1]-h[k-1])*i2,sz=(h[k+n]-h[k-n])*i2,sl=Math.sqrt(sx*sx+sz*sz);let fk=(f[k]*.8+.05*(f[k-1]+f[k+1]+f[k-n]+f[k+n]))*kf;
+    /* (Mud Lab 22.4: foam from a quarter of a slope where the water stands high, as on the face of the swell at a
+       wading SUV's nose; and a wave too steep to stand, .45, breaks: eased toward its neighbours, with more foam) */
+    if(sl>.25&&hk>.03){fk+=T*2.5*(sl-.25)*(hk>.1?1:hk*10);if(fk>1)fk=1;}
     if(sl>.45){fk+=T*3*(sl-.45);if(fk>1)fk=1;h[k]=hk+=.3*(.25*(h[k-1]+h[k+1]+h[k-n]+h[k+n])-hk);vv[k]*=.8;}f[k]=fk;
-    uv[k2]=ek+hk;uv[k2+1]=hk;col[k4]=sx;col[k4+1]=sz;col[k4+2]=fk;}}
+    uv[k2]=ek+hk;uv[k2+1]=hk;col[k4]=sx;col[k4+1]=sz;col[k4+2]=fk;}
+    if(rm>mx)mx=rm;if(rm>2e-4){if(j<na)na=j;if(j>nb)nb=j;}}
+  /* (these rows are what is sent to the graphics card; the rows with ripples on them, for the next moment) */
+  if(R.u0>R.u1){R.u0=ja;R.u1=jb;}else{if(ja<R.u0)R.u0=ja;if(jb>R.u1)R.u1=jb;}
+  if(na>nb){R.j0=1;R.j1=0;}else{R.j0=Math.max(1,na-3);R.j1=Math.min(n-2,nb+3);}
   R.peak=mx;R.dirty=true;if(mx<.002&&moved<=1e-4)R.quiet+=dt;else R.quiet=0;}
 /* (Mud Lab 22.3 water) A RUT DUG DOWN TO THE WATER FILLS; IT DOES NOT BURST. His words, 15 Nov 2026: "when you make a
    rut nearby a body of water ... the splashing happens like very suddenly, but the water would fill the rut after you
@@ -487,6 +507,8 @@ function mlThrow(t,w,dt,S,W,wd){
 /* a thrown clod lands: a little more soil where it falls (a soft lump), turned over; true when it's taken in. In water
    it just sinks */
 function mlLand(p){
+  /* (Mud Lab 22.4: a clod that comes down in standing water knocks it, by its size: a ring) */
+  if(MLRP.on&&mlStand(p.x,p.z)>.03)mlRpPoke(p.x,p.z,Math.min(1.5,.35+(p.s0||.03)*14));
   if(!MLS.ready)return false;const N=MLS.N,C=MLS.C,fi=(p.x-MLS.x0)/C-.5,fj=(p.z-MLS.z0)/C-.5;
   if(fi<3||fj<3||fi>N-4||fj>N-4)return false;
   if(mlWL(p.x,p.z)>mlBase(p.x,p.z)+mlRut(fi|0,fj|0)+.02){MLS.stat.landed++;return true;}
@@ -666,8 +688,15 @@ function mlWkDrops(dt){const F=MLWK.fx,W=RANCH.W;let nm=0;
     /* (Mud Lab 22.1 water: the mist drifts as the engine's spray does; the drops fall. Mud Lab 22.2: it swells fast at
        first and then slowly, so a puff is a haze almost at once and never a ball) */
     if(q.kind==='spray'){q.vx*=1-dt*2.4;q.vz*=1-dt*2.4;q.vy=q.vy*(1-dt*2)-dt*.6;q.s=q.s0*(1+3.2*Math.sqrt(1-q.life/q.max));q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;continue;}
-    q.vy-=9.8*dt;q.vx*=1-dt*.4;q.vz*=1-dt*.4;q.s=q.s0*(1-(1-q.life/q.max)*.6);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;if(q.y<W.heightAt(q.x,q.z))q.life=0;}
+    q.vy-=9.8*dt;q.vx*=1-dt*.4;q.vz*=1-dt*.4;q.s=q.s0*(1-(1-q.life/q.max)*.6);q.x+=q.vx*dt;q.y+=q.vy*dt;q.z+=q.vz*dt;
+    /* (Mud Lab 22.4: a drop that comes down on the worked-out water knocks it: a ring. One in three, the bigger ones more) */
+    if(q.vy<0&&MLRP.on&&q.y<MLS.h0+MLRP.lv){q.life=0;if(q.s0>.03&&(MLRP.pk=(MLRP.pk||0)+1)%3===0)mlRpPoke(q.x,q.z,Math.min(.5,q.s0*5));}
+    else if(q.y<W.heightAt(q.x,q.z))q.life=0;}
   MLWK.nm=nm;}
+/* (Mud Lab 22.4 water) a drop's streak (src/build.py): which way it is crossing the picture, and how long that makes it:
+   into the engine's list of puffs at o (o+3 its turn in the picture, o+6 how much longer than wide) */
+function mlStreak(p,o){const B=R.camBasis;if(!B)return;const r=B.r,u=B.up,vr=p.vx*r[0]+p.vy*r[1]+p.vz*r[2],vu=p.vx*u[0]+p.vy*u[1]+p.vz*u[2],sp=Math.hypot(vr,vu);
+  if(sp>1.5){PUFF_BUF[o+3]=Math.atan2(-vr,vu);PUFF_BUF[o+6]=Math.min(3.5,(sp-1.5)*.16);}}
 /* (they join the engine's particles only for the moment it draws them) */
 {const draw=FXP.particles;FXP.particles=function(R,U,texs){const F=MLWK.fx,n=FX.length;for(let i=0;i<F.length&&FX.length<FX_MAX;i++)FX.push(F[i]);try{return draw.call(this,R,U,texs);}finally{FX.length=n;}};}
 /* (Mud Lab 19) DEEP WATER: THE ENGINE DROWNS. (Mud Lab 20) AND IT CHOKES FIRST. His words, 13 Nov 2026: "when it does
@@ -886,7 +915,7 @@ function mlPatchDraw(u){
      now, and the sheet drawn 5 mm under its water's level, only with the soil's own program and only while there are
      ripples on it */
   if(u.uMLf&&u.uMLv&&MLRP.on&&MLRP.mesh&&MLRP.quiet<1.5&&MLRP.peak>.003){const R=MLRP;
-    if(R.dirty){R.dirty=false;gl.bindBuffer(gl.ARRAY_BUFFER,R.mesh.bufs[2]);gl.bufferSubData(gl.ARRAY_BUFFER,0,R.col);gl.bindBuffer(gl.ARRAY_BUFFER,R.mesh.bufs[4]);gl.bufferSubData(gl.ARRAY_BUFFER,0,R.uv);}
+    if(R.dirty&&R.u0<=R.u1){const a=R.u0*R.n,m=(R.u1-R.u0+1)*R.n;gl.bindBuffer(gl.ARRAY_BUFFER,R.mesh.bufs[2]);gl.bufferSubData(gl.ARRAY_BUFFER,a*16,R.col,a*4,m*4);gl.bindBuffer(gl.ARRAY_BUFFER,R.mesh.bufs[4]);gl.bufferSubData(gl.ARRAY_BUFFER,a*8,R.uv,a*2,m*2);R.u0=1;R.u1=0;}R.dirty=false;
     gl.uniform1f(u.uMLv,2);atM(u,R.ox,MLS.h0+R.lv-.005,R.oz);drawMesh(R.mesh);gl.uniform1f(u.uMLv,0);tris+=R.mesh.tris;}
   return tris;}
 /* the world raked smooth again (K on a keyboard; the test tools) */

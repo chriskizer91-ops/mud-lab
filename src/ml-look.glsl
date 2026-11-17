@@ -188,7 +188,23 @@ vec3 mlWoods(vec2 wp,float moist){
         if(mlWin){vec4 gt=textureLod(uMLt,mlW,0.);gy=textureLod(uMLd,mlW,0.).r+gt.r;if(gt.a<0.&&gt.a>-2.5)fl=.3*(2.+gt.a);}
         float dep=vP.y-(uMLq.z+gy)-fl,sh=smoothstep(0.,.14,dep),ed=smoothstep(0.,.035,dep);
         if(dep<-.004&&(fl>0.||!(uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985)))discard;
-        alb=mix(vec3(.06,.044,.028),mix(vec3(.105,.076,.046),vec3(.135,.096,.054),sh),ed);spec=mix(.1,.2,ed);shin=mix(30.,420.,ed*ed);ssr=ed>.5?.5:0.;N=normalize(vec3(gw.x*.55*ed,1.,gw.y*.55*ed));
+        alb=mix(vec3(.06,.044,.028),mix(vec3(.105,.076,.046),vec3(.135,.096,.054),sh),ed);spec=mix(.1,.2,ed);shin=mix(30.,420.,ed*ed);ssr=ed>.5?.5:0.;
+        /* (Mud Lab 22.4 water) THE WATER'S OWN RIPPLES. Until now still water was tipped this way and that by two layers of
+           blotchy noise (the engine's creek: gw), a tenth of a slope each way everywhere: seen from low down across a
+           pond, half of those tips mirrored the pale sky and half the land under the horizon, and the water read as a
+           grey speckled sheet, like concrete. Now:
+           - the tips are the SLOPES OF RIPPLES (a noise's own gradient, at two sizes: about half a metre and a hand's
+             breadth, each drifting its own way), so they lie as ripples do;
+           - they come in PATCHES, as a breeze lays them: strong in some places, nearly glassy in others, the patches
+             drifting slowly;
+           - they fade where a pixel is wider than a ripple (far off they could only sparkle);
+           - and no ripple mirrors what is under the horizon (below: Mud Lab 22.1 did this for the wake only) */
+        vec2 rg;{vec3 r1=vnd(wp*2.1+vec2(uTime*.5,uTime*.31)),r2=vnd(wp.yx*5.3-vec2(uTime*.7,uTime*.45));
+          float ra=(.2+.9*smoothstep(.42,.72,vn(wp*.06+uTime*.015)))*ed;rg=(r1.yz*.15+r2.zy*.09)*(ra/(1.+gFP*3.5));
+          /* (and where there are ripples the water leans toward the eye by about their steepness, seen or too small to
+             see: that is the face of each ripple the eye meets. So rippled water mirrors the sky from higher up
+             (bluer, darker) and glassy water the pale sky at the horizon: the patches show as they do on a pond) */
+          N=normalize(vec3(-rg.x,1.,-rg.y)+vec3(V.x,0.,V.z)*(.08*ra));}
         /* (Mud Lab 22.3 water) WHAT A TRUCK DOES TO THE WATER IS WORKED OUT, NOT DRAWN (src/ml-soil.js mlRipple). Builds
            16 to 22.2 worked a wake out here, a pixel at a time, from 52 places along the paths the tyres and the body
            had taken: a loop of 52 sums for every pixel of water near the truck. That is gone. The ripples are a sheet
@@ -200,10 +216,12 @@ vec3 mlWoods(vec2 wp,float moist){
            squares as a net of bright lines); foam as Mud Lab 22.1 made it (pale tan froth, matt, laid as a lace that stays where it is on the
            water); and a wave's far side, seen from low down, mirrors the sky just over the horizon, not the land
            under it (22.1) */
-        if(sm){float wk=ed*(1.-.7*smoothstep(.05,.15,gFP)),wf=vC.b;
-          float wl=min(1.,length(vC.rg)*4.);N=normalize(N-vec3(vC.r,0.,vC.g)*(1.3*wk)+vec3(gw.x,0.,gw.y)*(.6*wl*ed));alb*=1.+.25*clamp(vUV.y*8.,-1.,1.)*wk;shin=mix(min(shin,200.),90.,wl*ed);
-          if(wf>.03){float n=.6*abs(2.*vn(wp*4.)-1.)+.4*vn(wp*15.),c=smoothstep(n-.12,n+.14,wf)*ed*.85;alb=mix(alb,vec3(.4,.34,.26),c);shin=mix(shin,6.,c);N=normalize(mix(N,vec3(0.,1.,0.),c*.6));}
-          {vec3 wr=reflect(-V,N);if(wr.y<0.){wr.y=-wr.y;N=normalize(V+wr);}}}}
+        if(sm){float wk=ed,wf=vC.b;
+          float wl=min(1.,length(vC.rg)*4.);N=normalize(N-vec3(vC.r,0.,vC.g)*(1.3*wk)-vec3(rg.x,0.,rg.y)*(.6*wl));alb*=1.+.6*vUV.y*wk;shin=mix(shin,90.,wl);
+          if(wf>.03){float n=.6*abs(2.*vn(wp*4.)-1.)+.4*vn(wp*15.),c=smoothstep(n-.12,n+.14,wf)*ed*.85;alb=mix(alb,vec3(.4,.34,.26),c);shin=mix(shin,6.,c);}
+          }
+        /* (water mirrors the sky just over the horizon where a slope would mirror what is under it) */
+        {vec3 wr=reflect(-V,N);if(wr.y<0.){wr.y=-wr.y;N=normalize(V+wr);}}}
 #endif
 //@@ trunk
     /* (Mud Lab 8) the trees' trunks: bark, furrowed up and down the trunk, darker toward the ground (the engine's wood

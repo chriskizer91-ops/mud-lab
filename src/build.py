@@ -6,7 +6,7 @@ Exact text swaps, each must match exactly as many times as said, so a changed en
 usage: python3 src/build.py [out-name]   (from the repo's top; writes builds/<out-name>.html, default mud-lab-19: give the
 next build its own name, an older build is never written over)"""
 import sys, os, json, re
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-22.3-water'
+R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-lab-22.4-water'
 rd = lambda p: open(os.path.join(R, p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
@@ -170,6 +170,12 @@ swap("const FX_MAX=360,", "const FX_MAX=1200,")
 # (Mud Lab 22.2 water) a puff of mist can say how thick it is (the wake's own, src/ml-soil.js: .27; the engine's spray off
 # wet tarmac stays .28)
 swap("p.kind==='spray'?.28*f*Math.min(1,(1-f)*6):.45*f;n++;}", "p.kind==='spray'?(p.al||.28)*f*Math.min(1,(1-f)*6):.45*f;n++;}")
+# (Mud Lab 22.4 water) A DROP OF WATER IN THE AIR IS A STREAK, NOT A DOT. The engine draws every particle as a round soft
+# dot. A drop moving fast across the picture is now drawn drawn out along the way it is going (src/ml-soil.js mlStreak:
+# by how fast it crosses the picture, up to four and a half times as long as wide), so a fan of spray reads as water
+# thrown, not beads. The puff's own shape, light and fade are as they were; dust, mist and mud are untouched
+swap("PUFF_BUF[o+6]=0;PUFF_BUF[o+7]=0;", "PUFF_BUF[o+6]=0;PUFF_BUF[o+7]=0;if(p.kind==='water')mlStreak(p,o);")
+swap("vec2 q=vec2(c*aPos.x-s*aPos.y,s*aPos.x+c*aPos.y);vec3 w=iA.xyz+(uRt*q.x+uUp*q.y)*iB.x;", "vec2 q0=vec2(aPos.x,aPos.y*(1.+iB.z)),q=vec2(c*q0.x-s*q0.y,s*q0.x+c*q0.y);vec3 w=iA.xyz+(uRt*q.x+uUp*q.y)*iB.x;")
 # (Mud Lab 15) the brake lamps' light on the ground: after dark a quarter of what the engine gives it (a little
 # over the tail lamps' own), by day a sixteenth. At full strength every wet lump of mud behind a braking SUV caught a red glint: ruts that looked like
 # cracks in lava, by day too
@@ -260,6 +266,10 @@ def drop(a):
     global s
     assert s.count(a) == 1, f'drop, found {s.count(a)}: {a[:80]!r}'; s = s.replace(a, ''); return len(a)
 ML_CUT += drop("#ifndef LEAN_D\n      if(uRain>.35)gw+=ripplesS(wp*1.7)*uRain*near(.05);\n#endif\n")
+# (Mud Lab 22.4 water) the engine's creek ripples (two layers of blotchy noise) are not worked out in the soil's own program:
+# every water there is Mud Lab's, with its own ripples (src/ml-look.glsl). It pays for them
+swap("      vec2 rp=wp*1.3+vec2(uTime*.3,uTime*.5);vec2 gw=vec2((vn(rp)-.5)*.25+(vn(wp*3.1-uTime*.4)-.5)*.12,(vn(rp+7.)-.5)*.25);\n",
+     "#if !defined(PROBE)&&defined(MLSOIL)\n      const vec2 gw=vec2(0.);\n#else\n      vec2 rp=wp*1.3+vec2(uTime*.3,uTime*.5);vec2 gw=vec2((vn(rp)-.5)*.25+(vn(wp*3.1-uTime*.4)-.5)*.12,(vn(rp+7.)-.5)*.25);\n#endif\n")
 ML_CUT += drop("    if(uWet>0.){alb*=1.-uWet*(.36*por+.22*hard);spec=mix(spec,.6,uWet*(.75*hard+.2*por));shin=mix(shin,160.,uWet*(hard+.4*por));ssr=max(ssr,uWet*(.7*hard+.25*por));\n      if(por>0.)pud=max(pud,smoothstep(.66,.72,fbmS(wp*.09+11.3)*.8+vn(wp*.55)*.2+uWet*.12-.1)*uWet*.9);}\n")
 ML_CUT += drop("    float por=m==40||m==42||m==43||m==44||m==53||m==55||m==56||m==57?1.:0.,hard=m==54||m==45||m==58?1.:0.;\n")
 ML_CUT += drop("#ifndef LEAN_D\n      vec2 rg=uRain>.35?ripplesS(wp*1.8)*uRain*near(.05):vec2(0.);N=normalize(N+vec3(rg.x,0.,rg.y)*pud);\n#endif\n")
