@@ -144,6 +144,48 @@ the surface under it, a cap on the glint, a fade with distance, a clamp on how m
 ![Into the Mud Hole at 38 mph](docs/shots/mud-lab-22.4-water-entry.jpg)
 ![Build 22.4 at laptop size (High): the Pond, and the wade from ahead](docs/shots/mud-lab-22.4-water-laptop.jpg)
 
+## The water passes, 22.1 to 22.4: what was tried and dropped, and what is still to do
+
+For whoever picks the water up next. Each build's own section above and below says what it does; this is what does
+not show in them. The one-off scripts used along the way are in `tools/water/` (its own README).
+
+**How each pass was judged:** `tools/test/ml-views.py` pictures of the same drives in the build before and the build
+being made (the `water-*` views, and `pond`, `n-lake`, `n-fordn1`, `n-pooln` for still water), looked at, changed,
+taken again. Then `ml-same.py` (the physics must be the same to the last digit), `ml-shaders.py` (landSoil no
+bigger), and a few views at laptop size. Nothing has been seen moving, and nothing has run on his devices.
+
+**Tried and dropped, or changed after the first picture:**
+- 22.1: foam as soft blobs (read as white patches: became a lace). Foam on rings (the air off a drowned SUV made two
+  white discs: rings never have foam). The bow's crest 45 cm ahead of the bumper (a gap of flat water between: moved
+  to stand against it). A wave's far side mirroring the land (tan stripes: mirrors sky).
+- 22.2: the mist at .42, then .34 (round balls, then a white veil over the SUV at laptop size, where twice as many
+  puffs were allowed: thinned, and given its own count, the same on every tier).
+- 22.3: the first worked-out water was far too violent (jagged white peaks: a spinning tyre was pumping the water at
+  6 times a second, and every shape pushed with all its depth). A net of bright zigzags in the sun's glint (the
+  sheet's own squares: a little of each point's height is shared with its neighbours each frame, and the glint is
+  softer). A fast tyre left almost no wake (its push and its hollow cancel: the thrown-aside rule). The swell at a
+  wading nose came out timid (the body's push was raised).
+  Considered and not done: making the sheet replace the level water outright (so a trough could dip below it): it
+  needs the level water thrown away under the sheet, and goes wrong where two waters at different levels are close.
+  The sheet is lifted by how big the ripples round each point have lately been instead, which needs neither.
+  The time a spot was dug below the water could not go to the shader as a time (the soil's picture holds times to
+  about half a second after ten minutes' play): it goes as how far the rut has filled.
+- 22.4: still water's first new ripples were too faint (a smooth white sheet, like mist), the second too brown (the
+  lean toward the eye too strong): the third is what is in. The foam at the nose was cut back twice. Four small things
+  in the lighting of the worked-out water were taken out to keep landSoil no bigger.
+  Considered and not done: the SUV's body as a wall the ripples bend round and bounce off (the water must still be
+  drawn up against the bumper, and a wall there breaks that).
+
+**Still to do, if he wants it** (none of it started):
+- Ripples in a rut's own water, and on water at another level than the one the SUV stands in.
+- The far bank and its trees mirrored in still water; far water less pale.
+- The body as a wall for ripples (above); ripples from the Heron.
+- Thrown water as a real sheet (it is streaks); water running down the body, a wet and muddy SUV (he said: much
+  later).
+- Wind: the ripples' patches drift by themselves and answer to nothing.
+- Finer ripples than the sheet can hold (25 cm between points on the phone).
+- And first of all: what it looks like moving on his phone and laptop, and what it costs there.
+
 ## Mud Lab 22.3 water (Nov 15 2026): ripples that are worked out, and a rut that fills
 
 His words on Build 22.2: "There's a little bit too much splashing, or rather the splashing happens in a way that,

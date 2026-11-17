@@ -1,0 +1,1 @@
+()=>{const G=__game.R.G,gl=__game.gl,dbg=gl.getExtension('WEBGL_debug_shaders');const P=G.programs.find(p=>p.name==='landSoil');return 'landSoil vs '+dbg.getTranslatedShaderSource(P.vs).length+' fs '+dbg.getTranslatedShaderSource(P.fs).length;}
