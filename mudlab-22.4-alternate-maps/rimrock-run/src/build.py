@@ -1,22 +1,26 @@
-"""MUD LAB 22.4, ALTERNATE MAPS: this folder's page. Everything technical is Mud Lab 22.4's: the frozen engine
-(../base/engine-salt-and-sand.html), the two SUVs' play models and his ground pictures (../base), and Mud Lab's own code
+"""MUD LAB 22.4, ALTERNATE MAPS, RIMROCK RUN: this folder's page. Everything technical is Mud Lab 22.4's: the frozen engine
+(../../base/engine-salt-and-sand.html), the two SUVs' play models and his ground pictures (../../base), and Mud Lab's own code
 as it stood at 22.4, copied into this folder's src/ and changed only where the new map and the two new vehicles need
-it (README). The map is src/ml-world.js. New models made for this folder are in this folder's base/.
+it (README). The map is src/ml-world.js. The Group B's model is the alternate maps' own (../base).
 Exact text swaps, each must match exactly as many times as said, so a changed engine fails loudly.
 usage: python3 src/build.py [out-name]   (from this folder; writes builds/<out-name>.html: give the next build its own
 name, an older build is never written over)"""
 import sys, os, json, re
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE); NAME = sys.argv[1] if len(sys.argv) > 1 else 'mud-park-1'
-# (a file is this folder's if it has one, Mud Lab's own otherwise)
-def path(p): q = os.path.join(HERE, p); return q if os.path.exists(q) else os.path.join(R, p)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); TOP = os.path.dirname(HERE); R = os.path.dirname(TOP); NAME = sys.argv[1] if len(sys.argv) > 1 else 'rimrock-run-1'
+# (a file is this map's if it has one, else the alternate maps' shared one (../base: the Group B's model), else Mud Lab's own)
+def path(p):
+    for d in (HERE, TOP, R):
+        q = os.path.join(d, p)
+        if os.path.exists(q): return q
+    return os.path.join(R, p)
 rd = lambda p: open(path(p), encoding='utf-8').read()
 s = rd('base/engine-salt-and-sand.html')
 def swap(old, new, n=1):
     global s
     c = s.count(old); assert c == n, f'expected {n} of: {old[:100]!r}, found {c}'; s = s.replace(old, new)
 # ---------- ITS OWN NAME, ITS OWN SAVES, ITS FRONT DOOR (src/ml-ui.js) ----------
-swap('<title>Redline County: Salt &amp; Sand (Studio 2)</title>', '<title>Mud Lab: The Mud Park</title>')
-swap("localStorage.getItem('sas:'+k)", "localStorage.getItem('mudpark:'+k)"); swap("localStorage.setItem('sas:'+k,", "localStorage.setItem('mudpark:'+k,"); swap("localStorage.removeItem('sas:'+k)", "localStorage.removeItem('mudpark:'+k)")
+swap('<title>Redline County: Salt &amp; Sand (Studio 2)</title>', '<title>Mud Lab: Rimrock Run</title>')
+swap("localStorage.getItem('sas:'+k)", "localStorage.getItem('rimrockrun:'+k)"); swap("localStorage.setItem('sas:'+k,", "localStorage.setItem('rimrockrun:'+k,"); swap("localStorage.removeItem('sas:'+k)", "localStorage.removeItem('rimrockrun:'+k)")
 swap("const word='REDLINE COUNTY',", "const word='MUD LAB',")
 swap("L.hidden=true;openMenu(true);dybStart();sasBoot();", "L.hidden=true;openMenu(true);dybStart();sasBoot();mlTitle();")
 # the driving screen, less crowded (his rule): no nitrous or exhaust-bang lights in the HUD's row
@@ -104,15 +108,19 @@ swap("if(DUNES){let bb=[0,1e9,0,CH,-1e9,CH];", "if(DUNES&&!ML){let bb=[0,1e9,0,C
 swap("if(x1>-EDGE-40&&x0<EDGE+40&&z1>-EDGE-40&&z0<EDGE+40)townStatic(", "if(!ML&&x1>-EDGE-40&&x0<EDGE+40&&z1>-EDGE-40&&z0<EDGE+40)townStatic(")
 swap("if(x1>PARK.x0-80&&x0<PARK.x1+80&&z1>PARK.z0-80&&z0<PARK.z1+80||x1>PKW.ROADX-30&&x0<PKW.ROADX+30&&z1>-60&&z0<-20)parkStatic(", "if(!ML&&(x1>PARK.x0-80&&x0<PARK.x1+80&&z1>PARK.z0-80&&z0<PARK.z1+80||x1>PKW.ROADX-30&&x0<PKW.ROADX+30&&z1>-60&&z0<-20))parkStatic(")
 swap("if(x1>OL.bb[0]&&x0<OL.bb[2]&&z1>OL.bb[1]&&z0<OL.bb[3])loopStatic(", "if(!ML&&x1>OL.bb[0]&&x0<OL.bb[2]&&z1>OL.bb[1]&&z0<OL.bb[3])loopStatic(")
-swap("  townTrees(x0,z0,x1,z1,inC,addTree);\n  {const G=6.2,n=Math.floor(CH/G),cr={};", "  if(!ML)townTrees(x0,z0,x1,z1,inC,addTree);\n  if(!(ML&&Math.abs(x0+CH/2-ML_A.x-ML_A.cu)<ML_A.h+ML_A.m-CH/2&&Math.abs(z0+CH/2-ML_A.z-ML_A.cv)<ML_A.h+ML_A.m-CH/2)){const G=6.2,n=Math.floor(CH/G),cr={};")
-swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlE:ML_E,mlLayerRows,mlX:ML_X,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlPits:ML_PITS,mlWhite,mlHoles:ML_HOLES,mlTrees,mlBog:ML_BOG,mlClimb:ML_CLIMB,mlClimbY,mlClimbS,mlHills,L,HALF,CH,FT,ROAD_END,")
+swap("  townTrees(x0,z0,x1,z1,inC,addTree);\n  {const G=6.2,n=Math.floor(CH/G),cr={};", "  if(!ML)townTrees(x0,z0,x1,z1,inC,addTree);\n  if(!(ML&&Math.abs(x0+CH/2-ML_A.x-ML_A.cu)<ML_A.hx+ML_A.m-CH/2&&Math.abs(z0+CH/2-ML_A.z-ML_A.cv)<ML_A.hz+ML_A.m-CH/2)){const G=6.2,n=Math.floor(CH/G),cr={};")
+swap("return {L,HALF,CH,FT,ROAD_END,", "return {mlA:ML_A,mlE:ML_E,mlLayerRows,mlX:ML_X,mlZone,mlBaseH,mlMat,mlLevel,mlCore,mlPlace,mlPlaces:ML_PLACES,mlTrails:ML_TRAILS,mlPits:ML_PITS,mlHoles:ML_HOLES,mlTrees,mlBog:ML_BOG,mlClimb:ML_CLIMB,mlClimbY,mlClimbS,mlHills,L,HALF,CH,FT,ROAD_END,")
 swap("if(DYB.dunes)return Math.abs(z)<6?'Highway 40'", "if(WG.mlA)return WG.mlPlace(x-WG.mlA.x,z-WG.mlA.z);if(DYB.dunes)return Math.abs(z)<6?'Highway 40'")
-swap("const HOME=[0,1.9,0];", "const HOME=[WG.mlA.x-12,WG.mlA.z+640,1.571];")
+swap("const HOME=[0,1.9,0];", "const HOME=[WG.mlA.x+2414,WG.mlA.z+330,Math.PI];")
 swap("  if(x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=", "  if(!ML&&x1>COURSE.x0-60&&z0<60&&z1>-60){\n    const C=COURSE,sign=")
 swap("{const S=SLALOM;if(x1>S.x-40&&x0<S.x+S.n*S.sp+40", "{const S=SLALOM;if(!ML&&x1>S.x-40&&x0<S.x+S.n*S.sp+40")
-swap("function addTree(x,z,v,sc){const y=sample(x,z,CRo).h;", "function addTree(x,z,v,sc,raw){if(!raw&&ML&&Math.abs(x-ML_A.x-ML_A.cu)<ML_A.h+ML_A.m+4&&Math.abs(z-ML_A.z-ML_A.cv)<ML_A.h+ML_A.m+4)return;const y=sample(x,z,CRo).h;")
+swap("function addTree(x,z,v,sc){const y=sample(x,z,CRo).h;", "function addTree(x,z,v,sc,raw){if(!raw&&ML&&Math.abs(x-ML_A.x-ML_A.cu)<ML_A.hx+ML_A.m+4&&Math.abs(z-ML_A.z-ML_A.cv)<ML_A.hz+ML_A.m+4)return;const y=sample(x,z,CRo).h;")
 swap("    cols.push({t:'c',x,z,r:palm?.32*sc:.35*sc+.15,top:y+(palm?8:(pine?1.6:2.4)+(pine?2.2:3.4))*sc});}\n", "    cols.push({t:'c',x,z,r:palm?.32*sc:.35*sc+.15,top:y+(palm?8:(pine?1.6:2.4)+(pine?2.2:3.4))*sc});}\n  if(ML)mlTrees(x0,z0,x1,z1,addTree);\n")
 swap("RECENT.unshift(b.id);RECENT.length=Math.min(RECENT.length,3);", "RECENT.unshift(b.id);RECENT.length=Math.min(RECENT.length,6);")
+# (Rimrock Run: THE VIEW. The engine draws the far land out to 1.8 km on a phone, 3 km on a laptop; past that, nothing.
+# From the Rim the River is 4.5 km off. Here the far land goes 2.2 times as far: 4 km on a phone, 6.6 km on a laptop.
+# It is coarse (a point every 32 m) and only what is in front of the camera is drawn)
+swap("WORLD.near=r.near*k;WORLD.farR=r.farR*k;", "WORLD.near=r.near*k;WORLD.farR=r.farR*k*2.2;")
 # ---------- THE SOIL (src/ml-soil.js) ----------
 # THE PHYSICS: inside the arena the ground is the soil's (src/ml-soil.js mlGround)
 swap("function groundInto(x,z,o){\n  const c=chunkAt(x,z);", "function groundInto(x,z,o){\n  if(MLS.ready&&mlGround(x,z,o))return o;const c=chunkAt(x,z);")
@@ -122,16 +130,16 @@ swap("function groundInto(x,z,o){\n  const c=chunkAt(x,z);", "function groundInt
 # The vertex shader lifts the patch; the fragment shader hides the chunks' ground under the patch, paints every soil
 # by how wet it is, the sod and the woods' floor, the ruts, the turned soil, the pressed and the wet tracks, and the
 # water (muddy, the bottom showing through where it's shallow)
-UNI = "uniform highp sampler2D uMLt;uniform highp sampler2D uMLd;uniform highp sampler2D uMLs0;uniform sampler2D uMLs1;uniform vec4 uMLo;uniform vec4 uMLw;uniform vec4 uMLp;uniform vec4 uMLq;uniform float uMLv;uniform vec4 uMLf;"
+UNI = "uniform highp sampler2D uMLt;uniform highp sampler2D uMLd;uniform highp sampler2D uMLs0;uniform sampler2D uMLs1;uniform vec4 uMLo;uniform float uMLk;uniform vec4 uMLw;uniform vec4 uMLp;uniform vec4 uMLq;uniform float uMLv;uniform vec4 uMLf;"
 swap("uniform vec3 uCam;uniform vec4 uFarDrop;\nout vec3 vP;", "uniform vec3 uCam;uniform vec4 uFarDrop;" + UNI + "\nout vec3 vP;")
 swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uPrevVP*vec4(pw,1.);}`;",
      "  /* (Mud Lab) the soil's patch: the ground's own height every 8 cm and the ruts (fading out toward its edge); its\n"
      "     slope from the world's ground */\n"
-     "  if(uMLv>.5&&uMLv<1.5){vec2 mlu=(w.xz-uMLo.xy)*uMLo.z,mlw=fract((w.xz-uMLo.xy)*uMLw.z);bool win=max(abs(w.x-uMLw.x),abs(w.z-uMLw.y))<uMLw.w;\n"
+     "  if(uMLv>.5&&uMLv<1.5){vec2 mlu=(w.xz-uMLo.xy)*uMLo.z*vec2(1.,uMLk),mlw=fract((w.xz-uMLo.xy)*uMLw.z);bool win=max(abs(w.x-uMLw.x),abs(w.z-uMLw.y))<uMLw.w;\n"
      "    float mle=max(abs(aPos.x),abs(aPos.z)),mlf=1.-smoothstep(uMLp.z*.7,uMLp.z*.95,mle);\n"
-     "    float mb=win?textureLod(uMLd,mlw,0.).r:textureLod(uMLs0,mlu,0.).r,mbc=textureLod(uMLs0,mlu,0.).r;\n"
-     "    w.y=uMLq.z+mix(mbc,mb,win?1.:0.)+(win?textureLod(uMLt,mlw,0.).r*mlf:0.);pw.y=w.y;float mld=uMLo.z*1.28;\n"
-     "    float mlx=textureLod(uMLs0,mlu+vec2(mld,0.),0.).r-textureLod(uMLs0,mlu-vec2(mld,0.),0.).r,mlz=textureLod(uMLs0,mlu+vec2(0.,mld),0.).r-textureLod(uMLs0,mlu-vec2(0.,mld),0.).r;\n"
+     "    float mbc=textureLod(uMLs0,mlu,0.).r,mb=mbc+(win?textureLod(uMLd,mlw,0.).r:0.);\n"
+     "    w.y=uMLq.z+mb+(win?textureLod(uMLt,mlw,0.).r*mlf:0.);pw.y=w.y;float mld=uMLo.z*1.28;\n"
+     "    float mlx=textureLod(uMLs0,mlu+vec2(mld,0.),0.).r-textureLod(uMLs0,mlu-vec2(mld,0.),0.).r,mlz=textureLod(uMLs0,mlu+vec2(0.,mld*uMLk),0.).r-textureLod(uMLs0,mlu-vec2(0.,mld*uMLk),0.).r;\n"
      "    vN=normalize(vec3(-mlx,2.56,-mlz));vC=vec4(0.,0.,0.,1.);}\n"
      # (Mud Lab 22.3 water) THE WORKED-OUT WATER (src/ml-soil.js mlRipple; uMLv 2): a sheet of points lying a hair under the
      # water's level, each lifted by what it carries in aUV.x (its ripple's height and how big the ripples round it have
@@ -143,7 +151,7 @@ swap("  vP=w;vMat=aMat;gl_Position=uVP*vec4(w,1.);vCur=uVPnj*vec4(w,1.);vPrev=uP
 swap("uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;\nlayout(location=0) out vec4 oCol;", "uniform sampler2D uRTa;uniform sampler2D uRTn;uniform sampler2D uRTo;" + UNI + "\nlayout(location=0) out vec4 oCol;")
 swap("bool dirty=false,ground=false;vec3 Pw=vP+uOrg;", "bool dirty=false,ground=false;vec3 Pw=vP+uOrg;vec3 mlq1=dPx,mlq2=dPy;vec2 mlt1=dFdx(vUV),mlt2=dFdy(vUV);mlDx=dPx.xz;mlDy=dPy.xz;\n"
      "#ifndef PROBE\n  /* (Mud Lab) inside the world: the patch drawn only there; the chunks' ground not drawn under the patch */\n"
-     "  vec2 mlUV=(vP.xz-uMLo.xy)*uMLo.z,mlW=fract((vP.xz-uMLo.xy)*uMLw.z);bool mlIn=(m==40||m==50)&&uMLo.w>.5&&mlUV.x>0.&&mlUV.y>0.&&mlUV.x<1.&&mlUV.y<1.;\n"
+     "  vec2 mlUV=(vP.xz-uMLo.xy)*uMLo.z*vec2(1.,uMLk),mlW=fract((vP.xz-uMLo.xy)*uMLw.z);bool mlIn=(m==40||m==50)&&uMLo.w>.5&&mlUV.x>0.&&mlUV.y>0.&&mlUV.x<1.&&mlUV.y<1.;\n"
      "  bool mlWin=mlIn&&max(abs(vP.x-uMLw.x),abs(vP.z-uMLw.y))<uMLw.w;\n"
      "  if(m==40&&uMLo.w>.5){if(uMLv>.5){if(!mlIn)discard;}else if(mlIn&&uMLp.w>.5&&max(abs(vP.x-uMLp.x),abs(vP.z-uMLp.y))<uMLp.z*.985)discard;}\n#endif")
 SC = '%.3f,%.3f,%.3f' % tuple(TP['SAND']['m'])

@@ -14,7 +14,7 @@ function vn(x,z,s){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz,ux=fx
 function fbm(x,z,o,s){let t=0,a=.5,n=0;for(let i=0;i<o;i++){t+=a*vn(x,z,s+i*101);n+=a;x=x*2.03+17.3;z=z*2.03-9.1;a*=.5;}return t/n;}
 const rimAt=(x,z)=>0;
 `;
-  const post=`\nreturn {ML_A,ML_BOG,ML_CLIMB,ML_RIVER,ML_CHAIN,ML_PITS,mlLand,mlClimbY,mlZone,mlMat,mlCore,mlPlace,mlHills,ML_PLACES,ML_TRAILS,ML_HOLES,ML_NONE,ML_CL,
+  const post=`\nreturn {ML_A,ML_BOG,ML_CLIMB,ML_RIVER,ML_CHAIN,ML_PITS,mlLand,mlClimbY,ML_E,ML_X:(typeof ML_X!=='undefined'?ML_X:null),MLCK:(typeof MLCK!=='undefined'?MLCK:null),mlCreekInit:(typeof mlCreekInit!=='undefined'?mlCreekInit:null),mlRoadY:(typeof mlRoadY!=='undefined'?mlRoadY:null),ML_ROADS:(typeof ML_ROADS!=='undefined'?ML_ROADS:null),ML_CREEK:(typeof ML_CREEK!=='undefined'?ML_CREEK:null),mlZone,mlMat,mlCore,mlPlace,mlHills,ML_PLACES,ML_TRAILS,ML_HOLES,ML_NONE,ML_CL,
   X:(typeof ML_X!=='undefined'?ML_X:null)};`;
   return new Function(pre+src+post)();
 }
